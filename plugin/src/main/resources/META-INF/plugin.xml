@@ -1,0 +1,36 @@
+<idea-plugin>
+  <id>com.github.sulir.runtimesave</id>
+  <name>RuntimeSave</name>
+  <vendor email="matus.sulir@gmail.com" url="https://sulir.github.io">Matúš Sulír</vendor>
+  <description>Saves the runtime values of variables in a graph database and loads them for various purposes</description>
+
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.java</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <xdebugger.breakpointType implementation="com.github.sulir.runtimesave.savepoints.SavepointType"/>
+    <debugger.javaBreakpointHandlerFactory
+            implementation="com.github.sulir.runtimesave.savepoints.SavepointHandlerFactory"/>
+  </extensions>
+
+  <actions>
+    <action id="com.github.sulir.runtimesave.StartProgramAction" class="com.github.sulir.runtimesave.StartProgramAction"
+            text="Start Program at This Line">
+      <add-to-group group-id="RunMenu" anchor="first"/>
+    </action>
+
+    <action id="com.github.sulir.runtimesave.savepoints.AddSavepointAction"
+            class="com.github.sulir.runtimesave.savepoints.AddSavepointAction" text="Add Savepoint">
+      <add-to-group group-id="XDebugger.Hover.Breakpoint.Context.Menu" anchor="last"/>
+    </action>
+  </actions>
+
+  <projectListeners>
+    <!-- disabled
+    <listener class="com.github.sulir.runtimesave.everyline.BreakpointListener"
+              topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
+    -->
+    <listener class="com.github.sulir.runtimesave.savepoints.SavepointListener"
+              topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
+  </projectListeners>
+</idea-plugin>
