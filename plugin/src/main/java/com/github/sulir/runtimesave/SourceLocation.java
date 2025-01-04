@@ -1,9 +1,9 @@
 package com.github.sulir.runtimesave;
 
 public class SourceLocation {
-    String className;
-    String method;
-    int line;
+    final String className;
+    final String method;
+    final int line;
 
     public SourceLocation(String className, String method, int line) {
         this.className = className;

@@ -11,6 +11,7 @@ import com.intellij.xdebugger.breakpoints.XBreakpointManager;
 import com.intellij.xdebugger.impl.actions.handlers.AddLineBreakpointAction;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("UnstableApiUsage")
 public class AddSavepointAction extends AddLineBreakpointAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {

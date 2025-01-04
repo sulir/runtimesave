@@ -9,9 +9,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.PsiMethod;
+import com.intellij.psi.*;
 import com.intellij.psi.util.ClassUtil;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
@@ -20,26 +18,43 @@ public class StartProgramAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         PsiMethod method = getMethodAtCursor(e.getProject());
-        startDebugging(e.getProject(), method);
+        if (method != null)
+            startDebugging(e.getProject(), method);
     }
 
     private PsiMethod getMethodAtCursor(Project project) {
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
-        VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
-        int offset = editor.getCaretModel().getOffset();
+        if (editor == null)
+            return null;
 
-        PsiElement element = PsiManager.getInstance(project).findFile(file).findElementAt(offset);
+        VirtualFile virtualFile = FileDocumentManager.getInstance().getFile(editor.getDocument());
+        if (virtualFile == null)
+            return null;
+
+        PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
+        if (psiFile == null)
+            return null;
+
+        int offset = editor.getCaretModel().getOffset();
+        PsiElement element = psiFile.findElementAt(offset);
         return PsiTreeUtil.getParentOfType(element, PsiMethod.class);
     }
 
     private void startDebugging(Project project, PsiMethod method) {
-        String className = ClassUtil.getJVMClassName(method.getContainingClass());
+        PsiClass containingClass = method.getContainingClass();
+        if (containingClass == null)
+            return;
+
+        String className = ClassUtil.getJVMClassName(containingClass);
         String methodName = method.getName();
         String methodSignature = ClassUtil.getAsmMethodSignature(method);
         String paramsSignature = methodSignature.substring(0, methodSignature.lastIndexOf(')') + 1);
 
         RunManager runManager = RunManager.getInstance(project);
         RunnerAndConfigurationSettings selected = runManager.findConfigurationByName("ProgramStarter");
+        if (selected == null)
+            return;
+
         String programArgs = String.format("\"%s\" \"%s\" \"%s\"", className, methodName, paramsSignature);
         ((JavaRunConfigurationBase) selected.getConfiguration()).setProgramParameters(programArgs);
         Executor debugExecutor = DefaultDebugExecutor.getDebugExecutorInstance();

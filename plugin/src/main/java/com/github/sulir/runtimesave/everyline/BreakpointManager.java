@@ -31,9 +31,8 @@ public class BreakpointManager {
                 EventRequestManager manager = clazz.virtualMachine().eventRequestManager();
                 BreakpointRequest request = manager.createBreakpointRequest(location);
 
-                DebugProcessEvents.enableRequestWithHandler(request, (event) -> {
-                    handleBreakpoint((BreakpointEvent) event);
-                });
+                DebugProcessEvents.enableRequestWithHandler(request,
+                        (event) -> handleBreakpoint((BreakpointEvent) event));
             }
         } catch (AbsentInformationException ignored) {  }
     }
