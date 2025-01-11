@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave;
+package com.github.sulir.runtimesave.starter;
 
 import sun.misc.Unsafe;
 
@@ -7,12 +7,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ProgramStarter {
+public class StarterMain {
     public static void main(String[] args) throws Throwable {
         String className = args[0];
         String methodName = args[1];
         String paramsDescriptor = args[2];
-        new ProgramStarter().start(className, methodName, paramsDescriptor);
+        new StarterMain().start(className, methodName, paramsDescriptor);
     }
 
     public void start(String className, String methodName, String paramsDescriptor) throws Throwable  {

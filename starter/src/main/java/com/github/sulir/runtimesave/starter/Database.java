@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave;
+package com.github.sulir.runtimesave.starter;
 
 import org.neo4j.driver.*;
 

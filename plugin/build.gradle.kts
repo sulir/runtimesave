@@ -17,7 +17,7 @@ dependencies {
     implementation("org.neo4j.driver:neo4j-java-driver:${project.ext["neo4jVersion"]}")
 
     implementation(project(":runtimesave-shared"))
-    runtimeOnly(project(":runtimesave-agent")) {
+    runtimeOnly(project(":runtimesave-starter")) {
         isTransitive = false
     }
 }
@@ -31,12 +31,12 @@ tasks.assemble {
 }
 
 tasks.buildPlugin {
-    dependsOn(":runtimesave-agent:jar")
+    dependsOn(":runtimesave-starter:jar")
     destinationDirectory = project.rootProject.file("dist")
 }
 
 tasks.runIde {
-    dependsOn(":runtimesave-agent:jar")
+    dependsOn(":runtimesave-starter:jar")
 }
 
 tasks.clean {

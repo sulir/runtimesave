@@ -1,7 +1,14 @@
 package com.github.sulir.runtimesave;
 
-import com.intellij.execution.*;
+import com.intellij.execution.Executor;
+import com.intellij.execution.ProgramRunnerUtil;
+import com.intellij.execution.RunManager;
+import com.intellij.execution.RunnerAndConfigurationSettings;
+import com.intellij.execution.application.ApplicationConfiguration;
+import com.intellij.execution.application.ApplicationConfigurationType;
+import com.intellij.execution.configurations.ModuleBasedConfigurationOptions;
 import com.intellij.execution.executors.DefaultDebugExecutor;
+import com.intellij.ide.plugins.cl.PluginAwareClassLoader;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.editor.Editor;
@@ -13,6 +20,9 @@ import com.intellij.psi.*;
 import com.intellij.psi.util.ClassUtil;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
+
+import java.nio.file.Path;
+import java.util.List;
 
 public class StartProgramAction extends AnAction {
     @Override
@@ -50,14 +60,24 @@ public class StartProgramAction extends AnAction {
         String methodSignature = ClassUtil.getAsmMethodSignature(method);
         String paramsSignature = methodSignature.substring(0, methodSignature.lastIndexOf(')') + 1);
 
-        RunManager runManager = RunManager.getInstance(project);
-        RunnerAndConfigurationSettings selected = runManager.findConfigurationByName("ProgramStarter");
-        if (selected == null)
-            return;
+        RunnerAndConfigurationSettings settings = RunManager.getInstance(project).createConfiguration(
+                "ProgramStarter", ApplicationConfigurationType.class);
+        ApplicationConfiguration config = (ApplicationConfiguration) settings.getConfiguration();
 
-        String programArgs = String.format("\"%s\" \"%s\" \"%s\"", className, methodName, paramsSignature);
-        ((JavaRunConfigurationBase) selected.getConfiguration()).setProgramParameters(programArgs);
+        config.setMainClassName("com.github.sulir.runtimesave.starter.StarterMain");
+        String programArgs = String.format("%s %s %s", className, methodName, paramsSignature);
+        config.setProgramParameters(programArgs);
+
+        PluginAwareClassLoader thisLoader = (PluginAwareClassLoader) this.getClass().getClassLoader();
+        Path pluginPath = thisLoader.getPluginDescriptor().getPluginPath();
+        String agentJar = pluginPath.resolve("lib").resolve("runtimesave-starter.jar").toString();
+        String vmArgs = String.format("-javaagent:%s", agentJar);
+        config.setVMParameters(vmArgs);
+
+        var includeStarterClasspath = new ModuleBasedConfigurationOptions.ClasspathModification(agentJar, false);
+        config.setClasspathModifications(List.of(includeStarterClasspath));
+
         Executor debugExecutor = DefaultDebugExecutor.getDebugExecutorInstance();
-        ProgramRunnerUtil.executeConfiguration(selected, debugExecutor);
+        ProgramRunnerUtil.executeConfiguration(settings, debugExecutor);
     }
 }

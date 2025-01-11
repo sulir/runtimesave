@@ -1,5 +1,5 @@
 rootProject.name = "runtimesave"
-include("shared", "agent", "plugin")
+include("shared", "starter", "plugin")
 project(":shared").name = "runtimesave-shared"
-project(":agent").name = "runtimesave-agent"
+project(":starter").name = "runtimesave-starter"
 project(":plugin").name = "runtimesave-plugin"

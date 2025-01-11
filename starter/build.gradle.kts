@@ -20,8 +20,7 @@ tasks.shadowJar {
 
     manifest {
         attributes(mapOf(
-            "Premain-Class" to "com.github.sulir.runtimesave.agent.SearchAgent",
-            "Boot-Class-Path" to agentArchive
+            "Premain-Class" to "com.github.sulir.runtimesave.starter.StarterAgent"
         ))
     }
 }
