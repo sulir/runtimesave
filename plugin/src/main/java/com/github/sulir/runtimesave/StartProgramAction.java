@@ -61,23 +61,35 @@ public class StartProgramAction extends AnAction {
         String paramsSignature = methodSignature.substring(0, methodSignature.lastIndexOf(')') + 1);
 
         RunnerAndConfigurationSettings settings = RunManager.getInstance(project).createConfiguration(
-                "ProgramStarter", ApplicationConfigurationType.class);
+                "RuntimeSave Starter", ApplicationConfigurationType.class);
         ApplicationConfiguration config = (ApplicationConfiguration) settings.getConfiguration();
 
+        configureMain(config, className, methodName, paramsSignature);
+        String agentJar = configureAgent(config);
+        configureClasspath(config, agentJar);
+
+        Executor debugExecutor = DefaultDebugExecutor.getDebugExecutorInstance();
+        ProgramRunnerUtil.executeConfiguration(settings, debugExecutor);
+    }
+
+    private void configureMain(ApplicationConfiguration config, String className, String methodName,
+                               String paramsSignature) {
         config.setMainClassName("com.github.sulir.runtimesave.starter.StarterMain");
         String programArgs = String.format("%s %s %s", className, methodName, paramsSignature);
         config.setProgramParameters(programArgs);
+    }
 
+    private String configureAgent(ApplicationConfiguration config) {
         PluginAwareClassLoader thisLoader = (PluginAwareClassLoader) this.getClass().getClassLoader();
         Path pluginPath = thisLoader.getPluginDescriptor().getPluginPath();
         String agentJar = pluginPath.resolve("lib").resolve("runtimesave-starter.jar").toString();
         String vmArgs = String.format("-javaagent:%s", agentJar);
         config.setVMParameters(vmArgs);
+        return agentJar;
+    }
 
+    private void configureClasspath(ApplicationConfiguration config, String agentJar) {
         var includeStarterClasspath = new ModuleBasedConfigurationOptions.ClasspathModification(agentJar, false);
         config.setClasspathModifications(List.of(includeStarterClasspath));
-
-        Executor debugExecutor = DefaultDebugExecutor.getDebugExecutorInstance();
-        ProgramRunnerUtil.executeConfiguration(settings, debugExecutor);
     }
 }
