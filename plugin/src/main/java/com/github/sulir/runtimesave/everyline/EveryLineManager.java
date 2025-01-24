@@ -13,13 +13,13 @@ import com.sun.jdi.request.EventRequestManager;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BreakpointManager {
+public class EveryLineManager {
     public static final int MAX_HITS = 1;
 
     private final ReferenceType clazz;
     private final Map<Location, Integer> hitCounts = new HashMap<>();
 
-    public BreakpointManager(ReferenceType clazz) {
+    public EveryLineManager(ReferenceType clazz) {
         this.clazz = clazz;
     }
 
