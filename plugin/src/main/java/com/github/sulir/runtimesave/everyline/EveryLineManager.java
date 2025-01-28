@@ -23,7 +23,7 @@ public class EveryLineManager {
         this.clazz = clazz;
     }
 
-    public void addToEveryLine() {
+    public void addBreakpoints() {
         System.out.println("Adding breakpoints to " + clazz.name());
 
         try {

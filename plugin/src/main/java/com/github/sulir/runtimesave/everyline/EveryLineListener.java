@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.xdebugger.XDebugSession;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.ClassPrepareEvent;
@@ -24,6 +25,10 @@ public class EveryLineListener implements DebuggerManagerListener {
         session.getProcess().addDebugProcessListener(new DebugProcessListener() {
             @Override
             public void processAttached(@NotNull DebugProcess process) {
+                XDebugSession xSession = session.getXDebugSession();
+                if (xSession == null || xSession.getRunContentDescriptor().getExecutionId() != EveryLineRunner.UID)
+                    return;
+
                 VirtualMachine vm = ((VirtualMachineProxyImpl) process.getVirtualMachineProxy()).getVirtualMachine();
                 setClassPrepareRequest(vm, session.getProject());
             }
@@ -39,7 +44,7 @@ public class EveryLineListener implements DebuggerManagerListener {
             ClassPrepareEvent event = (ClassPrepareEvent) ev;
 
             if (isProjectClass(event.referenceType(), project))
-                new EveryLineManager(event.referenceType()).addToEveryLine();
+                new EveryLineManager(event.referenceType()).addBreakpoints();
         });
     }
 

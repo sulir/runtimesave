@@ -8,6 +8,8 @@
   <depends>com.intellij.java</depends>
 
   <extensions defaultExtensionNs="com.intellij">
+    <executor implementation="com.github.sulir.runtimesave.everyline.EveryLineExecutor"/>
+    <programRunner implementation="com.github.sulir.runtimesave.everyline.EveryLineRunner"/>
     <xdebugger.breakpointType implementation="com.github.sulir.runtimesave.savepoints.SavepointType"/>
     <debugger.javaBreakpointHandlerFactory
             implementation="com.github.sulir.runtimesave.savepoints.SavepointHandlerFactory"/>
@@ -26,10 +28,8 @@
   </actions>
 
   <projectListeners>
-    <!-- disabled
-    <listener class="com.github.sulir.runtimesave.everyline.BreakpointListener"
+    <listener class="com.github.sulir.runtimesave.everyline.EveryLineListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
-    -->
     <listener class="com.github.sulir.runtimesave.savepoints.SavepointListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
   </projectListeners>
