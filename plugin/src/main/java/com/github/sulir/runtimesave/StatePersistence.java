@@ -85,8 +85,12 @@ public class StatePersistence {
             long childID = object.uniqueID();
             boolean created = Database.getInstance().writeObjectField(objectID, name, type, childID);
 
-            if (created)
-                saveFields(object, level);
+            if (created) {
+                if (value instanceof StringReference string)
+                    Database.getInstance().writeString(childID, string.value());
+                else
+                    saveFields(object, level);
+            }
         }
     }
 
