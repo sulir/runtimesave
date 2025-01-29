@@ -1,8 +1,14 @@
 package com.github.sulir.runtimesave.starter;
 
-import sun.misc.Unsafe;
+import com.github.sulir.runtimesave.graph.LazyNode;
+import com.github.sulir.runtimesave.graph.LazyObjectGraph;
+import com.github.sulir.runtimesave.graph.JavaObjectGraph;
+import com.github.sulir.runtimesave.graph.ObjectNode;
 
-import java.lang.reflect.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,19 +58,14 @@ public class StarterMain {
         method.setAccessible(wasAccessible);
     }
 
-    private Object createThisObject(Method method) throws ReflectiveOperationException {
+    private Object createThisObject(Method method) {
         if (Modifier.isStatic(method.getModifiers())) {
             return null;
         } else {
-            Field unsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            unsafe.setAccessible(true);
-            Object thisObject = ((Unsafe) unsafe.get(null)).allocateInstance(method.getDeclaringClass());
-
-            for (Field field : thisObject.getClass().getDeclaredFields()) {
-                // inherited are missing
-            }
-
-            return thisObject;
+            String id = Database.getInstance().readObjectVariableId(method.getDeclaringClass().getName(),
+                    method.getName() + getParamsDescriptor(method), "this");
+            LazyNode lazyNode = new ObjectNode(id);
+            return new JavaObjectGraph(new LazyObjectGraph(lazyNode)).create();
         }
     }
 

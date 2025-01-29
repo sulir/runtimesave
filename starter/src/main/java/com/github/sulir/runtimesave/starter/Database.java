@@ -49,13 +49,13 @@ public class Database {
         }
     }
 
-    public String readObjectVariable(String className, String method, String variable) {
+    public String readObjectVariableId(String className, String method, String variable) {
         try (Session session = driver.session(SessionConfig.forDatabase(DB_NAME))) {
             String query = "MATCH (:Class {name: $class})-->(:Method {signature: $method})-->(l:Line)"
                     + " WHERE l.number > 0"
                     + " WITH l ORDER BY l.number LIMIT 1"
                     + " MATCH (l)-[:HAS_VARIABLE {name: $variable}]->(o:Object)"
-                    + " RETURN o";
+                    + " RETURN elementId(o)";
             Result result = session.run(query, Map.of("class", className, "method", method,
                     "variable", variable));
             return result.next().values().get(0).asString();
