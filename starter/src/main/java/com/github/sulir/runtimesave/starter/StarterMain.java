@@ -1,5 +1,6 @@
 package com.github.sulir.runtimesave.starter;
 
+import com.github.sulir.runtimesave.db.DBReader;
 import com.github.sulir.runtimesave.graph.LazyNode;
 import com.github.sulir.runtimesave.graph.LazyObjectGraph;
 import com.github.sulir.runtimesave.graph.JavaObjectGraph;
@@ -62,7 +63,7 @@ public class StarterMain {
         if (Modifier.isStatic(method.getModifiers())) {
             return null;
         } else {
-            String id = Database.getInstance().readObjectVariableId(method.getDeclaringClass().getName(),
+            String id = DBReader.getInstance().readObjectVariableId(method.getDeclaringClass().getName(),
                     method.getName() + getParamsDescriptor(method), "this");
             LazyNode lazyNode = new ObjectNode(id);
             return new JavaObjectGraph(new LazyObjectGraph(lazyNode)).create();
@@ -72,7 +73,7 @@ public class StarterMain {
     private Object readVariable(String className, String method, String variableName, Class<?> variableType) {
         String primitiveValue;
         if (variableType.isPrimitive())
-            primitiveValue = Database.getInstance().readPrimitiveVariable(className, method, variableName);
+            primitiveValue = DBReader.getInstance().readPrimitiveVariable(className, method, variableName);
         else
             primitiveValue = "";
 
@@ -83,7 +84,7 @@ public class StarterMain {
             case "float" -> Float.valueOf(primitiveValue);
             case "double" -> Double.valueOf(primitiveValue);
             case "boolean" -> Boolean.valueOf(primitiveValue);
-            case "java.lang.String" -> Database.getInstance().readStringVariable(className, method, variableName);
+            case "java.lang.String" -> DBReader.getInstance().readStringVariable(className, method, variableName);
             default -> null;
         };
     }

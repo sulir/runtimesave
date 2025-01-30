@@ -1,30 +1,22 @@
-package com.github.sulir.runtimesave.starter;
+package com.github.sulir.runtimesave.db;
 
 import org.neo4j.driver.*;
 
 import java.util.Map;
 
-public class Database {
-    public static final String URI = "bolt://localhost:7687";
-    public static final String USER = "neo4j";
-    public static final String PASSWORD = System.getenv("NEO4J_PASSWORD");
-    public static final String DB_NAME = "runtimesave";
-    private static Database instance;
+public class DBReader extends Database {
+    private static DBReader instance;
 
-    private final Driver driver;
+    private DBReader() { }
 
-    public static Database getInstance() {
+    public static DBReader getInstance() {
         if (instance == null)
-            instance = new Database();
+            instance = new DBReader();
         return instance;
     }
 
-    private Database() {
-        driver = GraphDatabase.driver(URI, AuthTokens.basic(USER, PASSWORD));
-    }
-
     public String readPrimitiveVariable(String className, String method, String variable) {
-        try (Session session = driver.session(SessionConfig.forDatabase(DB_NAME))) {
+        try (Session session = createSession()) {
             String query = "MATCH (:Class {name: $class})-->(:Method {signature: $method})-->(l:Line)"
                     + " WHERE l.number > 0"
                     + " WITH l ORDER BY l.number LIMIT 1"
@@ -37,7 +29,7 @@ public class Database {
     }
 
     public String readStringVariable(String className, String method, String variable) {
-        try (Session session = driver.session(SessionConfig.forDatabase(DB_NAME))) {
+        try (Session session = createSession()) {
             String query = "MATCH (:Class {name: $class})-->(:Method {signature: $method})-->(l:Line)"
                     + " WHERE l.number > 0"
                     + " WITH l ORDER BY l.number LIMIT 1"
@@ -50,7 +42,7 @@ public class Database {
     }
 
     public String readObjectVariableId(String className, String method, String variable) {
-        try (Session session = driver.session(SessionConfig.forDatabase(DB_NAME))) {
+        try (Session session = createSession()) {
             String query = "MATCH (:Class {name: $class})-->(:Method {signature: $method})-->(l:Line)"
                     + " WHERE l.number > 0"
                     + " WITH l ORDER BY l.number LIMIT 1"

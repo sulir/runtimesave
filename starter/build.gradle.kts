@@ -3,7 +3,6 @@ plugins {
 }
 
 dependencies {
-    implementation("org.neo4j.driver:neo4j-java-driver:${project.ext["neo4jVersion"]}")
     implementation("org.ow2.asm:asm:${project.ext["asmVersion"]}")
     implementation("org.ow2.asm:asm-tree:${project.ext["asmVersion"]}")
 

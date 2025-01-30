@@ -14,8 +14,6 @@ dependencies {
         bundledPlugin("com.intellij.java")
     }
 
-    implementation("org.neo4j.driver:neo4j-java-driver:${project.ext["neo4jVersion"]}")
-
     implementation(project(":runtimesave-shared"))
     runtimeOnly(project(":runtimesave-starter")) {
         isTransitive = false

@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave;
+package com.github.sulir.runtimesave.db;
 
 public class SourceLocation {
     final String className;

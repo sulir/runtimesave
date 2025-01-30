@@ -1,30 +1,22 @@
-package com.github.sulir.runtimesave;
+package com.github.sulir.runtimesave.db;
 
 import org.neo4j.driver.*;
 
 import java.util.Map;
 
-public class Database {
-    public static final String URI = "bolt://localhost:7687";
-    public static final String USER = "neo4j";
-    public static final String PASSWORD = System.getenv("NEO4J_PASSWORD");
-    public static final String DB_NAME = "runtimesave";
-    private static Database instance;
+public class DBWriter extends Database {
+    private static DBWriter instance;
 
-    private final Driver driver;
+    private DBWriter() { }
 
-    public static Database getInstance() {
+    public static DBWriter getInstance() {
         if (instance == null)
-            instance = new Database();
+            instance = new DBWriter();
         return instance;
     }
 
-    private Database() {
-        driver = GraphDatabase.driver(URI, AuthTokens.basic(USER, PASSWORD));
-    }
-
     public void writeLocation(SourceLocation location) {
-        try (Session session = driver.session(SessionConfig.forDatabase(DB_NAME))) {
+        try (Session session = createSession()) {
             String query = "MERGE (c:Class {name: $class})"
                     + " MERGE (c)-[:DEFINES]->(m:Method {signature: $method})"
                     + " MERGE (m)-[:CONTAINS]->(:Line {number: $line})";
@@ -34,7 +26,7 @@ public class Database {
     }
 
     public void writePrimitiveVariable(SourceLocation location, String name, String type, String value) {
-        try (Session session = driver.session(SessionConfig.forDatabase(DB_NAME))) {
+        try (Session session = createSession()) {
             String query = "MATCH (:Class {name: $class})"
                     + "-[:DEFINES]->(:Method {signature: $method})"
                     + "-[:CONTAINS]->(l:Line {number: $line})"
@@ -45,7 +37,7 @@ public class Database {
     }
 
     public boolean writeObjectVariable(SourceLocation location, String name, String type, long objectID) {
-        try (Session session = driver.session(SessionConfig.forDatabase(DB_NAME))) {
+        try (Session session = createSession()) {
             String mode = objectID == -1 ? "CREATE" : "MERGE";
             String query = "MERGE (s:Class {name: $class})"
                     + "-[:DEFINES]->(:Method {signature: $method})"
@@ -60,7 +52,7 @@ public class Database {
     }
 
     public void writePrimitiveField(long objectID, String name, String type, String value) {
-        try (Session session = driver.session(SessionConfig.forDatabase(DB_NAME))) {
+        try (Session session = createSession()) {
             String query = "MATCH (o:Object {objectID: $id})"
                     + " CREATE (o)-[:HAS_FIELD {name: $name}]->(:Value {type: $type, value: $value})";
             session.run(query, Map.of("id", objectID, "name", name, "type", type, "value", value));
@@ -68,7 +60,7 @@ public class Database {
     }
 
     public boolean writeObjectField(long parentID, String name, String type, long childID) {
-        try (Session session = driver.session(SessionConfig.forDatabase(DB_NAME))) {
+        try (Session session = createSession()) {
             String mode = childID == -1 ? "CREATE" : "MERGE";
             String query = "MATCH (p:Object {objectID: $parent})"
                     + " " + mode + " (c:Object {type: $type, objectID: $child})"
@@ -81,7 +73,7 @@ public class Database {
     }
 
     public void writeString(long objectID, String value) {
-        try (Session session = driver.session(SessionConfig.forDatabase(DB_NAME))) {
+        try (Session session = createSession()) {
             String query = "MATCH (o:Object {objectID: $id})"
                     + " MERGE (s:String {value: $value})"
                     + " CREATE (o)-[:HAS_VALUE]->(s)";
@@ -90,7 +82,7 @@ public class Database {
     }
 
     public void deleteObjectIDs() {
-        try (Session session = driver.session(SessionConfig.forDatabase(DB_NAME))) {
+        try (Session session = createSession()) {
             session.run("MATCH (o:Object) REMOVE o.objectID");
         }
     }

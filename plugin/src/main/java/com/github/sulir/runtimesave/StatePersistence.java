@@ -1,5 +1,7 @@
 package com.github.sulir.runtimesave;
 
+import com.github.sulir.runtimesave.db.DBWriter;
+import com.github.sulir.runtimesave.db.SourceLocation;
 import com.sun.jdi.*;
 
 public class StatePersistence {
@@ -25,7 +27,7 @@ public class StatePersistence {
     }
 
     public void saveLocation() {
-        Database.getInstance().writeLocation(location);
+        DBWriter.getInstance().writeLocation(location);
     }
 
     public void saveThisObject() {
@@ -43,17 +45,17 @@ public class StatePersistence {
     private void saveVariable(String name, Value value) {
         if (value instanceof PrimitiveValue) {
             String type = value.type().name();
-            Database.getInstance().writePrimitiveVariable(location, name, type, value.toString());
+            DBWriter.getInstance().writePrimitiveVariable(location, name, type, value.toString());
         } else if (value == null) {
-            Database.getInstance().writeObjectVariable(location, name, "null", -1);
+            DBWriter.getInstance().writeObjectVariable(location, name, "null", -1);
         } else if (value instanceof ObjectReference object) {
             String type = object.referenceType().name();
             long objectID = object.uniqueID();
-            boolean created = Database.getInstance().writeObjectVariable(location, name, type, objectID);
+            boolean created = DBWriter.getInstance().writeObjectVariable(location, name, type, objectID);
 
             if (created) {
                 if (value instanceof StringReference string)
-                    Database.getInstance().writeString(objectID, string.value());
+                    DBWriter.getInstance().writeString(objectID, string.value());
                 else
                     saveFields(object, MAX_REFERENCE_LEVEL);
             }
@@ -78,16 +80,16 @@ public class StatePersistence {
         String type = (value == null) ? "null" : value.type().name();
 
         if (value instanceof PrimitiveValue) {
-            Database.getInstance().writePrimitiveField(objectID, name, type, value.toString());
+            DBWriter.getInstance().writePrimitiveField(objectID, name, type, value.toString());
         } else if (value == null) {
-            Database.getInstance().writeObjectField(objectID, name, type, -1);
+            DBWriter.getInstance().writeObjectField(objectID, name, type, -1);
         } else if (value instanceof ObjectReference object)  {
             long childID = object.uniqueID();
-            boolean created = Database.getInstance().writeObjectField(objectID, name, type, childID);
+            boolean created = DBWriter.getInstance().writeObjectField(objectID, name, type, childID);
 
             if (created) {
                 if (value instanceof StringReference string)
-                    Database.getInstance().writeString(childID, string.value());
+                    DBWriter.getInstance().writeString(childID, string.value());
                 else
                     saveFields(object, level);
             }
@@ -95,6 +97,6 @@ public class StatePersistence {
     }
 
     public void finish() {
-        Database.getInstance().deleteObjectIDs();
+        DBWriter.getInstance().deleteObjectIDs();
     }
 }
