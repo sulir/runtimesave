@@ -48,17 +48,15 @@ public class StatePersistence {
             DBWriter.getInstance().writePrimitiveVariable(location, name, type, value.toString());
         } else if (value == null) {
             DBWriter.getInstance().writeObjectVariable(location, name, "null", -1);
+        } else if (value instanceof StringReference string) {
+            DBWriter.getInstance().writeStringVariable(location, name, string.value());
         } else if (value instanceof ObjectReference object) {
             String type = object.referenceType().name();
             long objectID = object.uniqueID();
             boolean created = DBWriter.getInstance().writeObjectVariable(location, name, type, objectID);
 
-            if (created) {
-                if (value instanceof StringReference string)
-                    DBWriter.getInstance().writeString(objectID, string.value());
-                else
-                    saveFields(object, MAX_REFERENCE_LEVEL);
-            }
+            if (created)
+                saveFields(object, MAX_REFERENCE_LEVEL);
         }
     }
 
@@ -83,16 +81,14 @@ public class StatePersistence {
             DBWriter.getInstance().writePrimitiveField(objectID, name, type, value.toString());
         } else if (value == null) {
             DBWriter.getInstance().writeObjectField(objectID, name, type, -1);
+        } else if (value instanceof StringReference string) {
+            DBWriter.getInstance().writeStringField(objectID, name, string.value());
         } else if (value instanceof ObjectReference object)  {
             long childID = object.uniqueID();
             boolean created = DBWriter.getInstance().writeObjectField(objectID, name, type, childID);
 
-            if (created) {
-                if (value instanceof StringReference string)
-                    DBWriter.getInstance().writeString(childID, string.value());
-                else
-                    saveFields(object, level);
-            }
+            if (created)
+                saveFields(object, level);
         }
     }
 

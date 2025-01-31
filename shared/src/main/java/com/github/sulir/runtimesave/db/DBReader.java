@@ -33,7 +33,7 @@ public class DBReader extends Database {
             String query = "MATCH (:Class {name: $class})-->(:Method {signature: $method})-->(l:Line)"
                     + " WHERE l.number > 0"
                     + " WITH l ORDER BY l.number LIMIT 1"
-                    + " MATCH (l)-[:HAS_VARIABLE {name: $variable}]->(:Object)-[:HAS_VALUE]->(s:String)"
+                    + " MATCH (l)-[:HAS_VARIABLE {name: $variable}]->(s:String)"
                     + " RETURN s.value";
             Result result = session.run(query, Map.of("class", className, "method", method,
                     "variable", variable));
