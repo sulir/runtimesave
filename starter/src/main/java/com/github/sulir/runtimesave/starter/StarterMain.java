@@ -1,10 +1,7 @@
 package com.github.sulir.runtimesave.starter;
 
-import com.github.sulir.runtimesave.db.DBReader;
-import com.github.sulir.runtimesave.graph.LazyNode;
-import com.github.sulir.runtimesave.graph.LazyObjectGraph;
+import com.github.sulir.runtimesave.graph.GraphNode;
 import com.github.sulir.runtimesave.graph.JavaObjectGraph;
-import com.github.sulir.runtimesave.graph.ObjectNode;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -47,7 +44,7 @@ public class StarterMain {
         String methodSignature = method.getName() + getParamsDescriptor(method);
 
         List<Object> params = Arrays.stream(method.getParameters())
-                .map(p -> readVariable(className, methodSignature, p.getName(), p.getType()))
+                .map(p -> readVariable(className, methodSignature, p.getName()))
                 .toList();
 
         try {
@@ -63,30 +60,15 @@ public class StarterMain {
         if (Modifier.isStatic(method.getModifiers())) {
             return null;
         } else {
-            String id = DBReader.getInstance().readObjectVariableId(method.getDeclaringClass().getName(),
+            GraphNode graphNode = GraphNode.findVariable(method.getDeclaringClass().getName(),
                     method.getName() + getParamsDescriptor(method), "this");
-            LazyNode lazyNode = new ObjectNode(id);
-            return new JavaObjectGraph(new LazyObjectGraph(lazyNode)).create();
+            return new JavaObjectGraph(graphNode).create();
         }
     }
 
-    private Object readVariable(String className, String method, String variableName, Class<?> variableType) {
-        String primitiveValue;
-        if (variableType.isPrimitive())
-            primitiveValue = DBReader.getInstance().readPrimitiveVariable(className, method, variableName);
-        else
-            primitiveValue = "";
-
-        return switch(variableType.getName()) {
-            case "char" -> primitiveValue.charAt(0);
-            case "byte", "short", "int" -> Integer.valueOf(primitiveValue);
-            case "long" -> Long.valueOf(primitiveValue);
-            case "float" -> Float.valueOf(primitiveValue);
-            case "double" -> Double.valueOf(primitiveValue);
-            case "boolean" -> Boolean.valueOf(primitiveValue);
-            case "java.lang.String" -> DBReader.getInstance().readStringVariable(className, method, variableName);
-            default -> null;
-        };
+    private Object readVariable(String className, String method, String variableName) {
+        GraphNode graphNode = GraphNode.findVariable(className, method, variableName);
+        return new JavaObjectGraph(graphNode).create();
     }
 
     private String getParamsDescriptor(Method method) {

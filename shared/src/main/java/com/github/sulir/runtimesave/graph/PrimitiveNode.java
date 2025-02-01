@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.graph;
 
-public class PrimitiveNode extends LazyNode {
+public class PrimitiveNode extends GraphNode {
     private final Object value;
 
     public PrimitiveNode(Object value, String type) {

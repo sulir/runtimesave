@@ -1,7 +1,11 @@
 package com.github.sulir.runtimesave.db;
 
-import org.neo4j.driver.*;
+import org.neo4j.driver.Record;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.types.Node;
 
+import java.util.List;
 import java.util.Map;
 
 public class DBReader extends Database {
@@ -15,42 +19,27 @@ public class DBReader extends Database {
         return instance;
     }
 
-    public String readPrimitiveVariable(String className, String method, String variable) {
+    public Node readVariable(String className, String method, String variable) {
         try (Session session = createSession()) {
             String query = "MATCH (:Class {name: $class})-->(:Method {signature: $method})-->(l:Line)"
                     + " WHERE l.number > 0"
                     + " WITH l ORDER BY l.number LIMIT 1"
-                    + " MATCH (l)-[:HAS_VARIABLE {name: $variable}]->(v:Value)"
-                    + " RETURN v.value";
+                    + " MATCH (l)-[:HAS_VARIABLE {name: $variable}]->(v)"
+                    + " RETURN v";
             Result result = session.run(query, Map.of("class", className, "method", method,
                     "variable", variable));
-            return result.next().values().get(0).asString();
+            return result.next().get("v").asNode();
         }
     }
 
-    public String readStringVariable(String className, String method, String variable) {
+    public List<Record> readObjectFields(String id) {
         try (Session session = createSession()) {
-            String query = "MATCH (:Class {name: $class})-->(:Method {signature: $method})-->(l:Line)"
-                    + " WHERE l.number > 0"
-                    + " WITH l ORDER BY l.number LIMIT 1"
-                    + " MATCH (l)-[:HAS_VARIABLE {name: $variable}]->(s:String)"
-                    + " RETURN s.value";
-            Result result = session.run(query, Map.of("class", className, "method", method,
-                    "variable", variable));
-            return result.next().values().get(0).asString();
-        }
-    }
-
-    public String readObjectVariableId(String className, String method, String variable) {
-        try (Session session = createSession()) {
-            String query = "MATCH (:Class {name: $class})-->(:Method {signature: $method})-->(l:Line)"
-                    + " WHERE l.number > 0"
-                    + " WITH l ORDER BY l.number LIMIT 1"
-                    + " MATCH (l)-[:HAS_VARIABLE {name: $variable}]->(o:Object)"
-                    + " RETURN elementId(o)";
-            Result result = session.run(query, Map.of("class", className, "method", method,
-                    "variable", variable));
-            return result.next().values().get(0).asString();
+            String query = "MATCH (o:Object)"
+                    + " WHERE elementId(o) = $id"
+                    + " MATCH (o)-[f:HAS_FIELD]->(n)"
+                    + " RETURN f, n";
+            Result result = session.run(query, Map.of("id", id));
+            return result.list();
         }
     }
 }

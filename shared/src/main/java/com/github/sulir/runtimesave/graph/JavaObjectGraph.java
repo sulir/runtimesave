@@ -7,21 +7,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JavaObjectGraph {
-    private final LazyObjectGraph lazyGraph;
+    private final GraphNode root;
     private final Map<ObjectNode, Object> visited = new HashMap<>();
 
-    public JavaObjectGraph(LazyObjectGraph lazyGraph) {
-        this.lazyGraph = lazyGraph;
+    public JavaObjectGraph(GraphNode root) {
+        this.root = root;
     }
 
     public Object create() {
-        LazyNode root = lazyGraph.getRoot();
         Object result = transform(root);
         visited.clear();
         return result;
     }
 
-    private Object transform(LazyNode node) {
+    private Object transform(GraphNode node) {
         if (node instanceof PrimitiveNode primitive) {
             return primitive.getValue();
         } else if (node instanceof StringNode string) {
@@ -39,7 +38,7 @@ public class JavaObjectGraph {
 
             for (var entry : objectNode.getFields().entrySet()) {
                 String name = entry.getKey();
-                LazyNode fieldNode = entry.getValue();
+                GraphNode fieldNode = entry.getValue();
                 Object value = transform(fieldNode);
                 setFieldValue(object, name, value);
             }
@@ -50,11 +49,11 @@ public class JavaObjectGraph {
         }
     }
 
-    private Object initializeMemory(ObjectNode lazyNode) {
+    private Object initializeMemory(ObjectNode node) {
         try {
             Field unsafe = Unsafe.class.getDeclaredField("theUnsafe");
             unsafe.setAccessible(true);
-            return ((Unsafe) unsafe.get(null)).allocateInstance(Class.forName(lazyNode.getType()));
+            return ((Unsafe) unsafe.get(null)).allocateInstance(Class.forName(node.getType()));
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

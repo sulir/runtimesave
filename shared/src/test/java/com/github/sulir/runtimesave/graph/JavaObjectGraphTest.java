@@ -38,7 +38,7 @@ class JavaObjectGraphTest {
 
     @Test
     void simpleNodeTreeIsTransformedToObjects() {
-        JavaObjectGraph objectGraph = new JavaObjectGraph(new LazyObjectGraph(firstNode));
+        JavaObjectGraph objectGraph = new JavaObjectGraph(firstNode);
         SampleClass result = (SampleClass) objectGraph.create();
 
         assertEquals(first, result);
@@ -51,7 +51,7 @@ class JavaObjectGraphTest {
         secondNode.getFields().put("reference", firstNode);
         second.setReference(first);
 
-        JavaObjectGraph objectGraph = new JavaObjectGraph(new LazyObjectGraph(firstNode));
+        JavaObjectGraph objectGraph = new JavaObjectGraph(firstNode);
         SampleClass result = (SampleClass) objectGraph.create();
 
         assertEquals(first, result);

@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.graph;
 
-public class StringNode extends LazyNode {
+public class StringNode extends GraphNode {
     private final String value;
 
     public StringNode(String value) {
