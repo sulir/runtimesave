@@ -25,7 +25,7 @@ public class DBWriter extends Database {
         }
     }
 
-    public void writePrimitiveVariable(SourceLocation location, String name, String type, String value) {
+    public void writePrimitiveVariable(SourceLocation location, String name, String type, Object value) {
         try (Session session = createSession()) {
             String query = "MATCH (:Class {name: $class})"
                     + "-[:DEFINES]->(:Method {signature: $method})"
@@ -63,7 +63,7 @@ public class DBWriter extends Database {
         }
     }
 
-    public void writePrimitiveField(long objectID, String name, String type, String value) {
+    public void writePrimitiveField(long objectID, String name, String type, Object value) {
         try (Session session = createSession()) {
             String query = "MATCH (o:Object {objectID: $id})"
                     + " CREATE (o)-[:HAS_FIELD {name: $name}]->(:Value {type: $type, value: $value})";

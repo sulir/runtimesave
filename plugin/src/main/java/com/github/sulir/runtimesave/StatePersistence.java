@@ -43,9 +43,9 @@ public class StatePersistence {
     }
 
     private void saveVariable(String name, Value value) {
-        if (value instanceof PrimitiveValue) {
+        if (value instanceof PrimitiveValue primitive) {
             String type = value.type().name();
-            DBWriter.getInstance().writePrimitiveVariable(location, name, type, value.toString());
+            DBWriter.getInstance().writePrimitiveVariable(location, name, type, toJavaPrimitive(primitive));
         } else if (value == null) {
             DBWriter.getInstance().writeObjectVariable(location, name, "null", -1);
         } else if (value instanceof StringReference string) {
@@ -77,8 +77,8 @@ public class StatePersistence {
     private void saveField(long objectID, String name, Value value, int level) {
         String type = (value == null) ? "null" : value.type().name();
 
-        if (value instanceof PrimitiveValue) {
-            DBWriter.getInstance().writePrimitiveField(objectID, name, type, value.toString());
+        if (value instanceof PrimitiveValue primitive) {
+            DBWriter.getInstance().writePrimitiveField(objectID, name, type, toJavaPrimitive(primitive));
         } else if (value == null) {
             DBWriter.getInstance().writeObjectField(objectID, name, type, -1);
         } else if (value instanceof StringReference string) {
@@ -94,5 +94,19 @@ public class StatePersistence {
 
     public void finish() {
         DBWriter.getInstance().deleteObjectIDs();
+    }
+
+    private Object toJavaPrimitive(PrimitiveValue value) {
+        return switch (value.type().name()) {
+            case "char" -> value.charValue();
+            case "byte" -> value.byteValue();
+            case "short" -> value.shortValue();
+            case "int" -> value.intValue();
+            case "long" -> value.longValue();
+            case "float" -> value.floatValue();
+            case "double" -> value.doubleValue();
+            case "boolean" -> value.booleanValue();
+            default -> throw new IllegalArgumentException("Unknown primitive type: " + value.type().name());
+        };
     }
 }
