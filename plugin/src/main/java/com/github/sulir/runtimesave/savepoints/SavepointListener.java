@@ -49,6 +49,8 @@ public class SavepointListener implements DebuggerManagerListener {
 
         PsiElement element = ApplicationManager.getApplication().runReadAction((Computable<PsiElement>) () ->
                 session.getContextManager().getContext().getContextElement());
+        if (element == null)
+            return false;
 
         VirtualFile file = ApplicationManager.getApplication().runReadAction((Computable<VirtualFile>) () ->
              element.getContainingFile().getVirtualFile());
