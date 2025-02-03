@@ -34,7 +34,7 @@ public class EveryLineExecutor extends DefaultDebugExecutor {
 
     @Override
     public String getContextActionId() {
-        return EXECUTOR_ID;
+        return EXECUTOR_ID + "Context";
     }
 
     @Override
