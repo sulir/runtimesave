@@ -5,7 +5,7 @@ import com.github.sulir.runtimesave.db.SourceLocation;
 import com.sun.jdi.*;
 
 public class StatePersistence {
-    private static final int MAX_REFERENCE_LEVEL = 5;
+    private static final int MAX_REFERENCE_LEVEL = -1;
 
     private final StackFrame frame;
     private final SourceLocation location;
