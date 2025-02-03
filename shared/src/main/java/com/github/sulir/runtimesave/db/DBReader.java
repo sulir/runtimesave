@@ -35,7 +35,7 @@ public class DBReader extends Database {
     public List<Record> readObjectFields(String id) {
         try (Session session = createSession()) {
             String query = "MATCH (o:Object)"
-                    + " WHERE elementId(o) = $id"
+                    + " WHERE o.id = $id"
                     + " MATCH (o)-[f:HAS_FIELD]->(n)"
                     + " RETURN f, n";
             Result result = session.run(query, Map.of("id", id));

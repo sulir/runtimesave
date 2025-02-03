@@ -48,54 +48,56 @@ public class DBWriter extends Database {
         }
     }
 
-    public boolean writeObjectVariable(SourceLocation location, String name, String type, long objectID) {
+    public boolean writeObjectVariable(SourceLocation location, String name, String type, long jvmId) {
         try (Session session = createSession()) {
-            String mode = objectID == -1 ? "CREATE" : "MERGE";
+            String createOrMerge = jvmId == -1 ? " CREATE (o:Object {jvmId: $jvmId, type: $type})"
+                    : " MERGE (o:Object {jvmId: $jvmId}) ON CREATE SET o.id = randomUUID(), o.type = $type";
             String query = "MERGE (s:Class {name: $class})"
                     + "-[:DEFINES]->(:Method {signature: $method})"
                     + "-[:CONTAINS]->(l:Line {number: $line})"
-                    + " " + mode + " (o:Object {type: $type, objectID: $id})"
+                    + createOrMerge
                     + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(o)";
             Result result = session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
-                    "line", location.getLine(), "name", name, "type", type, "id", objectID));
+                    "line", location.getLine(), "name", name, "type", type, "jvmId", jvmId));
 
             return result.consume().counters().nodesCreated() > 0;
         }
     }
 
-    public void writePrimitiveField(long objectID, String name, String type, Object value) {
+    public void writePrimitiveField(long jvmId, String name, String type, Object value) {
         try (Session session = createSession()) {
-            String query = "MATCH (o:Object {objectID: $id})"
+            String query = "MATCH (o:Object {jvmID: $jvmId})"
                     + " CREATE (o)-[:HAS_FIELD {name: $name}]->(:Value {type: $type, value: $value})";
-            session.run(query, Map.of("id", objectID, "name", name, "type", type, "value", value));
+            session.run(query, Map.of("jvmId", jvmId, "name", name, "type", type, "value", value));
         }
     }
 
-    public boolean writeObjectField(long parentID, String name, String type, long childID) {
+    public boolean writeObjectField(long parentId, String name, String type, long childId) {
         try (Session session = createSession()) {
-            String mode = childID == -1 ? "CREATE" : "MERGE";
-            String query = "MATCH (p:Object {objectID: $parent})"
-                    + " " + mode + " (c:Object {type: $type, objectID: $child})"
+            String createOrMerge = childId == -1 ? " CREATE (c:Object {jvmId: $childId, type: $type})"
+                    : " MERGE (c:Object {jvmId: $childId}) ON CREATE SET c.id = randomUUID(), c.type = $type";
+            String query = "MATCH (p:Object {jvmId: $parentId})"
+                    + createOrMerge
                     + " CREATE (p)-[:HAS_FIELD {name: $name}]->(c)";
-            Result result = session.run(query, Map.of("parent", parentID, "name", name, "type", type,
-                    "child", childID));
+            Result result = session.run(query, Map.of("parentId", parentId, "name", name, "type", type,
+                    "childId", childId));
 
             return result.consume().counters().nodesCreated() > 0;
         }
     }
 
-    public void writeStringField(long objectID, String name, String value) {
+    public void writeStringField(long jvmId, String name, String value) {
         try (Session session = createSession()) {
-            String query = "MATCH (o:Object {objectID: $id})"
+            String query = "MATCH (o:Object {jvmId: $jvmId})"
                     + " MERGE (s:String {value: $value})"
                     + " CREATE (o)-[:HAS_FIELD {name: $name}]->(s)";
-            session.run(query, Map.of("id", objectID, "name", name, "value", value));
+            session.run(query, Map.of("jvmId", jvmId, "name", name, "value", value));
         }
     }
 
-    public void deleteObjectIDs() {
+    public void deleteJvmIds() {
         try (Session session = createSession()) {
-            session.run("MATCH (o:Object) REMOVE o.objectID");
+            session.run("MATCH (o:Object) REMOVE o.jvmId");
         }
     }
 }

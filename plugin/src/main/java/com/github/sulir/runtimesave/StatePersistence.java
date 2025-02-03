@@ -52,8 +52,8 @@ public class StatePersistence {
             DBWriter.getInstance().writeStringVariable(location, name, string.value());
         } else if (value instanceof ObjectReference object) {
             String type = object.referenceType().name();
-            long objectID = object.uniqueID();
-            boolean created = DBWriter.getInstance().writeObjectVariable(location, name, type, objectID);
+            long jvmId = object.uniqueID();
+            boolean created = DBWriter.getInstance().writeObjectVariable(location, name, type, jvmId);
 
             if (created)
                 saveFields(object, MAX_REFERENCE_LEVEL);
@@ -61,7 +61,7 @@ public class StatePersistence {
     }
 
     private void saveFields(ObjectReference object, int level) {
-        long objectID = object.uniqueID();
+        long jvmId = object.uniqueID();
 
         if (level == 0)
             return;
@@ -70,22 +70,22 @@ public class StatePersistence {
             if (field.isStatic())
                 continue;
 
-            saveField(objectID, field.name(), object.getValue(field), level - 1);
+            saveField(jvmId, field.name(), object.getValue(field), level - 1);
         }
     }
 
-    private void saveField(long objectID, String name, Value value, int level) {
+    private void saveField(long jvmId, String name, Value value, int level) {
         String type = (value == null) ? "null" : value.type().name();
 
         if (value instanceof PrimitiveValue primitive) {
-            DBWriter.getInstance().writePrimitiveField(objectID, name, type, toJavaPrimitive(primitive));
+            DBWriter.getInstance().writePrimitiveField(jvmId, name, type, toJavaPrimitive(primitive));
         } else if (value == null) {
-            DBWriter.getInstance().writeObjectField(objectID, name, type, -1);
+            DBWriter.getInstance().writeObjectField(jvmId, name, type, -1);
         } else if (value instanceof StringReference string) {
-            DBWriter.getInstance().writeStringField(objectID, name, string.value());
+            DBWriter.getInstance().writeStringField(jvmId, name, string.value());
         } else if (value instanceof ObjectReference object)  {
             long childID = object.uniqueID();
-            boolean created = DBWriter.getInstance().writeObjectField(objectID, name, type, childID);
+            boolean created = DBWriter.getInstance().writeObjectField(jvmId, name, type, childID);
 
             if (created)
                 saveFields(object, level);
@@ -93,7 +93,7 @@ public class StatePersistence {
     }
 
     public void finish() {
-        DBWriter.getInstance().deleteObjectIDs();
+        DBWriter.getInstance().deleteJvmIds();
     }
 
     private Object toJavaPrimitive(PrimitiveValue value) {
