@@ -66,7 +66,7 @@ public class DBWriter extends Database {
 
     public void writePrimitiveField(long jvmId, String name, String type, Object value) {
         try (Session session = createSession()) {
-            String query = "MATCH (o:Object {jvmID: $jvmId})"
+            String query = "MATCH (o:Object {jvmId: $jvmId})"
                     + " CREATE (o)-[:HAS_FIELD {name: $name}]->(:Primitive {type: $type, value: $value})";
             session.run(query, Map.of("jvmId", jvmId, "name", name, "type", type, "value", value));
         }
