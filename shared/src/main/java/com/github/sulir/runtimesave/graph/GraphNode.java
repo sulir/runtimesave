@@ -1,6 +1,7 @@
 package com.github.sulir.runtimesave.graph;
 
 import com.github.sulir.runtimesave.db.DBReader;
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.types.Node;
 
@@ -11,20 +12,22 @@ public abstract class GraphNode {
         return type;
     }
 
-    public static GraphNode fromDB(Node dbNode) {
-        String label = dbNode.labels().iterator().next();
+    public static GraphNode fromDB(Record record) {
+        Node value = record.get("v").asNode();
+        String label = value.labels().iterator().next();
+        String type = record.get("t").isNull() ? null : record.get("t").get("name").asString();
 
         return switch (label) {
-            case "Primitive" -> new PrimitiveNode(convertNodeValue(dbNode), dbNode.get("type").asString());
-            case "String" -> new StringNode(dbNode.get("value").asString());
-            case "Object" -> new ObjectNode(dbNode.get("id").asString(), dbNode.get("type").asString());
+            case "Primitive" -> new PrimitiveNode(convertNodeValue(value), value.get("type").asString());
+            case "String" -> new StringNode(value.get("value").asString());
+            case "Object" -> new ObjectNode(value.get("id").asString(), type);
             default -> throw new IllegalArgumentException("Unknown node label: " + label);
         };
     }
 
     public static GraphNode findVariable(String className, String method, String variableName) {
-        Node dbNode = DBReader.getInstance().readVariable(className, method, variableName);
-        return fromDB(dbNode);
+        Record record = DBReader.getInstance().readVariable(className, method, variableName);
+        return fromDB(record);
     }
 
     private static Object convertNodeValue(Node dbNode) {

@@ -50,13 +50,16 @@ public class DBWriter extends Database {
 
     public boolean writeObjectVariable(SourceLocation location, String name, String type, long jvmId) {
         try (Session session = createSession()) {
-            String createOrMerge = jvmId == -1 ? " CREATE (o:Object {jvmId: $jvmId, type: $type})"
-                    : " MERGE (o:Object {jvmId: $jvmId}) ON CREATE SET o.id = randomUUID(), o.type = $type";
+            String createOrMerge = jvmId == -1 ? " CREATE (o:Object {jvmId: $jvmId})"
+                    : " MERGE (o:Object {jvmId: $jvmId})"
+                    + " ON CREATE SET o.id = randomUUID()";
             String query = "MERGE (s:Class {name: $class})"
                     + "-[:DEFINES]->(:Method {signature: $method})"
                     + "-[:CONTAINS]->(l:Line {number: $line})"
                     + createOrMerge
-                    + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(o)";
+                    + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(o)"
+                    + " MERGE (t:Type {name: $type})"
+                    + " CREATE (o)-[:HAS_TYPE]->(t)";
             Result result = session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
                     "line", location.getLine(), "name", name, "type", type, "jvmId", jvmId));
 
@@ -74,11 +77,14 @@ public class DBWriter extends Database {
 
     public boolean writeObjectField(long parentId, String name, String type, long childId) {
         try (Session session = createSession()) {
-            String createOrMerge = childId == -1 ? " CREATE (c:Object {jvmId: $childId, type: $type})"
-                    : " MERGE (c:Object {jvmId: $childId}) ON CREATE SET c.id = randomUUID(), c.type = $type";
+            String createOrMerge = childId == -1 ? " CREATE (c:Object {jvmId: $childId})"
+                    : " MERGE (c:Object {jvmId: $childId})"
+                    + " ON CREATE SET c.id = randomUUID()";
             String query = "MATCH (p:Object {jvmId: $parentId})"
                     + createOrMerge
-                    + " CREATE (p)-[:HAS_FIELD {name: $name}]->(c)";
+                    + " CREATE (p)-[:HAS_FIELD {name: $name}]->(c)"
+                    + " MERGE (t:Type {name: $type})"
+                    + " CREATE (c)-[:HAS_TYPE]->(t)";
             Result result = session.run(query, Map.of("parentId", parentId, "name", name, "type", type,
                     "childId", childId));
 

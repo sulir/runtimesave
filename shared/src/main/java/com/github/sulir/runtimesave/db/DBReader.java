@@ -3,7 +3,6 @@ package com.github.sulir.runtimesave.db;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
-import org.neo4j.driver.types.Node;
 
 import java.util.List;
 import java.util.Map;
@@ -19,16 +18,17 @@ public class DBReader extends Database {
         return instance;
     }
 
-    public Node readVariable(String className, String method, String variable) {
+    public Record readVariable(String className, String method, String variable) {
         try (Session session = createSession()) {
             String query = "MATCH (:Class {name: $class})-->(:Method {signature: $method})-->(l:Line)"
                     + " WHERE l.number > 0"
                     + " WITH l ORDER BY l.number LIMIT 1"
                     + " MATCH (l)-[:HAS_VARIABLE {name: $variable}]->(v)"
-                    + " RETURN v";
+                    + " OPTIONAL MATCH (v)-[:HAS_TYPE]->(t:Type)"
+                    + " RETURN v, t";
             Result result = session.run(query, Map.of("class", className, "method", method,
                     "variable", variable));
-            return result.next().get("v").asNode();
+            return result.next();
         }
     }
 
@@ -36,8 +36,9 @@ public class DBReader extends Database {
         try (Session session = createSession()) {
             String query = "MATCH (o:Object)"
                     + " WHERE o.id = $id"
-                    + " MATCH (o)-[f:HAS_FIELD]->(n)"
-                    + " RETURN f, n";
+                    + " MATCH (o)-[f:HAS_FIELD]->(v)"
+                    + " OPTIONAL MATCH (v)-[:HAS_TYPE]->(t:Type)"
+                    + " RETURN f, v, t";
             Result result = session.run(query, Map.of("id", id));
             return result.list();
         }
