@@ -15,7 +15,7 @@ public abstract class GraphNode {
         String label = dbNode.labels().iterator().next();
 
         return switch (label) {
-            case "Value" -> new PrimitiveNode(convertNodeValue(dbNode), dbNode.get("type").asString());
+            case "Primitive" -> new PrimitiveNode(convertNodeValue(dbNode), dbNode.get("type").asString());
             case "String" -> new StringNode(dbNode.get("value").asString());
             case "Object" -> new ObjectNode(dbNode.get("id").asString(), dbNode.get("type").asString());
             default -> throw new IllegalArgumentException("Unknown node label: " + label);
