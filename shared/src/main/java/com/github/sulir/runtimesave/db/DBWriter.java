@@ -59,7 +59,7 @@ public class DBWriter extends Database {
                     + createOrMerge
                     + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(o)"
                     + " MERGE (t:Type {name: $type})"
-                    + " CREATE (o)-[:HAS_TYPE]->(t)";
+                    + " MERGE (o)-[:HAS_TYPE]->(t)";
             Result result = session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
                     "line", location.getLine(), "name", name, "type", type, "jvmId", jvmId));
 
@@ -84,7 +84,7 @@ public class DBWriter extends Database {
                     + createOrMerge
                     + " CREATE (p)-[:HAS_FIELD {name: $name}]->(c)"
                     + " MERGE (t:Type {name: $type})"
-                    + " CREATE (c)-[:HAS_TYPE]->(t)";
+                    + " MERGE (c)-[:HAS_TYPE]->(t)";
             Result result = session.run(query, Map.of("parentId", parentId, "name", name, "type", type,
                     "childId", childId));
 
