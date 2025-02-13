@@ -7,7 +7,7 @@ public class PrimitiveNode extends GraphNode {
     private final Object value;
 
     public static PrimitiveNode fromDB(Record record) {
-        String type = record.get("v").get("type").asString();
+        String type = record.get("t").get("name").asString();
         Value value = record.get("v").get("value");
 
         Object result = switch (type) {
