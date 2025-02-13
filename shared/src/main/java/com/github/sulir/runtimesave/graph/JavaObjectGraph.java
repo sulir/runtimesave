@@ -23,12 +23,11 @@ public class JavaObjectGraph {
     private Object transform(GraphNode node) {
         if (node instanceof PrimitiveNode primitive) {
             return primitive.getValue();
+        } else if (node instanceof NullNode) {
+            return null;
         } else if (node instanceof StringNode string) {
             return string.getValue();
         } else if (node instanceof ObjectNode objectNode) {
-            if (objectNode.isNull())
-                return null;
-
             Object existing = visited.get(objectNode);
             if (existing != null)
                 return existing;

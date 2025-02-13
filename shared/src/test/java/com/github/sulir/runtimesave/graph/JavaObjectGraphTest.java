@@ -21,14 +21,14 @@ class JavaObjectGraphTest {
         secondNode = new ObjectNode("id-2", SampleClass.class.getName());
 
         firstNode.setFields(Map.of(
-                "number", new PrimitiveNode(1, "int"),
+                "number", new PrimitiveNode(1),
                 "text", new StringNode("first"),
                 "reference", secondNode
         ));
         secondNode.setFields(new HashMap<>(Map.of(
-                "number", new PrimitiveNode(2, "int"),
+                "number", new PrimitiveNode(2),
                 "text", new StringNode("second"),
-                "reference", new ObjectNode("id-3", "null")
+                "reference", new NullNode()
         )));
 
         first = new SampleClass(1, "first");

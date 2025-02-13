@@ -6,19 +6,14 @@ import org.neo4j.driver.Value;
 import org.neo4j.driver.types.Node;
 
 public abstract class GraphNode {
-    protected String type;
-
-    public String getType() {
-        return type;
-    }
-
     public static GraphNode fromDB(Record record) {
         Node value = record.get("v").asNode();
         String label = value.labels().iterator().next();
         String type = record.get("t").isNull() ? null : record.get("t").get("name").asString();
 
         return switch (label) {
-            case "Primitive" -> new PrimitiveNode(convertNodeValue(value), value.get("type").asString());
+            case "Primitive" -> new PrimitiveNode(convertNodeValue(value));
+            case "Null" -> new NullNode();
             case "String" -> new StringNode(value.get("value").asString());
             case "Object" -> new ObjectNode(value.get("id").asString(), type);
             default -> throw new IllegalArgumentException("Unknown node label: " + label);

@@ -8,6 +8,7 @@ import java.util.Objects;
 
 public class ObjectNode extends GraphNode {
     private final String id;
+    private final String type;
     private Map<String, GraphNode> fields;
 
     public ObjectNode(String id, String type) {
@@ -15,8 +16,8 @@ public class ObjectNode extends GraphNode {
         this.type = type;
     }
 
-    public boolean isNull() {
-        return type.equals("null");
+    public String getType() {
+        return type;
     }
 
     public Map<String, GraphNode> getFields() {

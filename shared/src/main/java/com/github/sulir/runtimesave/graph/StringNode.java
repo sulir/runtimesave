@@ -5,7 +5,6 @@ public class StringNode extends GraphNode {
 
     public StringNode(String value) {
         this.value = value;
-        this.type = "java.lang.String";
     }
 
     public String getValue() {

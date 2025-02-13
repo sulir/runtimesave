@@ -3,9 +3,8 @@ package com.github.sulir.runtimesave.graph;
 public class PrimitiveNode extends GraphNode {
     private final Object value;
 
-    public PrimitiveNode(Object value, String type) {
+    public PrimitiveNode(Object value) {
         this.value = value;
-        this.type = type;
     }
 
     public Object getValue() {

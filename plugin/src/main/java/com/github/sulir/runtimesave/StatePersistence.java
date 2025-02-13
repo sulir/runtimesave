@@ -47,7 +47,7 @@ public class StatePersistence {
             String type = value.type().name();
             DBWriter.getInstance().writePrimitiveVariable(location, name, type, toJavaPrimitive(primitive));
         } else if (value == null) {
-            DBWriter.getInstance().writeObjectVariable(location, name, "null", -1);
+            DBWriter.getInstance().writeNullVariable(location, name);
         } else if (value instanceof StringReference string) {
             DBWriter.getInstance().writeStringVariable(location, name, string.value());
         } else if (value instanceof ObjectReference object) {
@@ -80,7 +80,7 @@ public class StatePersistence {
         if (value instanceof PrimitiveValue primitive) {
             DBWriter.getInstance().writePrimitiveField(jvmId, name, type, toJavaPrimitive(primitive));
         } else if (value == null) {
-            DBWriter.getInstance().writeObjectField(jvmId, name, type, -1);
+            DBWriter.getInstance().writeNullField(jvmId, name);
         } else if (value instanceof StringReference string) {
             DBWriter.getInstance().writeStringField(jvmId, name, string.value());
         } else if (value instanceof ObjectReference object)  {
