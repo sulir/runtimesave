@@ -36,18 +36,6 @@ public class DBWriter extends Database {
         }
     }
 
-    public void writeStringVariable(SourceLocation location, String name, String value) {
-        try (Session session = createSession()) {
-            String query = "MATCH (:Class {name: $class})"
-                    + "-[:DEFINES]->(:Method {signature: $method})"
-                    + "-[:CONTAINS]->(l:Line {number: $line})"
-                    + " MERGE (s:String {value: $value})"
-                    + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(s)";
-            session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
-                    "line", location.getLine(), "name", name, "value", value));
-        }
-    }
-
     public void writeNullVariable(SourceLocation location, String name) {
         try (Session session = createSession()) {
             String query = "MERGE (:Class {name: $class})"
@@ -57,6 +45,18 @@ public class DBWriter extends Database {
                     + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(n)";
             session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
                     "line", location.getLine(), "name", name));
+        }
+    }
+
+    public void writeStringVariable(SourceLocation location, String name, String value) {
+        try (Session session = createSession()) {
+            String query = "MATCH (:Class {name: $class})"
+                    + "-[:DEFINES]->(:Method {signature: $method})"
+                    + "-[:CONTAINS]->(l:Line {number: $line})"
+                    + " MERGE (s:String {value: $value})"
+                    + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(s)";
+            session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
+                    "line", location.getLine(), "name", name, "value", value));
         }
     }
 
@@ -94,6 +94,15 @@ public class DBWriter extends Database {
         }
     }
 
+    public void writeStringField(long jvmId, String name, String value) {
+        try (Session session = createSession()) {
+            String query = "MATCH (o:Object {jvmId: $jvmId})"
+                    + " MERGE (s:String {value: $value})"
+                    + " CREATE (o)-[:HAS_FIELD {name: $name}]->(s)";
+            session.run(query, Map.of("jvmId", jvmId, "name", name, "value", value));
+        }
+    }
+
     public boolean writeObjectField(long parentId, String name, String type, long childId) {
         try (Session session = createSession()) {
             String query = "MATCH (p:Object {jvmId: $parentId})"
@@ -106,15 +115,6 @@ public class DBWriter extends Database {
                     "childId", childId));
 
             return result.consume().counters().nodesCreated() > 0;
-        }
-    }
-
-    public void writeStringField(long jvmId, String name, String value) {
-        try (Session session = createSession()) {
-            String query = "MATCH (o:Object {jvmId: $jvmId})"
-                    + " MERGE (s:String {value: $value})"
-                    + " CREATE (o)-[:HAS_FIELD {name: $name}]->(s)";
-            session.run(query, Map.of("jvmId", jvmId, "name", name, "value", value));
         }
     }
 

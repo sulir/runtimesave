@@ -1,6 +1,7 @@
 package com.github.sulir.runtimesave.graph;
 
 import com.github.sulir.runtimesave.db.DBReader;
+import org.neo4j.driver.Record;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +11,12 @@ public class ObjectNode extends GraphNode {
     private final String id;
     private final String type;
     private Map<String, GraphNode> fields;
+
+    public static ObjectNode fromDB(Record record) {
+        String id = record.get("v").get("id").asString();
+        String type = record.get("t").get("name").asString();
+        return new ObjectNode(id, type);
+    }
 
     public ObjectNode(String id, String type) {
         this.id = id;
