@@ -5,6 +5,7 @@ import org.neo4j.driver.*;
 import java.util.Map;
 
 public class DBWriter extends Database {
+    private static final String STRING_TYPE = "java.lang.String";
     private static DBWriter instance;
 
     private DBWriter() { }
@@ -56,9 +57,11 @@ public class DBWriter extends Database {
                     + "-[:DEFINES]->(:Method {signature: $method})"
                     + "-[:CONTAINS]->(l:Line {number: $line})"
                     + " MERGE (s:String {value: $value})"
-                    + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(s)";
+                    + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(s)"
+                    + " MERGE (t:Type {name: $type})"
+                    + " MERGE (s)-[:HAS_TYPE]->(t)";
             session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
-                    "line", location.getLine(), "name", name, "value", value));
+                    "line", location.getLine(), "name", name, "value", value, "type", STRING_TYPE));
         }
     }
 
@@ -102,8 +105,10 @@ public class DBWriter extends Database {
         try (Session session = createSession()) {
             String query = "MATCH (o:Object {jvmId: $jvmId})"
                     + " MERGE (s:String {value: $value})"
-                    + " CREATE (o)-[:HAS_FIELD {name: $name}]->(s)";
-            session.run(query, Map.of("jvmId", jvmId, "name", name, "value", value));
+                    + " CREATE (o)-[:HAS_FIELD {name: $name}]->(s)"
+                    + " MERGE (t:Type {name: $type})"
+                    + " MERGE (s)-[:HAS_TYPE]->(t)";
+            session.run(query, Map.of("jvmId", jvmId, "name", name, "value", value, "type", STRING_TYPE));
         }
     }
 
