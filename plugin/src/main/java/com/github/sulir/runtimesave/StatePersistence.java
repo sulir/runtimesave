@@ -55,8 +55,46 @@ public class StatePersistence {
             long jvmId = object.uniqueID();
             boolean created = DBWriter.getInstance().writeObjectVariable(location, name, type, jvmId);
 
-            if (created)
-                saveFields(object, MAX_REFERENCE_LEVEL);
+            if (created) {
+                if (value instanceof ArrayReference array)
+                    saveElements(array, MAX_REFERENCE_LEVEL);
+                else
+                    saveFields(object, MAX_REFERENCE_LEVEL);
+            }
+        }
+    }
+
+    private void saveElements(ArrayReference array, int level) {
+        long jvmId = array.uniqueID();
+
+        if (level == 0)
+            return;
+
+        int index = 0;
+        for (Value element : array.getValues()) {
+            saveElement(jvmId, index, element, level - 1);
+            index++;
+        }
+    }
+
+    private void saveElement(long jvmId, int index, Value value, int level) {
+        if (value instanceof PrimitiveValue primitive) {
+            DBWriter.getInstance().writePrimitiveElement(jvmId, index, toJavaPrimitive(primitive));
+        } else if (value == null) {
+            DBWriter.getInstance().writeNullElement(jvmId, index);
+        } else if (value instanceof StringReference string) {
+            DBWriter.getInstance().writeStringElement(jvmId, index, string.value());
+        } else if (value instanceof ObjectReference object) {
+            String type = object.referenceType().name();
+            long childId = object.uniqueID();
+            boolean created = DBWriter.getInstance().writeObjectElement(jvmId, index, type, childId);
+
+            if (created) {
+                if (value instanceof ArrayReference childArray)
+                    saveElements(childArray, level);
+                else
+                    saveFields(object, level);
+            }
         }
     }
 
@@ -87,8 +125,12 @@ public class StatePersistence {
             long childID = object.uniqueID();
             boolean created = DBWriter.getInstance().writeObjectField(jvmId, name, type, childID);
 
-            if (created)
-                saveFields(object, level);
+            if (created) {
+                if (object instanceof ArrayReference array)
+                    saveElements(array, level);
+                else
+                    saveFields(object, level);
+            }
         }
     }
 

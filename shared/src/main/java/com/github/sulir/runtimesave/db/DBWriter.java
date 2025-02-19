@@ -70,7 +70,7 @@ public class DBWriter extends Database {
             String query = "MERGE (:Class {name: $class})"
                     + "-[:DEFINES]->(:Method {signature: $method})"
                     + "-[:CONTAINS]->(l:Line {number: $line})"
-                    + " MERGE (o:Object {jvmId: $jvmId})"
+                    + " MERGE (o:" + getNodeLabel(type) + " {jvmId: $jvmId})"
                     + " ON CREATE SET o.id = randomUUID()"
                     + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(o)"
                     + " MERGE (t:Type {name: $type})"
@@ -115,7 +115,7 @@ public class DBWriter extends Database {
     public boolean writeObjectField(long parentId, String name, String type, long childId) {
         try (Session session = createSession()) {
             String query = "MATCH (p:Object {jvmId: $parentId})"
-                    + " MERGE (c:Object {jvmId: $childId})"
+                    + " MERGE (c:" + getNodeLabel(type) + " {jvmId: $childId})"
                     + " ON CREATE SET c.id = randomUUID()"
                     + " CREATE (p)-[:HAS_FIELD {name: $name}]->(c)"
                     + " MERGE (t:Type {name: $type})"
@@ -127,9 +127,59 @@ public class DBWriter extends Database {
         }
     }
 
+    public void writePrimitiveElement(long jvmId, int index, Object value) {
+        try (Session session = createSession()) {
+            String query = "MATCH (o:Array {jvmId: $jvmId})"
+                    + " CREATE (o)-[:HAS_ELEMENT {index: $index}]->(:Primitive {value: $value})";
+            session.run(query, Map.of("jvmId", jvmId, "index", index, "value", value));
+        }
+    }
+
+    public void writeNullElement(long jvmId, int index) {
+        try (Session session = createSession()) {
+            String query = "MATCH (o:Array {jvmId: $jvmId})"
+                    + " MERGE (n:Null)"
+                    + " CREATE (o)-[:HAS_ELEMENT {index: $index}]->(n)";
+            session.run(query, Map.of("jvmId", jvmId, "index", index));
+        }
+    }
+
+    public void writeStringElement(long jvmId, int index, String value) {
+        try (Session session = createSession()) {
+            String query = "MATCH (o:Array {jvmId: $jvmId})"
+                    + " MERGE (s:String {value: $value})"
+                    + " CREATE (o)-[:HAS_ELEMENT {index: $index}]->(s)"
+                    + " MERGE (t:Type {name: $type})"
+                    + " MERGE (s)-[:HAS_TYPE]->(t)";
+            session.run(query, Map.of("jvmId", jvmId, "index", index, "value", value, "type", STRING_TYPE));
+        }
+    }
+
+    public boolean writeObjectElement(long jvmId, int index, String type, long childId) {
+        try (Session session = createSession()) {
+            String query = "MATCH (o:Array {jvmId: $jvmId})"
+                    + " MERGE (c:" + getNodeLabel(type) + " {jvmId: $childId})"
+                    + " ON CREATE SET c.id = randomUUID()"
+                    + " CREATE (o)-[:HAS_ELEMENT {index: $index}]->(c)"
+                    + " MERGE (t:Type {name: $type})"
+                    + " MERGE (c)-[:HAS_TYPE]->(t)";
+            Result result = session.run(query, Map.of("jvmId", jvmId, "index", index, "type", type, "childId", childId));
+
+            return result.consume().counters().nodesCreated() > 0;
+        }
+    }
+
     public void deleteJvmIds() {
         try (Session session = createSession()) {
-            session.run("MATCH (o:Object) REMOVE o.jvmId");
+            session.run("MATCH (o:Object|Array) REMOVE o.jvmId");
+        }
+    }
+
+    private String getNodeLabel(String type) {
+        if (type.contains("[")) {
+            return "Array";
+        } else {
+            return "Object";
         }
     }
 }
