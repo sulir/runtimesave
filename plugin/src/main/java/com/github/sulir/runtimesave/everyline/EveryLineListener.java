@@ -20,6 +20,8 @@ import com.sun.jdi.request.EventRequestManager;
 import org.jetbrains.annotations.NotNull;
 
 public class EveryLineListener implements DebuggerManagerListener {
+    private static final String[] EXCLUDE_PACKAGES = {"com.sun.*", "java.*", "javax.*", "jdk.*", "sun.*"};
+
     @Override
     public void sessionCreated(DebuggerSession session) {
         session.getProcess().addDebugProcessListener(new DebugProcessListener() {
@@ -38,7 +40,8 @@ public class EveryLineListener implements DebuggerManagerListener {
     private void setClassPrepareRequest(VirtualMachine vm, Project project) {
         EventRequestManager manager = vm.eventRequestManager();
         ClassPrepareRequest request = manager.createClassPrepareRequest();
-        request.addClassFilter("org.apache.commons.lang3.*");
+        for (String pattern : EXCLUDE_PACKAGES)
+            request.addClassExclusionFilter(pattern);
 
         DebugProcessEvents.enableRequestWithHandler(request, (ev) -> {
             ClassPrepareEvent event = (ClassPrepareEvent) ev;
