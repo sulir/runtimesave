@@ -11,7 +11,7 @@ public abstract class GraphNode {
             case "Primitive" -> PrimitiveNode.fromDB(record);
             case "Null" -> new NullNode();
             case "String" -> StringNode.fromDB(record);
-            case "Object" -> ObjectNode.fromDB(record);
+            case "Array", "Object" -> ReferenceNode.fromDB(record);
             default -> throw new IllegalArgumentException("Unknown node label: " + label);
         };
     }

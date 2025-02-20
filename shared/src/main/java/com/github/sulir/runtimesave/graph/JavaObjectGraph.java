@@ -2,13 +2,14 @@ package com.github.sulir.runtimesave.graph;
 
 import sun.misc.Unsafe;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
 public class JavaObjectGraph {
     private final GraphNode root;
-    private final Map<ObjectNode, Object> visited = new HashMap<>();
+    private final Map<ReferenceNode, Object> visited = new HashMap<>();
 
     public JavaObjectGraph(GraphNode root) {
         this.root = root;
@@ -27,19 +28,20 @@ public class JavaObjectGraph {
             return null;
         } else if (node instanceof StringNode string) {
             return string.getValue();
-        } else if (node instanceof ObjectNode objectNode) {
-            Object existing = visited.get(objectNode);
+        } else if (node instanceof ReferenceNode referenceNode) {
+            Object existing = visited.get(referenceNode);
             if (existing != null)
                 return existing;
 
-            Object object = initializeMemory(objectNode);
-            visited.put(objectNode, object);
-
-            for (var entry : objectNode.getFields().entrySet()) {
-                String name = entry.getKey();
-                GraphNode fieldNode = entry.getValue();
-                Object value = transform(fieldNode);
-                setFieldValue(object, name, value);
+            Object object = null;
+            if (referenceNode instanceof ArrayNode arrayNode) {
+                object = allocateArray(arrayNode);
+                visited.put(referenceNode, object);
+                assignElements(object, arrayNode);
+            } else if (referenceNode instanceof ObjectNode objectNode) {
+                object = allocateObject(objectNode);
+                visited.put(referenceNode, object);
+                assignFields(object, objectNode);
             }
 
             return object;
@@ -48,7 +50,30 @@ public class JavaObjectGraph {
         }
     }
 
-    private Object initializeMemory(ObjectNode node) {
+    private Object allocateArray(ArrayNode arrayNode) {
+        try {
+            String component = arrayNode.getType().substring(0, arrayNode.getType().indexOf("["));
+            int dimensions = (int) arrayNode.getType().chars().filter(c -> c == '[').count();
+
+            Class<?> componentType = Class.forName(component);
+            for (int i = 0; i < dimensions - 1; i++)
+                componentType = componentType.arrayType();
+
+            int length = arrayNode.getElements().length;
+            return Array.newInstance(componentType, length);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void assignElements(Object object, ArrayNode arrayNode) {
+        for (int i = 0; i < arrayNode.getElements().length; i++) {
+            Object element = transform(arrayNode.getElements()[i]);
+            Array.set(object, i, element);
+        }
+    }
+
+    private Object allocateObject(ObjectNode node) {
         try {
             Field unsafe = Unsafe.class.getDeclaredField("theUnsafe");
             unsafe.setAccessible(true);
@@ -58,7 +83,16 @@ public class JavaObjectGraph {
         }
     }
 
-    private void setFieldValue(Object object, String name, Object value) {
+    private void assignFields(Object object, ObjectNode objectNode) {
+        for (var entry : objectNode.getFields().entrySet()) {
+            String name = entry.getKey();
+            GraphNode fieldNode = entry.getValue();
+            Object value = transform(fieldNode);
+            assignField(object, name, value);
+        }
+    }
+
+    private void assignField(Object object, String name, Object value) {
         Field field = findField(object.getClass(), name);
         field.setAccessible(true);
         try {

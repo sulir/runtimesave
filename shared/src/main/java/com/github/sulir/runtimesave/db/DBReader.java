@@ -32,6 +32,19 @@ public class DBReader extends Database {
         }
     }
 
+    public List<Record> readArrayElements(String id) {
+        try (Session session = createSession()) {
+            String query = "MATCH (a:Array)"
+                    + " WHERE a.id = $id"
+                    + " MATCH (a)-[e:HAS_ELEMENT]->(v)"
+                    + " OPTIONAL MATCH (v)-[:HAS_TYPE]->(t:Type)"
+                    + " RETURN e, v, t"
+                    + " ORDER BY e.index";
+            Result result = session.run(query, Map.of("id", id));
+            return result.list();
+        }
+    }
+
     public List<Record> readObjectFields(String id) {
         try (Session session = createSession()) {
             String query = "MATCH (o:Object)"
