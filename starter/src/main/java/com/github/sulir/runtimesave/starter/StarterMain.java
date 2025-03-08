@@ -1,12 +1,8 @@
 package com.github.sulir.runtimesave.starter;
 
-import com.github.sulir.runtimesave.graph.GraphNode;
-import com.github.sulir.runtimesave.graph.JavaObjectGraph;
+import sun.misc.Unsafe;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
+import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,6 +13,16 @@ public class StarterMain {
         String methodName = args[1];
         String paramsDescriptor = args[2];
         new StarterMain().start(className, methodName, paramsDescriptor);
+    }
+
+    public static Object allocateInstance(String className) {
+        try {
+            Field unsafe = Unsafe.class.getDeclaredField("theUnsafe");
+            unsafe.setAccessible(true);
+            return ((Unsafe) unsafe.get(null)).allocateInstance(Class.forName(className));
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void start(String className, String methodName, String paramsDescriptor) throws Throwable  {
@@ -31,6 +37,13 @@ public class StarterMain {
         }
     }
 
+    private String getParamsDescriptor(Method method) {
+        return "(" + Arrays.stream(method.getParameters())
+                .map(Parameter::getType)
+                .map(Class::descriptorString)
+                .collect(Collectors.joining()) + ")";
+    }
+
     private void executeMethod(Method method) throws Throwable {
         @SuppressWarnings("deprecation")
         boolean wasAccessible = method.isAccessible();
@@ -39,12 +52,8 @@ public class StarterMain {
         }
 
         Object thisObject = createThisObject(method);
-
-        String className = method.getDeclaringClass().getName();
-        String methodSignature = method.getName() + getParamsDescriptor(method);
-
         List<Object> params = Arrays.stream(method.getParameters())
-                .map(p -> readVariable(className, methodSignature, p.getName()))
+                .map(p -> createDefaultValue(p.getType()))
                 .toList();
 
         try {
@@ -60,21 +69,11 @@ public class StarterMain {
         if (Modifier.isStatic(method.getModifiers())) {
             return null;
         } else {
-            GraphNode graphNode = GraphNode.findVariable(method.getDeclaringClass().getName(),
-                    method.getName() + getParamsDescriptor(method), "this");
-            return new JavaObjectGraph(graphNode).create();
+            return allocateInstance(method.getDeclaringClass().getName());
         }
     }
 
-    private Object readVariable(String className, String method, String variableName) {
-        GraphNode graphNode = GraphNode.findVariable(className, method, variableName);
-        return new JavaObjectGraph(graphNode).create();
-    }
-
-    private String getParamsDescriptor(Method method) {
-        return "(" + Arrays.stream(method.getParameters())
-                .map(Parameter::getType)
-                .map(Class::descriptorString)
-                .collect(Collectors.joining()) + ")";
+    private Object createDefaultValue(Class<?> type) {
+        return Array.get(Array.newInstance(type, 1), 0);
     }
 }

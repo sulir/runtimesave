@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.savepoints;
 
-import com.github.sulir.runtimesave.StatePersistence;
+import com.github.sulir.runtimesave.JdiSaver;
 import com.intellij.debugger.engine.evaluation.EvaluateException;
 import com.intellij.debugger.engine.jdi.StackFrameProxy;
 import com.intellij.debugger.impl.DebuggerManagerListener;
@@ -32,8 +32,8 @@ public class SavepointListener implements DebuggerManagerListener {
                             return;
                         StackFrame frame = proxy.getStackFrame();
 
-                        StatePersistence persistence = new StatePersistence(frame);
-                        persistence.saveThisAndLocals();
+                        JdiSaver saver = new JdiSaver(frame);
+                        saver.saveThisAndLocals();
 
                         ApplicationManager.getApplication().invokeLater(session::resume);
                     } catch (EvaluateException e) {

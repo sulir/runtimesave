@@ -4,19 +4,15 @@ import com.github.sulir.runtimesave.db.DBWriter;
 import com.github.sulir.runtimesave.db.SourceLocation;
 import com.sun.jdi.*;
 
-public class StatePersistence {
+public class JdiSaver {
     private static final int MAX_REFERENCE_LEVEL = -1;
 
     private final StackFrame frame;
     private final SourceLocation location;
 
-    public StatePersistence(StackFrame frame) {
+    public JdiSaver(StackFrame frame) {
         this.frame = frame;
-
-        String className = frame.location().declaringType().name();
-        String method = frame.location().method().name() + frame.location().method().signature();
-        method = method.substring(0, method.lastIndexOf(')') + 1);
-        location = new SourceLocation(className, method, frame.location().lineNumber());
+        location = SourceLocation.fromJDI(frame.location());
     }
 
     public void saveThisAndLocals() {

@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave;
+package com.github.sulir.runtimesave.start;
 
 import com.intellij.execution.Executor;
 import com.intellij.execution.ProgramRunnerUtil;
@@ -25,11 +25,15 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class StartProgramAction extends AnAction {
+    public static final String MAIN_CLASS = "com.github.sulir.runtimesave.starter.StarterMain";
+
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         PsiMethod method = getMethodAtCursor(e.getProject());
-        if (method != null)
-            startDebugging(e.getProject(), method);
+        Integer line = getLineAtCursor(e.getProject());
+
+        if (method != null && line != null)
+            startDebugging(method, line);
     }
 
     private PsiMethod getMethodAtCursor(Project project) {
@@ -50,7 +54,15 @@ public class StartProgramAction extends AnAction {
         return PsiTreeUtil.getParentOfType(element, PsiMethod.class);
     }
 
-    private void startDebugging(Project project, PsiMethod method) {
+    private Integer getLineAtCursor(Project project) {
+        Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
+        if (editor == null)
+            return null;
+
+        return editor.getCaretModel().getLogicalPosition().line + 1;
+    }
+
+    private void startDebugging(PsiMethod method, int line) {
         PsiClass containingClass = method.getContainingClass();
         if (containingClass == null)
             return;
@@ -60,11 +72,11 @@ public class StartProgramAction extends AnAction {
         String methodSignature = ClassUtil.getAsmMethodSignature(method);
         String paramsSignature = methodSignature.substring(0, methodSignature.lastIndexOf(')') + 1);
 
-        RunnerAndConfigurationSettings settings = RunManager.getInstance(project).createConfiguration(
+        RunnerAndConfigurationSettings settings = RunManager.getInstance(method.getProject()).createConfiguration(
                 "RuntimeSave Starter", ApplicationConfigurationType.class);
         ApplicationConfiguration config = (ApplicationConfiguration) settings.getConfiguration();
 
-        configureMain(config, className, methodName, paramsSignature);
+        configureMain(config, className, methodName, paramsSignature, line);
         String agentJar = configureAgent(config);
         configureClasspath(config, agentJar);
 
@@ -73,9 +85,9 @@ public class StartProgramAction extends AnAction {
     }
 
     private void configureMain(ApplicationConfiguration config, String className, String methodName,
-                               String paramsSignature) {
-        config.setMainClassName("com.github.sulir.runtimesave.starter.StarterMain");
-        String programArgs = String.format("%s %s %s", className, methodName, paramsSignature);
+                               String paramsSignature, int line) {
+        config.setMainClassName(MAIN_CLASS);
+        String programArgs = String.format("%s %s %s %d", className, methodName, paramsSignature, line);
         config.setProgramParameters(programArgs);
     }
 

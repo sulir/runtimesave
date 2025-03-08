@@ -16,7 +16,7 @@
   </extensions>
 
   <actions>
-    <action id="com.github.sulir.runtimesave.StartProgramAction" class="com.github.sulir.runtimesave.StartProgramAction"
+    <action id="com.github.sulir.runtimesave.start.StartProgramAction" class="com.github.sulir.runtimesave.start.StartProgramAction"
             text="Start Program at This Line">
       <add-to-group group-id="RunMenu" anchor="first"/>
     </action>
@@ -31,6 +31,8 @@
     <listener class="com.github.sulir.runtimesave.everyline.EveryLineListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
     <listener class="com.github.sulir.runtimesave.savepoints.SavepointListener"
+              topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
+    <listener class="com.github.sulir.runtimesave.start.StartLineListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
   </projectListeners>
 </idea-plugin>

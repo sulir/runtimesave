@@ -1,0 +1,80 @@
+package com.github.sulir.runtimesave.start;
+
+import com.github.sulir.runtimesave.JdiLoader;
+import com.intellij.debugger.engine.DebugProcess;
+import com.intellij.debugger.engine.DebugProcessEvents;
+import com.intellij.debugger.engine.DebugProcessListener;
+import com.intellij.debugger.impl.DebuggerManagerListener;
+import com.intellij.debugger.impl.DebuggerSession;
+import com.intellij.debugger.jdi.VirtualMachineProxyImpl;
+import com.intellij.execution.application.ApplicationConfiguration;
+import com.intellij.openapi.ui.Messages;
+import com.intellij.xdebugger.XDebugSession;
+import com.sun.jdi.*;
+import com.sun.jdi.event.BreakpointEvent;
+import com.sun.jdi.event.ClassPrepareEvent;
+import com.sun.jdi.event.Event;
+import com.sun.jdi.request.BreakpointRequest;
+import com.sun.jdi.request.ClassPrepareRequest;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
+public class StartLineListener implements DebuggerManagerListener {
+    @Override
+    public void sessionCreated(DebuggerSession session) {
+        session.getProcess().addDebugProcessListener(new DebugProcessListener() {
+            @Override
+            public void processAttached(@NotNull DebugProcess process) {
+                XDebugSession xSession = session.getXDebugSession();
+                if (xSession == null || !(xSession.getRunProfile() instanceof ApplicationConfiguration configuration))
+                    return;
+                if (!StartProgramAction.MAIN_CLASS.equals(configuration.getMainClassName()))
+                    return;
+
+                if (configuration.getProgramParameters() == null)
+                    return;
+                String[] params = configuration.getProgramParameters().split(" ");
+                if (params.length < 4)
+                    return;
+
+                String className = params[0];
+                int line = Integer.parseInt(params[3]);
+
+                VirtualMachine vm = ((VirtualMachineProxyImpl) process.getVirtualMachineProxy()).getVirtualMachine();
+                addBreakpoint(vm, className, line);
+            }
+        });
+    }
+
+    private void addBreakpoint(VirtualMachine vm, String className, int line) {
+        ClassPrepareRequest request = vm.eventRequestManager().createClassPrepareRequest();
+        request.addClassFilter(className);
+
+        DebugProcessEvents.enableRequestWithHandler(request, (ev) -> {
+            ClassPrepareEvent classPrepareEvent = (ClassPrepareEvent) ev;
+            ReferenceType clazz = classPrepareEvent.referenceType();
+            try {
+                List<Location> locations = clazz.locationsOfLine(line);
+                if (locations.isEmpty()) {
+                    Messages.showErrorDialog("Cannot set breakpoint at line " + line, "Error");
+                    return;
+                }
+
+                BreakpointRequest breakpoint = vm.eventRequestManager().createBreakpointRequest(locations.get(0));
+                DebugProcessEvents.enableRequestWithHandler(breakpoint, this::handleBreakpoint);
+            } catch (AbsentInformationException ignored) { }
+        });
+    }
+
+    private void handleBreakpoint(Event event) {
+        BreakpointEvent breakpointEvent = (BreakpointEvent) event;
+        try {
+            StackFrame frame = breakpointEvent.thread().frame(0);
+            JdiLoader loader = new JdiLoader(frame);
+            loader.loadThisAndLocals();
+        } catch (IncompatibleThreadStateException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
