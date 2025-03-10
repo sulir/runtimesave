@@ -3,9 +3,9 @@ package com.github.sulir.runtimesave.db;
 import com.sun.jdi.Location;
 
 public class SourceLocation {
-    final String className;
-    final String method;
-    final int line;
+    private final String className;
+    private final String method;
+    private final int line;
 
     public static SourceLocation fromJDI(Location location) {
         String className = location.declaringType().name();

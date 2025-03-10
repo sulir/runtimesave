@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.everyline;
 
-import com.github.sulir.runtimesave.JdiSaver;
+import com.github.sulir.runtimesave.JdiFrameSaver;
 import com.intellij.debugger.engine.DebugProcessEvents;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.IncompatibleThreadStateException;
@@ -51,7 +51,7 @@ public class EveryLineManager {
         }
 
         try {
-            JdiSaver saver = new JdiSaver(event.thread().frame(0));
+            JdiFrameSaver saver = new JdiFrameSaver(event.thread().frame(0));
             saver.saveThisAndLocals();
         } catch (IncompatibleThreadStateException e) {
             throw new RuntimeException(e);

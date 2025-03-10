@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.start;
 
-import com.github.sulir.runtimesave.JdiLoader;
+import com.github.sulir.runtimesave.JdiFrameLoader;
 import com.intellij.debugger.engine.DebugProcess;
 import com.intellij.debugger.engine.DebugProcessEvents;
 import com.intellij.debugger.engine.DebugProcessListener;
@@ -71,7 +71,7 @@ public class StartLineListener implements DebuggerManagerListener {
         BreakpointEvent breakpointEvent = (BreakpointEvent) event;
         try {
             StackFrame frame = breakpointEvent.thread().frame(0);
-            JdiLoader loader = new JdiLoader(frame);
+            JdiFrameLoader loader = new JdiFrameLoader(frame);
             loader.loadThisAndLocals();
         } catch (IncompatibleThreadStateException e) {
             throw new RuntimeException(e);

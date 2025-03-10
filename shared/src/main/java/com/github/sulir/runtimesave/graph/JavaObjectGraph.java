@@ -102,7 +102,7 @@ public class JavaObjectGraph {
         }
     }
 
-    private Field findField(Class<?> clazz, String name) {
+    public static Field findField(Class<?> clazz, String name) {
         try {
             return clazz.getDeclaredField(name);
         } catch (NoSuchFieldException e) {

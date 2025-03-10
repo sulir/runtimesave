@@ -1,7 +1,5 @@
 package com.github.sulir.runtimesave.starter;
 
-import sun.misc.Unsafe;
-
 import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.List;
@@ -13,16 +11,6 @@ public class StarterMain {
         String methodName = args[1];
         String paramsDescriptor = args[2];
         new StarterMain().start(className, methodName, paramsDescriptor);
-    }
-
-    public static Object allocateInstance(String className) {
-        try {
-            Field unsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            unsafe.setAccessible(true);
-            return ((Unsafe) unsafe.get(null)).allocateInstance(Class.forName(className));
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public void start(String className, String methodName, String paramsDescriptor) throws Throwable  {
@@ -69,7 +57,7 @@ public class StarterMain {
         if (Modifier.isStatic(method.getModifiers())) {
             return null;
         } else {
-            return allocateInstance(method.getDeclaringClass().getName());
+            return UnsafeHelper.allocateInstance(method.getDeclaringClass().getName());
         }
     }
 

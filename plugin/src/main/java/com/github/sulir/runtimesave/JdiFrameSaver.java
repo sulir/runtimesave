@@ -4,13 +4,13 @@ import com.github.sulir.runtimesave.db.DBWriter;
 import com.github.sulir.runtimesave.db.SourceLocation;
 import com.sun.jdi.*;
 
-public class JdiSaver {
+public class JdiFrameSaver {
     private static final int MAX_REFERENCE_LEVEL = -1;
 
     private final StackFrame frame;
     private final SourceLocation location;
 
-    public JdiSaver(StackFrame frame) {
+    public JdiFrameSaver(StackFrame frame) {
         this.frame = frame;
         location = SourceLocation.fromJDI(frame.location());
     }

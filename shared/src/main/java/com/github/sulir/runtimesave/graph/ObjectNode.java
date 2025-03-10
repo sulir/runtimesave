@@ -19,6 +19,10 @@ public class ObjectNode extends ReferenceNode {
         return fields;
     }
 
+    public GraphNode getField(String name) {
+        return getFields().get(name);
+    }
+
     public void setFields(Map<String, GraphNode> fields) {
         this.fields = fields;
     }
