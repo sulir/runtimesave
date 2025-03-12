@@ -18,12 +18,18 @@ public class UnsafeHelper {
         }
     }
 
+    public static void ensureLoadedForJdi() { }
+
     public static Object allocateInstance(String className) {
         try {
             return unsafe.allocateInstance(Class.forName(className));
         } catch (InstantiationException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Object allocateArray(String arrayClass, int length) {
+        return JavaObjectGraph.allocateArray(arrayClass, length);
     }
 
     @SuppressWarnings({"deprecation", "RedundantSuppression"})

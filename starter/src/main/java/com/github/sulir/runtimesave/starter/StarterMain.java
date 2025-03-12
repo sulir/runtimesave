@@ -14,6 +14,8 @@ public class StarterMain {
     }
 
     public void start(String className, String methodName, String paramsDescriptor) throws Throwable  {
+        UnsafeHelper.ensureLoadedForJdi();
+
         for (Method method : Class.forName(className).getDeclaredMethods()) {
             if (method.getName().equals(methodName)) {
                 String methodParams = getParamsDescriptor(method);

@@ -35,7 +35,7 @@ public class JavaObjectGraph {
 
             Object object = null;
             if (referenceNode instanceof ArrayNode arrayNode) {
-                object = allocateArray(arrayNode);
+                object = allocateArray(arrayNode.getType(), arrayNode.getElements().length);
                 visited.put(referenceNode, object);
                 assignElements(object, arrayNode);
             } else if (referenceNode instanceof ObjectNode objectNode) {
@@ -50,16 +50,15 @@ public class JavaObjectGraph {
         }
     }
 
-    private Object allocateArray(ArrayNode arrayNode) {
+    public static Object allocateArray(String type, int length) {
         try {
-            String component = arrayNode.getType().substring(0, arrayNode.getType().indexOf("["));
-            int dimensions = (int) arrayNode.getType().chars().filter(c -> c == '[').count();
+            String component = type.substring(0, type.indexOf("["));
+            int dimensions = (int) type.chars().filter(c -> c == '[').count();
 
             Class<?> componentType = Class.forName(component);
             for (int i = 0; i < dimensions - 1; i++)
                 componentType = componentType.arrayType();
 
-            int length = arrayNode.getElements().length;
             return Array.newInstance(componentType, length);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
