@@ -75,7 +75,8 @@ public class JdiFrameSaver {
 
     private void saveElement(long jvmId, int index, Value value, int level) {
         if (value instanceof PrimitiveValue primitive) {
-            DBWriter.getInstance().writePrimitiveElement(jvmId, index, toJavaPrimitive(primitive));
+            String type = value.type().name();
+            DBWriter.getInstance().writePrimitiveElement(jvmId, index, type, toJavaPrimitive(primitive));
         } else if (value == null) {
             DBWriter.getInstance().writeNullElement(jvmId, index);
         } else if (value instanceof StringReference string) {

@@ -31,9 +31,10 @@ public class DBWriter extends Database {
             String query = "MATCH (:Class {name: $class})"
                     + "-[:DEFINES]->(:Method {signature: $method})"
                     + "-[:CONTAINS]->(l:Line {number: $line})"
-                    + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(p:Primitive {value: $value})"
                     + " MERGE (t:Type {name: $type})"
-                    + " CREATE (p)-[:HAS_TYPE]->(t)";
+                    + " MERGE (p:Primitive {value: $value})-[:HAS_TYPE]->(t)"
+                    + " ON CREATE SET p.id = randomUUID()"
+                    + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(p)";
             session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
                     "line", location.getLine(), "name", name, "type", type, "value", value));
         }
@@ -85,9 +86,10 @@ public class DBWriter extends Database {
     public void writePrimitiveField(long jvmId, String name, String type, Object value) {
         try (Session session = createSession()) {
             String query = "MATCH (o:Object {jvmId: $jvmId})"
-                    + " CREATE (o)-[:HAS_FIELD {name: $name}]->(p:Primitive {value: $value})"
                     + " MERGE (t:Type {name: $type})"
-                    + " CREATE (p)-[:HAS_TYPE]->(t)";
+                    + " MERGE (p:Primitive {value: $value})-[:HAS_TYPE]->(t)"
+                    + " ON CREATE SET p.id = randomUUID()"
+                    + " CREATE (o)-[:HAS_FIELD {name: $name}]->(p)";
             session.run(query, Map.of("jvmId", jvmId, "name", name, "type", type, "value", value));
         }
     }
@@ -127,11 +129,14 @@ public class DBWriter extends Database {
         }
     }
 
-    public void writePrimitiveElement(long jvmId, int index, Object value) {
+    public void writePrimitiveElement(long jvmId, int index, String type, Object value) {
         try (Session session = createSession()) {
             String query = "MATCH (o:Array {jvmId: $jvmId})"
-                    + " CREATE (o)-[:HAS_ELEMENT {index: $index}]->(:Primitive {value: $value})";
-            session.run(query, Map.of("jvmId", jvmId, "index", index, "value", value));
+                    + " MERGE (t:Type {name: $type})"
+                    + " MERGE (p:Primitive {value: $value})-[:HAS_TYPE]->(t)"
+                    + " ON CREATE SET p.id = randomUUID()"
+                    + " CREATE (o)-[:HAS_ELEMENT {index: $index}]->(p)";
+            session.run(query, Map.of("jvmId", jvmId, "index", index, "type", type, "value", value));
         }
     }
 
