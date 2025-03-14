@@ -1,10 +1,10 @@
 plugins {
-    id("com.gradleup.shadow") version "8.3.5"
+    id("com.gradleup.shadow")
 }
 
 dependencies {
-    implementation("org.ow2.asm:asm:${project.ext["asmVersion"]}")
-    implementation("org.ow2.asm:asm-tree:${project.ext["asmVersion"]}")
+    implementation("org.ow2.asm:asm:_")
+    implementation("org.ow2.asm:asm-tree:_")
 
     implementation(project(":runtimesave-shared"))
 }
