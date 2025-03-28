@@ -4,6 +4,9 @@ import com.github.sulir.runtimesave.db.DBWriter;
 import com.github.sulir.runtimesave.db.SourceLocation;
 import com.sun.jdi.*;
 
+import java.util.List;
+import java.util.Map;
+
 public class JdiFrameSaver {
     private static final int MAX_REFERENCE_LEVEL = -1;
 
@@ -33,8 +36,9 @@ public class JdiFrameSaver {
 
     public void saveLocalVariables() {
         try {
-            for (LocalVariable variable : frame.visibleVariables())
-                saveVariable(variable.name(), frame.getValue(variable));
+            List<LocalVariable> variables = frame.visibleVariables();
+            Map<LocalVariable, Value> values = frame.getValues(variables);
+            values.forEach((variable, value) -> saveVariable(variable.name(), value));
         } catch (AbsentInformationException ignored) { }
     }
 
@@ -101,12 +105,10 @@ public class JdiFrameSaver {
         if (level == 0)
             return;
 
-        for (Field field : object.referenceType().visibleFields()) {
-            if (field.isStatic())
-                continue;
-
-            saveField(jvmId, field.name(), object.getValue(field), level - 1);
-        }
+        List<Field> fields = object.referenceType().visibleFields();
+        fields.removeIf(Field::isStatic);
+        Map<Field, Value> values = object.getValues(fields);
+        values.forEach((field, value) -> saveField(jvmId, field.name(), value, level - 1));
     }
 
     private void saveField(long jvmId, String name, Value value, int level) {
