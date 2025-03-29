@@ -9,17 +9,16 @@ public class StarterMain {
     public static void main(String[] args) throws Throwable {
         String className = args[0];
         String methodName = args[1];
-        String paramsDescriptor = args[2];
-        new StarterMain().start(className, methodName, paramsDescriptor);
+        String descriptor = args[2];
+        new StarterMain().start(className, methodName, descriptor);
     }
 
-    public void start(String className, String methodName, String paramsDescriptor) throws Throwable  {
+    public void start(String className, String methodName, String descriptor) throws Throwable  {
         UnsafeHelper.ensureLoadedForJdi();
 
         for (Method method : Class.forName(className).getDeclaredMethods()) {
             if (method.getName().equals(methodName)) {
-                String methodParams = getParamsDescriptor(method);
-                if (methodParams.equals(paramsDescriptor)) {
+                if (getDescriptor(method).equals(descriptor)) {
                     executeMethod(method);
                     break;
                 }
@@ -27,11 +26,12 @@ public class StarterMain {
         }
     }
 
-    private String getParamsDescriptor(Method method) {
+    private String getDescriptor(Method method) {
         return "(" + Arrays.stream(method.getParameters())
                 .map(Parameter::getType)
                 .map(Class::descriptorString)
-                .collect(Collectors.joining()) + ")";
+                .collect(Collectors.joining()) + ")"
+                + method.getReturnType().descriptorString();
     }
 
     private void executeMethod(Method method) throws Throwable {

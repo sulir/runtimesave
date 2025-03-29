@@ -69,14 +69,13 @@ public class StartProgramAction extends AnAction {
 
         String className = ClassUtil.getJVMClassName(containingClass);
         String methodName = method.getName();
-        String methodSignature = ClassUtil.getAsmMethodSignature(method);
-        String paramsSignature = methodSignature.substring(0, methodSignature.lastIndexOf(')') + 1);
+        String descriptor = ClassUtil.getAsmMethodSignature(method);
 
         RunnerAndConfigurationSettings settings = RunManager.getInstance(method.getProject()).createConfiguration(
                 "RuntimeSave Starter", ApplicationConfigurationType.class);
         ApplicationConfiguration config = (ApplicationConfiguration) settings.getConfiguration();
 
-        configureMain(config, className, methodName, paramsSignature, line);
+        configureMain(config, className, methodName, descriptor, line);
         String agentJar = configureAgent(config);
         configureClasspath(config, agentJar);
 
@@ -85,9 +84,9 @@ public class StartProgramAction extends AnAction {
     }
 
     private void configureMain(ApplicationConfiguration config, String className, String methodName,
-                               String paramsSignature, int line) {
+                               String descriptor, int line) {
         config.setMainClassName(MAIN_CLASS);
-        String programArgs = String.format("%s %s %s %d", className, methodName, paramsSignature, line);
+        String programArgs = String.format("%s %s %s %d", className, methodName, descriptor, line);
         config.setProgramParameters(programArgs);
     }
 

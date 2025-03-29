@@ -10,7 +10,6 @@ public class SourceLocation {
     public static SourceLocation fromJDI(Location location) {
         String className = location.declaringType().name();
         String method = location.method().name() + location.method().signature();
-        method = method.substring(0, method.lastIndexOf(')') + 1);
         return new SourceLocation(className, method, location.lineNumber());
     }
 
