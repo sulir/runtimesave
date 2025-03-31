@@ -18,16 +18,14 @@ public class DBReader extends Database {
         return instance;
     }
 
-    public Record readVariable(String className, String method, String variable) {
+    public Record readVariable(SourceLocation location, String variable) {
         try (Session session = createSession()) {
-            String query = "MATCH (:Class {name: $class})-->(:Method {signature: $method})-->(l:Line)"
-                    + " WHERE l.number > 0"
-                    + " WITH l ORDER BY l.number LIMIT 1"
+            String query = "MATCH (:Class {name: $class})-->(:Method {signature: $method})-->(l:Line {number: $line})"
                     + " MATCH (l)-[:HAS_VARIABLE {name: $variable}]->(v)"
                     + " OPTIONAL MATCH (v)-[:HAS_TYPE]->(t:Type)"
                     + " RETURN v, t";
-            Result result = session.run(query, Map.of("class", className, "method", method,
-                    "variable", variable));
+            Result result = session.run(query, Map.of("class", location.getClassName(),
+                    "method", location.getMethod(), "line", location.getLine(), "variable", variable));
             return result.next();
         }
     }

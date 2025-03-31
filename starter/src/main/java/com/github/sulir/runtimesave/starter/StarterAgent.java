@@ -47,13 +47,13 @@ public class StarterAgent {
     private byte[] instrumentClass(byte[] bytes) {
         ClassReader reader = new ClassReader(bytes);
         ClassNode classNode = new ClassNode();
-        reader.accept(classNode, 0);
+        reader.accept(classNode, ClassReader.SKIP_FRAMES);
 
         for (var method : classNode.methods) {
             if (method.name.equals(methodName) && method.desc.equals(descriptor)) {
                 new LineJumpInstrumentation(method).insert(line);
 
-                ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+                ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
                 classNode.accept(writer);
                 return writer.toByteArray();
             }

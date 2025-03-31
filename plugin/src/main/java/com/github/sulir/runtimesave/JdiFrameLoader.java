@@ -30,16 +30,24 @@ public class JdiFrameLoader {
     public void loadThisObjectFields() {
         ObjectReference thisObject = frame.thisObject();
         if (thisObject != null) {
-            GraphNode node = GraphNode.findVariable(location.getClassName(), location.getMethod(), "this");
-            assignFields(thisObject, (ObjectNode) node);
+            try {
+                GraphNode node = GraphNode.findVariable(location, "this");
+                assignFields(thisObject, (ObjectNode) node);
+            } catch (NoMatchException e) {
+                System.err.println(e.getMessage());
+            }
         }
     }
 
     public void loadLocalVariables() {
         try {
             for (LocalVariable variable : frame.visibleVariables()) {
-                GraphNode node = GraphNode.findVariable(location.getClassName(), location.getMethod(), variable.name());
-                assignVariable(variable, node);
+                try {
+                    GraphNode node = GraphNode.findVariable(location, variable.name());
+                    assignVariable(variable, node);
+                } catch (NoMatchException e) {
+                    System.err.println(e.getMessage());
+                }
             }
         } catch (AbsentInformationException ignored) { }
     }
