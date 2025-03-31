@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation("org.ow2.asm:asm:_")
     implementation("org.ow2.asm:asm-tree:_")
+    implementation("org.ow2.asm:asm-util:_")
 
     implementation(project(":runtimesave-shared"))
 }

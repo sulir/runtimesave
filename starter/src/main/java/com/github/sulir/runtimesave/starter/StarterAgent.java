@@ -51,7 +51,7 @@ public class StarterAgent {
 
         for (var method : classNode.methods) {
             if (method.name.equals(methodName) && method.desc.equals(descriptor)) {
-                new LineJumpInstrumentation(method).insert(line);
+                new LineJumpInstrumentation(method).generate(line);
 
                 ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
                 classNode.accept(writer);
