@@ -8,6 +8,7 @@ import com.intellij.debugger.impl.DebuggerManagerListener;
 import com.intellij.debugger.impl.DebuggerSession;
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl;
 import com.intellij.execution.application.ApplicationConfiguration;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.xdebugger.XDebugSession;
 import com.sun.jdi.*;
@@ -57,13 +58,16 @@ public class StartLineListener implements DebuggerManagerListener {
             try {
                 List<Location> locations = clazz.locationsOfLine(line);
                 if (locations.isEmpty()) {
-                    Messages.showErrorDialog("Cannot set breakpoint at line " + line, "Error");
+                    stopProgram(vm, "Cannot start program at line " + line
+                            + ". It probably does not contain executable code.");
                     return;
                 }
 
                 BreakpointRequest breakpoint = vm.eventRequestManager().createBreakpointRequest(locations.get(0));
                 DebugProcessEvents.enableRequestWithHandler(breakpoint, this::handleBreakpoint);
-            } catch (AbsentInformationException ignored) { }
+            } catch (AbsentInformationException e) {
+                stopProgram(vm, "Line number information absent for class " + className);
+            }
         });
     }
 
@@ -76,5 +80,12 @@ public class StartLineListener implements DebuggerManagerListener {
         } catch (IncompatibleThreadStateException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void stopProgram(VirtualMachine vm, String message) {
+        ApplicationManager.getApplication().invokeLater(() ->
+                Messages.showErrorDialog(message, "Error")
+        );
+        vm.exit(1);
     }
 }

@@ -15,8 +15,11 @@ public class StarterMain {
 
     public void start(String className, String methodName, String descriptor) throws Throwable  {
         UnsafeHelper.ensureLoadedForJdi();
+        Class<?> clazz = loadClass(className);
+        if (clazz == null)
+            return;
 
-        for (Method method : Class.forName(className).getDeclaredMethods()) {
+        for (Method method : clazz.getDeclaredMethods()) {
             if (method.getName().equals(methodName)) {
                 if (getDescriptor(method).equals(descriptor)) {
                     executeMethod(method);
@@ -24,6 +27,17 @@ public class StarterMain {
                 }
             }
         }
+    }
+
+    private Class<?> loadClass(String name) {
+        try {
+            return Class.forName(name);
+        } catch (ClassNotFoundException e) {
+            System.err.println("Cannot load class " + name);
+        } catch (VerifyError e) {
+            System.err.println("Cannot start program at this line: probably not a start of a statement");
+        }
+        return null;
     }
 
     private String getDescriptor(Method method) {

@@ -11,10 +11,12 @@ import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.ide.plugins.cl.PluginAwareClassLoader;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.util.ClassUtil;
@@ -32,8 +34,13 @@ public class StartProgramAction extends AnAction {
         PsiMethod method = getMethodAtCursor(e.getProject());
         Integer line = getLineAtCursor(e.getProject());
 
-        if (method != null && line != null)
+        if (method != null && line != null) {
             startDebugging(method, line);
+        } else {
+            ApplicationManager.getApplication().invokeLater(() ->
+                    Messages.showErrorDialog("Current line is unsuitable for starting the program", "Error")
+            );
+        }
     }
 
     private PsiMethod getMethodAtCursor(Project project) {
