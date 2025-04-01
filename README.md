@@ -20,6 +20,4 @@ For saving sample values from all executed lines, choose the menu Run / Collect 
 
 To view the saved objects in the graph database, open http://localhost:7474/.
 
-To start a program from any line (currently only whole methods are implemented), place the caret on the given line and select Run / Start Program at This Line from the main menu. The following settings may be necessary for proper functioning:
-- for compilation, add `-parameters` to preserve parameter names,
-- when running the application, use `--add-opens=java.base/java.lang=ALL-UNNAMED` and analogous VM arguments.
+To start a program from any line, place the caret on the given line and select Run / Start Program at Current Line from the main menu. In the opened dialog, click Debug.

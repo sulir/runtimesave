@@ -2,7 +2,9 @@
   <id>com.github.sulir.runtimesave</id>
   <name>RuntimeSave</name>
   <vendor email="matus.sulir@gmail.com" url="https://sulir.github.io">Matúš Sulír</vendor>
-  <description>Saves the runtime values of variables in a graph database and loads them for various purposes</description>
+  <description>
+    Saves the runtime values of variables in a graph database and loads them for various purposes
+  </description>
 
   <depends>com.intellij.modules.platform</depends>
   <depends>com.intellij.java</depends>
@@ -16,9 +18,11 @@
   </extensions>
 
   <actions>
-    <action id="com.github.sulir.runtimesave.start.StartProgramAction" class="com.github.sulir.runtimesave.start.StartProgramAction"
-            text="Start Program at This Line">
-      <add-to-group group-id="RunMenu" anchor="first"/>
+    <action id="com.github.sulir.runtimesave.start.StartProgramAction"
+            class="com.github.sulir.runtimesave.start.StartProgramAction"
+            text="Start Program at Current Line..." icon="AllIcons.Debugger.SmartStepInto">
+      <add-to-group group-id="RunMenu" anchor="after" relative-to-action="ChooseDebugConfiguration"/>
+      <keyboard-shortcut keymap="$default" first-keystroke="F10"/>
     </action>
 
     <action id="com.github.sulir.runtimesave.savepoints.AddSavepointAction"
