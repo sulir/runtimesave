@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LineJumpInstrumentation implements Opcodes {
+    public static final String FLAG_CLASS = Type.getInternalName(StarterAgent.class);
+    public static final String FLAG_FIELD = "JUMPED_TO_LINE";
+
     private final InsnList instructions;
     private final List<LocalVariableNode> variables;
 
@@ -21,15 +24,28 @@ public class LineJumpInstrumentation implements Opcodes {
 
     public void generate(int line) {
         LabelNode lineStart = findLineNode(line).start;
+        LabelNode skipLabel = new LabelNode();
         InsnList prepended = new InsnList();
+        prepended.add(generateSkipIfAlreadyJumped(skipLabel));
 
-        for (LocalVariableNode variable : findVariablesAt(lineStart)) {
-            InsnList variableInit = generateInitializer(variable);
-            prepended.add(variableInit);
-        }
+        for (LocalVariableNode variable : findVariablesAt(lineStart))
+            prepended.add(generateInitializer(variable));
 
         prepended.add(new JumpInsnNode(GOTO, lineStart));
+        prepended.add(skipLabel);
         instructions.insert(prepended);
+
+        if (StarterAgent.DEBUG)
+            printInstructions();
+    }
+
+    private InsnList generateSkipIfAlreadyJumped(LabelNode skipLabel) {
+        InsnList list = new InsnList();
+        list.add(new FieldInsnNode(GETSTATIC, FLAG_CLASS, FLAG_FIELD, Type.BOOLEAN_TYPE.getDescriptor()));
+        list.add(new JumpInsnNode(IFNE, skipLabel));
+        list.add(new InsnNode(ICONST_1));
+        list.add(new FieldInsnNode(PUTSTATIC, FLAG_CLASS, FLAG_FIELD, Type.BOOLEAN_TYPE.getDescriptor()));
+        return list;
     }
 
     private LineNumberNode findLineNode(int line) {
@@ -83,13 +99,7 @@ public class LineJumpInstrumentation implements Opcodes {
     private void printInstructions() {
         Printer printer = new Textifier();
         TraceMethodVisitor tracer = new TraceMethodVisitor(printer);
-
-        for (AbstractInsnNode instruction : instructions.toArray()) {
-            instruction.accept(tracer);
-        }
-
-        for (Object line : printer.getText()) {
-            System.out.print(line);
-        }
+        instructions.forEach(instruction -> instruction.accept(tracer));
+        printer.getText().forEach(System.out::print);
     }
 }
