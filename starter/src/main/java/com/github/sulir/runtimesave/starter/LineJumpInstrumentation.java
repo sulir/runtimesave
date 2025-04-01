@@ -46,6 +46,9 @@ public class LineJumpInstrumentation implements Opcodes {
         List<LocalVariableNode> variablesAtNode = new ArrayList<>();
 
         for (LocalVariableNode variable : variables) {
+            if (variable.name.equals("this"))
+                continue;
+
             int start = instructions.indexOf(variable.start);
             int end = instructions.indexOf(variable.end);
 
