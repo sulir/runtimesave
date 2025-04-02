@@ -53,8 +53,10 @@ public class StartLineListener implements DebuggerManagerListener {
         request.addClassFilter(className);
 
         DebugProcessEvents.enableRequestWithHandler(request, (ev) -> {
+            vm.eventRequestManager().deleteEventRequest(ev.request());
             ClassPrepareEvent classPrepareEvent = (ClassPrepareEvent) ev;
             ReferenceType clazz = classPrepareEvent.referenceType();
+
             try {
                 List<Location> locations = clazz.locationsOfLine(line);
                 if (locations.isEmpty()) {
@@ -72,7 +74,9 @@ public class StartLineListener implements DebuggerManagerListener {
     }
 
     private void handleBreakpoint(Event event) {
+        event.virtualMachine().eventRequestManager().deleteEventRequest(event.request());
         BreakpointEvent breakpointEvent = (BreakpointEvent) event;
+
         try {
             StackFrame frame = breakpointEvent.thread().frame(0);
             JdiFrameLoader loader = new JdiFrameLoader(frame);
