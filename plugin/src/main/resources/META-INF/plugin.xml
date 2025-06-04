@@ -15,6 +15,7 @@
     <xdebugger.breakpointType implementation="com.github.sulir.runtimesave.savepoints.SavepointType"/>
     <debugger.javaBreakpointHandlerFactory
             implementation="com.github.sulir.runtimesave.savepoints.SavepointHandlerFactory"/>
+    <runConfigurationExtension implementation="com.github.sulir.runtimesave.HelperRunConfigExtension"/>
   </extensions>
 
   <actions>

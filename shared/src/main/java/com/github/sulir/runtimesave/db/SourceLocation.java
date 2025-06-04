@@ -13,6 +13,11 @@ public class SourceLocation {
         return new SourceLocation(className, method, location.lineNumber());
     }
 
+    public static SourceLocation fromStackTrace(int level) {
+        StackTraceElement frame = Thread.currentThread().getStackTrace()[level];
+        return new SourceLocation(frame.getClassName(), frame.getMethodName(), frame.getLineNumber());
+    }
+
     public SourceLocation(String className, String method, int line) {
         this.className = className;
         this.method = method;

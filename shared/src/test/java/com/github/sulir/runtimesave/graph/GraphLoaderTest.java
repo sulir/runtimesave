@@ -9,7 +9,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-class JavaObjectGraphTest {
+class GraphLoaderTest {
     private ObjectNode firstNode;
     private ObjectNode secondNode;
     private SampleClass first;
@@ -38,8 +38,8 @@ class JavaObjectGraphTest {
 
     @Test
     void simpleNodeTreeIsTransformedToObjects() {
-        JavaObjectGraph objectGraph = new JavaObjectGraph(firstNode);
-        SampleClass result = (SampleClass) objectGraph.create();
+        GraphLoader objectGraph = new GraphLoader(firstNode);
+        SampleClass result = (SampleClass) objectGraph.createJavaObject();
 
         assertEquals(first, result);
         assertEquals(second, result.getReference());
@@ -51,8 +51,8 @@ class JavaObjectGraphTest {
         secondNode.getFields().put("reference", firstNode);
         second.setReference(first);
 
-        JavaObjectGraph objectGraph = new JavaObjectGraph(firstNode);
-        SampleClass result = (SampleClass) objectGraph.create();
+        GraphLoader objectGraph = new GraphLoader(firstNode);
+        SampleClass result = (SampleClass) objectGraph.createJavaObject();
 
         assertEquals(first, result);
         assertEquals(second, result.getReference());

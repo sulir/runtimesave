@@ -7,15 +7,15 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JavaObjectGraph {
+public class GraphLoader {
     private final GraphNode root;
     private final Map<ReferenceNode, Object> visited = new HashMap<>();
 
-    public JavaObjectGraph(GraphNode root) {
+    public GraphLoader(GraphNode root) {
         this.root = root;
     }
 
-    public Object create() {
+    public Object createJavaObject() {
         Object result = transform(root);
         visited.clear();
         return result;

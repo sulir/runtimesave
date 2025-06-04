@@ -1,5 +1,6 @@
 package com.github.sulir.runtimesave.starter;
 
+import com.github.sulir.runtimesave.app.SaveHelper;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
@@ -20,6 +21,12 @@ public class StarterAgent {
 
     public static void premain(String agentArgs, Instrumentation inst) {
         String[] commandLine = System.getProperty("sun.java.command").split(" ");
+        String mainClass = commandLine[0];
+        if (!mainClass.equals(StarterMain.class.getName())) {
+            SaveHelper.ensureLoadedForJdi();
+            return;
+        }
+
         String targetClass = commandLine[1];
         String methodName = commandLine[2];
         String descriptor = commandLine[3];

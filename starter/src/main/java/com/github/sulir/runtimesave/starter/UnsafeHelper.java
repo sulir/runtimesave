@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.starter;
 
-import com.github.sulir.runtimesave.graph.JavaObjectGraph;
+import com.github.sulir.runtimesave.graph.GraphLoader;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
@@ -29,12 +29,12 @@ public class UnsafeHelper {
     }
 
     public static Object allocateArray(String arrayClass, int length) {
-        return JavaObjectGraph.allocateArray(arrayClass, length);
+        return GraphLoader.allocateArray(arrayClass, length);
     }
 
     @SuppressWarnings({"deprecation", "RedundantSuppression"})
     public static long getOffset(Object object, String fieldName) {
-        Field field = JavaObjectGraph.findField(object.getClass(), fieldName);
+        Field field = GraphLoader.findField(object.getClass(), fieldName);
         return unsafe.objectFieldOffset(field);
     }
 

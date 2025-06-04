@@ -4,16 +4,20 @@ import com.github.sulir.runtimesave.db.DBWriter;
 import com.github.sulir.runtimesave.db.SourceLocation;
 import com.sun.jdi.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 public class JdiFrameSaver {
     private static final int MAX_REFERENCE_LEVEL = -1;
+    private static final String HELPER = "com.github.sulir.runtimesave.app.SaveHelper";
 
-    private final StackFrame frame;
+    private final VirtualMachine vm;
+    private StackFrame frame;
     private final SourceLocation location;
 
     public JdiFrameSaver(StackFrame frame) {
+        this.vm = frame.virtualMachine();
         this.frame = frame;
         location = SourceLocation.fromJDI(frame.location());
     }
@@ -43,6 +47,12 @@ public class JdiFrameSaver {
     }
 
     private void saveVariable(String name, Value value) {
+        if (value instanceof IntegerValue) {
+            invokeHelperMethod("savePrimitive", "(Ljava/lang/String;" + value.type().signature() + ")V",
+                    vm.mirrorOf(name), value);
+            return;
+        }
+
         if (value instanceof PrimitiveValue primitive) {
             String type = value.type().name();
             DBWriter.getInstance().writePrimitiveVariable(location, name, type, toJavaPrimitive(primitive));
@@ -135,6 +145,18 @@ public class JdiFrameSaver {
 
     public void finish() {
         DBWriter.getInstance().deleteJvmIds();
+    }
+
+    private void invokeHelperMethod(String methodName, String signature, Value... args) {
+        ClassType helper = (ClassType) vm.classesByName(HELPER).get(0);
+        Method method = helper.concreteMethodByName(methodName, signature);
+        try {
+            ThreadReference thread = frame.thread();
+            helper.invokeMethod(thread, method, Arrays.asList(args), ClassType.INVOKE_SINGLE_THREADED);
+            frame = thread.frame(0);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Object toJavaPrimitive(PrimitiveValue value) {
