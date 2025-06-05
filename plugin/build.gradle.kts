@@ -13,6 +13,7 @@ dependencies {
         intellijIdeaCommunity("_")
         bundledPlugin("com.intellij.java")
     }
+    implementation("org.neo4j.driver:neo4j-java-driver:_")
 
     implementation(project(":runtimesave-shared"))
     runtimeOnly(project(":runtimesave-starter")) {
