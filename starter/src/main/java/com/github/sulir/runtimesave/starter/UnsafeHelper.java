@@ -1,22 +1,13 @@
 package com.github.sulir.runtimesave.starter;
 
-import com.github.sulir.runtimesave.graph.JavaObjectGraph;
 import sun.misc.Unsafe;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 
+@SuppressWarnings("unused")
 public class UnsafeHelper {
     private static final Unsafe unsafe = getUnsafe();
-
-    private static Unsafe getUnsafe() {
-        try {
-            Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-            unsafeField.setAccessible(true);
-            return ((Unsafe) unsafeField.get(null));
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public static void ensureLoadedForJdi() { }
 
@@ -28,13 +19,24 @@ public class UnsafeHelper {
         }
     }
 
-    public static Object allocateArray(String arrayClass, int length) {
-        return JavaObjectGraph.allocateArray(arrayClass, length);
+    public static Object allocateArray(String type, int length) {
+        try {
+            String component = type.substring(0, type.indexOf("["));
+            int dimensions = (int) type.chars().filter(c -> c == '[').count();
+
+            Class<?> componentType = Class.forName(component);
+            for (int i = 0; i < dimensions - 1; i++)
+                componentType = componentType.arrayType();
+
+            return Array.newInstance(componentType, length);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @SuppressWarnings({"deprecation", "RedundantSuppression"})
     public static long getOffset(Object object, String fieldName) {
-        Field field = JavaObjectGraph.findField(object.getClass(), fieldName);
+        Field field = findField(object.getClass(), fieldName);
         return unsafe.objectFieldOffset(field);
     }
 
@@ -72,5 +74,25 @@ public class UnsafeHelper {
 
     public static void putValue(Object object, String fieldName, Object value) {
         unsafe.putObject(object, getOffset(object, fieldName), value);
+    }
+
+    private static Unsafe getUnsafe() {
+        try {
+            Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+            unsafeField.setAccessible(true);
+            return ((Unsafe) unsafeField.get(null));
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Field findField(Class<?> clazz, String name) {
+        try {
+            return clazz.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+            if (clazz.getSuperclass() == null)
+                throw new RuntimeException(e);
+            return findField(clazz.getSuperclass(), name);
+        }
     }
 }
