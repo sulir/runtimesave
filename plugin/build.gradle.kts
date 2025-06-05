@@ -40,3 +40,10 @@ tasks.runIde {
 tasks.clean {
     delete(tasks.buildPlugin.get().archiveFile)
 }
+
+configurations.all {
+    resolutionStrategy {
+        cacheDynamicVersionsFor(7, "days")
+        cacheChangingModulesFor(7, "days")
+    }
+}
