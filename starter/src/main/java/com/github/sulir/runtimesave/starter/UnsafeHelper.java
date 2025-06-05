@@ -4,9 +4,13 @@ import sun.misc.Unsafe;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.util.Map;
 
 @SuppressWarnings("unused")
 public class UnsafeHelper {
+    private static final Map<String, Class<?>> primitives = Map.of("char", char.class,
+            "byte", byte.class, "short", short.class, "int", int.class, "long", long.class,
+            "float", float.class, "double", double.class, "boolean", boolean.class);
     private static final Unsafe unsafe = getUnsafe();
 
     public static void ensureLoadedForJdi() { }
@@ -24,7 +28,10 @@ public class UnsafeHelper {
             String component = type.substring(0, type.indexOf("["));
             int dimensions = (int) type.chars().filter(c -> c == '[').count();
 
-            Class<?> componentType = Class.forName(component);
+            Class<?> componentType = primitives.get(component);
+            if (componentType == null)
+                componentType = Class.forName(component);
+
             for (int i = 0; i < dimensions - 1; i++)
                 componentType = componentType.arrayType();
 
