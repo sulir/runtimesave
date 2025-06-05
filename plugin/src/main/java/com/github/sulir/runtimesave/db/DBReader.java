@@ -24,8 +24,8 @@ public class DBReader extends Database {
                     + " MATCH (l)-[:HAS_VARIABLE {name: $variable}]->(v)"
                     + " OPTIONAL MATCH (v)-[:HAS_TYPE]->(t:Type)"
                     + " RETURN v, t";
-            Result result = session.run(query, Map.of("class", location.getClassName(),
-                    "method", location.getMethod(), "line", location.getLine(), "variable", variable));
+            Result result = session.run(query, Map.of("class", location.className(),
+                    "method", location.method(), "line", location.line(), "variable", variable));
             return result.next();
         }
     }

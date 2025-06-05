@@ -23,10 +23,6 @@ public class ObjectNode extends ReferenceNode {
         return getFields().get(name);
     }
 
-    public void setFields(Map<String, GraphNode> fields) {
-        this.fields = fields;
-    }
-
     private void loadFields() {
         fields = new HashMap<>();
 

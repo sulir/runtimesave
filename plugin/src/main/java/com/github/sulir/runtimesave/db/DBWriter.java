@@ -21,8 +21,8 @@ public class DBWriter extends Database {
             String query = "MERGE (c:Class {name: $class})"
                     + " MERGE (c)-[:DEFINES]->(m:Method {signature: $method})"
                     + " MERGE (m)-[:CONTAINS]->(:Line {number: $line})";
-            session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
-                    "line", location.getLine()));
+            session.run(query, Map.of("class", location.className(), "method", location.method(),
+                    "line", location.line()));
         }
     }
 
@@ -35,8 +35,8 @@ public class DBWriter extends Database {
                     + " MERGE (p:Primitive {value: $value})-[:HAS_TYPE]->(t)"
                     + " ON CREATE SET p.id = randomUUID()"
                     + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(p)";
-            session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
-                    "line", location.getLine(), "name", name, "type", type, "value", value));
+            session.run(query, Map.of("class", location.className(), "method", location.method(),
+                    "line", location.line(), "name", name, "type", type, "value", value));
         }
     }
 
@@ -47,8 +47,8 @@ public class DBWriter extends Database {
                     + "-[:CONTAINS]->(l:Line {number: $line})"
                     + " MERGE (n:Null)"
                     + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(n)";
-            session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
-                    "line", location.getLine(), "name", name));
+            session.run(query, Map.of("class", location.className(), "method", location.method(),
+                    "line", location.line(), "name", name));
         }
     }
 
@@ -61,8 +61,8 @@ public class DBWriter extends Database {
                     + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(s)"
                     + " MERGE (t:Type {name: $type})"
                     + " MERGE (s)-[:HAS_TYPE]->(t)";
-            session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
-                    "line", location.getLine(), "name", name, "value", value, "type", STRING_TYPE));
+            session.run(query, Map.of("class", location.className(), "method", location.method(),
+                    "line", location.line(), "name", name, "value", value, "type", STRING_TYPE));
         }
     }
 
@@ -76,8 +76,8 @@ public class DBWriter extends Database {
                     + " CREATE (l)-[:HAS_VARIABLE {name: $name}]->(o)"
                     + " MERGE (t:Type {name: $type})"
                     + " MERGE (o)-[:HAS_TYPE]->(t)";
-            Result result = session.run(query, Map.of("class", location.getClassName(), "method", location.getMethod(),
-                    "line", location.getLine(), "name", name, "type", type, "jvmId", jvmId));
+            Result result = session.run(query, Map.of("class", location.className(), "method", location.method(),
+                    "line", location.line(), "name", name, "type", type, "jvmId", jvmId));
 
             return result.consume().counters().nodesCreated() > 0;
         }

@@ -25,7 +25,7 @@ public abstract class GraphNode {
             return fromDB(record);
         } catch (NoSuchRecordException e) {
             throw new NoMatchException(String.format("Cannot find variable %s in %s.%s:%d",
-                    variableName, location.getClassName(), location.getMethod(), location.getLine()));
+                    variableName, location.className(), location.method(), location.line()));
         }
     }
 }
