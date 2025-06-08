@@ -1,6 +1,8 @@
 package com.github.sulir.runtimesave.start;
 
-import com.github.sulir.runtimesave.JdiFrameLoader;
+import com.github.sulir.runtimesave.db.Database;
+import com.github.sulir.runtimesave.graph.*;
+import com.github.sulir.runtimesave.nodes.FrameNode;
 import com.intellij.debugger.engine.DebugProcess;
 import com.intellij.debugger.engine.DebugProcessEvents;
 import com.intellij.debugger.engine.DebugProcessListener;
@@ -79,10 +81,15 @@ public class StartLineListener implements DebuggerManagerListener {
 
         try {
             StackFrame frame = breakpointEvent.thread().frame(0);
-            JdiFrameLoader loader = new JdiFrameLoader(frame);
-            loader.loadThisAndLocals();
-        } catch (IncompatibleThreadStateException e) {
-            throw new RuntimeException(e);
+
+            DbSearch search = new DbSearch(Database.getInstance());
+            String frameId = search.findFrame(SourceLocation.fromJDI(frame.location()));
+            DbReader reader = new DbReader(Database.getInstance());
+            FrameNode frameNode = reader.readFrame(frameId);
+            JdiWriter writer = new JdiWriter(frame);
+            writer.writeFrame(frameNode);
+        } catch (IncompatibleThreadStateException | MismatchException e) {
+            stopProgram(event.virtualMachine(), e.getMessage());
         }
     }
 

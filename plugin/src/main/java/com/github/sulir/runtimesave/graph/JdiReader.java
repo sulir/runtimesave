@@ -1,19 +1,18 @@
-package com.github.sulir.runtimesave;
+package com.github.sulir.runtimesave.graph;
 
 import com.github.sulir.runtimesave.db.DBWriter;
-import com.github.sulir.runtimesave.db.SourceLocation;
 import com.sun.jdi.*;
 
 import java.util.List;
 import java.util.Map;
 
-public class JdiFrameSaver {
+public class JdiReader {
     private static final int MAX_REFERENCE_LEVEL = -1;
 
     private final StackFrame frame;
     private final SourceLocation location;
 
-    public JdiFrameSaver(StackFrame frame) {
+    public JdiReader(StackFrame frame) {
         this.frame = frame;
         location = SourceLocation.fromJDI(frame.location());
     }

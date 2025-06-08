@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave.db;
+package com.github.sulir.runtimesave.graph;
 
 import com.sun.jdi.Location;
 

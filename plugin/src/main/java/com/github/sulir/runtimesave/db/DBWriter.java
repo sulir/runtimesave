@@ -1,5 +1,6 @@
 package com.github.sulir.runtimesave.db;
 
+import com.github.sulir.runtimesave.graph.SourceLocation;
 import org.neo4j.driver.*;
 
 import java.util.Map;

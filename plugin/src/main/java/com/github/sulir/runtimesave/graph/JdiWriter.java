@@ -1,63 +1,58 @@
-package com.github.sulir.runtimesave;
+package com.github.sulir.runtimesave.graph;
 
-import com.github.sulir.runtimesave.db.SourceLocation;
-import com.github.sulir.runtimesave.graph.*;
+import com.github.sulir.runtimesave.nodes.*;
 import com.sun.jdi.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JdiFrameLoader {
+public class JdiWriter {
     private static final String UNSAFE_HELPER = "com.github.sulir.runtimesave.starter.UnsafeHelper";
 
     private StackFrame frame;
     private final VirtualMachine vm;
-    private final SourceLocation location;
     private final Map<ReferenceNode, ObjectReference> visited = new HashMap<>();
 
-    public JdiFrameLoader(StackFrame frame) {
+    public JdiWriter(StackFrame frame) {
         this.frame = frame;
         vm = frame.virtualMachine();
-        location = SourceLocation.fromJDI(frame.location());
     }
 
-    public void loadThisAndLocals() {
-        loadThisObjectFields();
-        loadLocalVariables();
+    public void writeFrame(FrameNode node) throws MismatchException {
+        writeThisObjectFields(node);
+        writeLocalVariables(node);
     }
 
-    public void loadThisObjectFields() {
+    public void writeVariable(LocalVariable variable, GraphNode node) {
+        assignValue((value) -> frame.setValue(variable, value), node);
+    }
+
+    private void writeThisObjectFields(FrameNode frameNode) throws MismatchException {
         ObjectReference thisObject = frame.thisObject();
         if (thisObject != null) {
-            try {
-                GraphNode node = GraphNode.findVariable(location, "this");
-                assignFields(thisObject, (ObjectNode) node);
-            } catch (NoMatchException e) {
-                System.err.println(e.getMessage());
-            }
+            GraphNode thisNode = frameNode.getVariable("this");
+            if (thisNode instanceof ObjectNode objectNode)
+                assignFields(thisObject, objectNode);
+            else
+                throw new MismatchException("Object 'this' not found or invalid");
         }
     }
 
-    public void loadLocalVariables() {
+    private void writeLocalVariables(FrameNode frameNode) throws MismatchException {
         try {
             for (LocalVariable variable : frame.visibleVariables()) {
-                try {
-                    GraphNode node = GraphNode.findVariable(location, variable.name());
-                    assignVariable(variable, node);
-                } catch (NoMatchException e) {
-                    System.err.println(e.getMessage());
-                }
+                GraphNode node = frameNode.getVariable(variable.name());
+                if (node != null)
+                    writeVariable(variable, node);
+                else
+                    throw new MismatchException("Variable " + variable.name() + " not found");
             }
         } catch (AbsentInformationException ignored) { }
     }
 
     private interface ValueAssigner {
         void setValue(Value value) throws InvalidTypeException, ClassNotLoadedException;
-    }
-
-    private void assignVariable(LocalVariable variable, GraphNode node) {
-        assignValue((value) -> frame.setValue(variable, value), node);
     }
 
     private void assignField(ObjectReference object, Field field, GraphNode node) {
@@ -107,15 +102,15 @@ public class JdiFrameLoader {
 
     private ObjectReference allocateArray(ArrayNode node) {
         Value result = invokeHelperMethod("allocateArray", "(Ljava/lang/String;I)Ljava/lang/Object;",
-                List.of(vm.mirrorOf(node.getType()), vm.mirrorOf(node.getElements().length)));
+                List.of(vm.mirrorOf(node.getType()), vm.mirrorOf(node.getSize())));
         return (ObjectReference) result;
     }
 
     private void assignElements(ArrayReference array, ArrayNode node) {
-        GraphNode[] elements = node.getElements();
+        int size = node.getSize();
 
-        for (int i = 0; i < elements.length; i++)
-            assignElement(array, i, elements[i]);
+        for (int i = 0; i < size; i++)
+            assignElement(array, i, node.getElement(i));
     }
 
     private ObjectReference allocateObject(ObjectNode node) {

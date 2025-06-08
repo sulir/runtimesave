@@ -4,7 +4,7 @@ RuntimeSave is an IntelliJ IDEA extension to save the runtime values of variable
 
 ## Setup
 
-1. Install [Neo4j](https://neo4j.com/docs/operations-manual/current/installation/).
+1. Install [Neo4j](https://neo4j.com/docs/operations-manual/current/installation/) and [APOC Core](https://neo4j.com/docs/apoc/current/installation/).
 2. Change `initial.dbms.default_database` in [neo4j.conf](https://neo4j.com/docs/operations-manual/current/database-administration/standard-databases/configuration-parameters/) to `runtimesave`.
 3. Set the [password](https://neo4j.com/docs/operations-manual/current/configuration/set-initial-password/) for the `neo4j` user to any value.
 4. Open this project in IntelliJ IDEA.
