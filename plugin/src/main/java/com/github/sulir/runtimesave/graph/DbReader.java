@@ -20,15 +20,15 @@ public class DbReader {
         this.db = db;
     }
 
-    public FrameNode readFrame(String elementId) {
+    public FrameNode readFrame(String frameId) {
         FrameNode frameNode = new FrameNode();
 
         try (Session session = db.createSession()) {
-            String query = "MATCH (l:Line)"
-                    + " WHERE elementId(l) = $elementId"
-                    + " MATCH (l)-[h:HAS_VARIABLE]->(v)"
+            String query = "MATCH (f:Frame)"
+                    + " WHERE elementId(f) = $frameId"
+                    + " MATCH (f)-[h:HAS_VARIABLE]->(v)"
                     + " RETURN elementId(v) AS variableId, h.name AS name";
-            Result result = session.run(query, Map.of("elementId", elementId));
+            Result result = session.run(query, Map.of("frameId", frameId));
 
             while (result.hasNext()) {
                 Record record = result.next();
@@ -42,13 +42,13 @@ public class DbReader {
         }
     }
 
-    public GraphNode readVariable(String elementId) {
+    public GraphNode readVariable(String variableId) {
         try (Session session = db.createSession()) {
             String query = "MATCH (v)"
-                    + " WHERE elementId(v) = $elementId"
+                    + " WHERE elementId(v) = $variableId"
                     + " CALL apoc.path.subgraphAll(v, {relationshipFilter: '>'}) YIELD nodes, relationships"
                     + " RETURN nodes, relationships";
-            Record record = session.run(query, Map.of("elementId", elementId)).single();
+            Record record = session.run(query, Map.of("variableId", variableId)).single();
             List<Node> nodes = record.get("nodes").asList(Value::asNode);
             List<Relationship> edges = record.get("relationships").asList(Value::asRelationship);
 
@@ -62,7 +62,7 @@ public class DbReader {
                 createEdge(from, to, edge);
             }
 
-            return idToNode.get(elementId);
+            return idToNode.get(variableId);
         }
     }
 

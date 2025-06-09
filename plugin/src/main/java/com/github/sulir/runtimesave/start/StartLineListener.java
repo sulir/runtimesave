@@ -82,7 +82,7 @@ public class StartLineListener implements DebuggerManagerListener {
         try {
             StackFrame frame = breakpointEvent.thread().frame(0);
 
-            DbSearch search = new DbSearch(Database.getInstance());
+            DbMetadata search = new DbMetadata(Database.getInstance());
             String frameId = search.findFrame(SourceLocation.fromJDI(frame.location()));
             DbReader reader = new DbReader(Database.getInstance());
             FrameNode frameNode = reader.readFrame(frameId);
