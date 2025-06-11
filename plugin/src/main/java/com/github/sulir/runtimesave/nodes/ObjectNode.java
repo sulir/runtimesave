@@ -1,16 +1,19 @@
 package com.github.sulir.runtimesave.nodes;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ObjectNode extends ReferenceNode {
-    private final Map<String, GraphNode> fields = new HashMap<>();
+    private final SortedMap<String, GraphNode> fields = new TreeMap<>();
 
     public GraphNode getField(String name) {
         return fields.get(name);
     }
 
-    public void addField(String name, GraphNode value) {
+    public SortedMap<String, GraphNode> getFields() {
+        return fields;
+    }
+
+    public void setField(String name, GraphNode value) {
         fields.put(name, value);
     }
 }

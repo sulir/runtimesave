@@ -1,6 +1,5 @@
-package com.github.sulir.runtimesave.graph;
+package com.github.sulir.runtimesave.db;
 
-import com.github.sulir.runtimesave.db.Database;
 import com.github.sulir.runtimesave.nodes.*;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
@@ -35,7 +34,7 @@ public class DbReader {
                 String variableId = record.get("variableId").asString();
 
                 GraphNode variableNode = readVariable(variableId);
-                frameNode.addVariable(record.get("name").asString(), variableNode);
+                frameNode.setVariable(record.get("name").asString(), variableNode);
             }
 
             return frameNode;
@@ -71,26 +70,27 @@ public class DbReader {
         return switch (label) {
             case "Primitive" -> new PrimitiveNode(node.get("value"));
             case "Null" -> new NullNode();
+            case "String" -> new StringNode(node.get("value").asString());
             case "Object" -> new ObjectNode();
             case "Array" -> new ArrayNode();
-            case "String" -> new StringNode(node.get("value").asString());
-            case "Type" -> new TypeNode(node.get("name").asString());
+            case "Type" -> TypeNode.getInstance(node.get("name").asString());
             default -> throw new IllegalArgumentException("Unknown node label: " + label);
         };
     }
 
     private void createEdge(GraphNode from, GraphNode to, Relationship edge) {
-        if (from instanceof PrimitiveNode primitive && to instanceof TypeNode type)
-            primitive.setValue(dbToBoxedType((Value) primitive.getValue(), type.getName()));
-        else if (from instanceof ReferenceNode reference && to instanceof TypeNode type)
+        if (from instanceof PrimitiveNode primitive && to instanceof TypeNode type) {
+            primitive.setValue(toBoxed((Value) primitive.getValue(), type.getName()));
+            primitive.setType(type.getName());
+        } else if (from instanceof ReferenceNode reference && to instanceof TypeNode type)
             reference.setType(type.getName());
         else if (from instanceof ObjectNode object)
-            object.addField(edge.get("name").asString(), to);
+            object.setField(edge.get("name").asString(), to);
         else if (from instanceof ArrayNode array)
             array.setElement(edge.get("index").asInt(), to);
     }
 
-    private Object dbToBoxedType(Value value, String type) {
+    private Object toBoxed(Value value, String type) {
         return switch (type) {
             case "char" -> value.asString().charAt(0);
             case "byte" -> (byte) value.asInt();

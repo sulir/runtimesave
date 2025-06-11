@@ -13,6 +13,7 @@ public class UnsafeHelper {
             "float", float.class, "double", double.class, "boolean", boolean.class);
     private static final Unsafe unsafe = getUnsafe();
 
+    @SuppressWarnings("EmptyMethod")
     public static void ensureLoadedForJdi() { }
 
     public static Object allocateInstance(String className) {

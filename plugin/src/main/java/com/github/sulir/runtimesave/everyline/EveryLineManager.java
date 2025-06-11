@@ -1,11 +1,8 @@
 package com.github.sulir.runtimesave.everyline;
 
-import com.github.sulir.runtimesave.graph.JdiReader;
+import com.github.sulir.runtimesave.RuntimePersistenceService;
 import com.intellij.debugger.engine.DebugProcessEvents;
-import com.sun.jdi.AbsentInformationException;
-import com.sun.jdi.IncompatibleThreadStateException;
-import com.sun.jdi.Location;
-import com.sun.jdi.ReferenceType;
+import com.sun.jdi.*;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.EventRequestManager;
@@ -51,8 +48,8 @@ public class EveryLineManager {
         }
 
         try {
-            JdiReader saver = new JdiReader(event.thread().frame(0));
-            saver.saveThisAndLocals();
+            StackFrame frame = event.thread().frame(0);
+            RuntimePersistenceService.getInstance().saveFrame(frame);
         } catch (IncompatibleThreadStateException e) {
             throw new RuntimeException(e);
         }

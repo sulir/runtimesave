@@ -10,18 +10,20 @@ public class Database {
     private static Database instance;
 
     private final Driver driver;
+    private final String dbName;
 
     public static Database getInstance() {
         if (instance == null)
-            instance = new Database();
+            instance = new Database(URI, USER, PASSWORD, DB_NAME);
         return instance;
     }
 
-    protected Database() {
-        driver = GraphDatabase.driver(URI, AuthTokens.basic(USER, PASSWORD));
+    public Database(String uri, String user, String password, String dbName) {
+        driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
+        this.dbName = dbName;
     }
 
     public Session createSession() {
-        return driver.session(SessionConfig.forDatabase(DB_NAME));
+        return driver.session(SessionConfig.forDatabase(dbName));
     }
 }
