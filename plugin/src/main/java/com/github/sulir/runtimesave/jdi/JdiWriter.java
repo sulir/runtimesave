@@ -13,7 +13,7 @@ public class JdiWriter {
 
     private StackFrame frame;
     private final VirtualMachine vm;
-    private final Map<ReferenceNode, ObjectReference> visited = new HashMap<>();
+    private final Map<GraphNode, ObjectReference> visited = new HashMap<>();
 
     public JdiWriter(StackFrame frame) {
         this.frame = frame;
@@ -77,34 +77,35 @@ public class JdiWriter {
                 assigner.setValue(null);
             } else if (node instanceof StringNode stringNode) {
                 assigner.setValue(vm.mirrorOf(stringNode.getValue()));
-            } else if (node instanceof ReferenceNode referenceNode) {
-                ObjectReference existing = visited.get(referenceNode);
+            } else if (node instanceof ArrayNode || node instanceof ObjectNode) {
+                ObjectReference existing = visited.get(node);
                 if (existing != null) {
                     assigner.setValue(existing);
                     return;
                 }
 
-                ObjectReference object = null;
-                if (referenceNode instanceof ArrayNode arrayNode) {
-                    object = allocateArray(arrayNode);
-                    visited.put(arrayNode, object);
-                    assignElements((ArrayReference) object, arrayNode);
-                } else if (referenceNode instanceof ObjectNode objectNode) {
-                    object = allocateObject(objectNode);
+                if (node instanceof ArrayNode arrayNode) {
+                    ArrayReference array = allocateArray(arrayNode);
+                    visited.put(arrayNode, array);
+                    assignElements(array, arrayNode);
+                    assigner.setValue(array);
+                } else {
+                    ObjectNode objectNode = (ObjectNode) node;
+                    ObjectReference object = allocateObject(objectNode);
                     visited.put(objectNode, object);
                     assignFields(object, objectNode);
+                    assigner.setValue(object);
                 }
-                assigner.setValue(object);
             }
         } catch (InvalidTypeException | ClassNotLoadedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private ObjectReference allocateArray(ArrayNode node) {
+    private ArrayReference allocateArray(ArrayNode node) {
         Value result = invokeHelperMethod("allocateArray", "(Ljava/lang/String;I)Ljava/lang/Object;",
                 List.of(vm.mirrorOf(node.getType()), vm.mirrorOf(node.getSize())));
-        return (ObjectReference) result;
+        return (ArrayReference) result;
     }
 
     private void assignElements(ArrayReference array, ArrayNode node) {

@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class JdiReader {
     private final StackFrame frame;
-    private final Map<Long, ReferenceNode> created = new java.util.HashMap<>();
+    private final Map<Long, GraphNode> created = new java.util.HashMap<>();
 
     public JdiReader(StackFrame frame) {
         this.frame = frame;
@@ -36,9 +36,7 @@ public class JdiReader {
 
     private GraphNode createNode(Value value) {
         if (value instanceof PrimitiveValue primitive) {
-            PrimitiveNode primitiveNode = new PrimitiveNode(toBoxed(primitive));
-            primitiveNode.setType(primitive.type().name());
-            return primitiveNode;
+            return new PrimitiveNode(toBoxed(primitive), primitive.type().name());
         } else if (value == null) {
             return new NullNode();
         } else if (value instanceof StringReference string) {
@@ -48,18 +46,17 @@ public class JdiReader {
             if (existing != null)
                 return existing;
 
-            ReferenceNode node;
             if (value instanceof ArrayReference array) {
-                node = new ArrayNode();
+                ArrayNode node = new ArrayNode(object.referenceType().name());
                 created.put(array.uniqueID(), node);
-                addElements((ArrayNode) node, array);
+                addElements(node, array);
+                return node;
             } else {
-                node = new ObjectNode();
+                ObjectNode node = new ObjectNode(object.referenceType().name());
                 created.put(object.uniqueID(), node);
-                saveFields((ObjectNode) node, object);
+                saveFields(node, object);
+                return node;
             }
-            node.setType(object.referenceType().name());
-            return node;
         } else {
             throw new IllegalArgumentException("Unknown value type: " + value.type().name());
         }

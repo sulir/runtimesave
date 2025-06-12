@@ -36,7 +36,7 @@ public final class RuntimePersistenceService {
 
     public void saveFrame(StackFrame frame) {
         FrameNode frameNode = new JdiReader(frame).readFrame();
-        String frameId = dbWriter.write(frameNode);
+        String frameId = dbWriter.writeNode(frameNode);
         dbMetadata.addLocation(frameId, SourceLocation.fromJDI(frame.location()));
     }
 }

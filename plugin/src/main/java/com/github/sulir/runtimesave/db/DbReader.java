@@ -67,24 +67,20 @@ public class DbReader {
 
     private GraphNode createNode(Node node) {
         String label = node.labels().iterator().next();
+        String type = node.get("type").asString();
+
         return switch (label) {
-            case "Primitive" -> new PrimitiveNode(node.get("value"));
+            case "Primitive" -> new PrimitiveNode(toBoxed(node.get("value"), type), type);
             case "Null" -> new NullNode();
             case "String" -> new StringNode(node.get("value").asString());
-            case "Object" -> new ObjectNode();
-            case "Array" -> new ArrayNode();
-            case "Type" -> TypeNode.getInstance(node.get("name").asString());
+            case "Array" -> new ArrayNode(type);
+            case "Object" -> new ObjectNode(type);
             default -> throw new IllegalArgumentException("Unknown node label: " + label);
         };
     }
 
     private void createEdge(GraphNode from, GraphNode to, Relationship edge) {
-        if (from instanceof PrimitiveNode primitive && to instanceof TypeNode type) {
-            primitive.setValue(toBoxed((Value) primitive.getValue(), type.getName()));
-            primitive.setType(type.getName());
-        } else if (from instanceof ReferenceNode reference && to instanceof TypeNode type)
-            reference.setType(type.getName());
-        else if (from instanceof ObjectNode object)
+        if (from instanceof ObjectNode object)
             object.setField(edge.get("name").asString(), to);
         else if (from instanceof ArrayNode array)
             array.setElement(edge.get("index").asInt(), to);

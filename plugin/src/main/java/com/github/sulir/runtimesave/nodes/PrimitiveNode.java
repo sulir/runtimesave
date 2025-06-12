@@ -1,26 +1,19 @@
 package com.github.sulir.runtimesave.nodes;
 
 public class PrimitiveNode extends GraphNode {
-    private Object value;
-    private String type;
+    private final Object value;
+    private final String type;
 
-    public PrimitiveNode(Object value) {
+    public PrimitiveNode(Object value, String type) {
         this.value = value;
+        this.type = type;
     }
 
     public Object getValue() {
         return value;
     }
 
-    public void setValue(Object value) {
-        this.value = value;
-    }
-
     public String getType() {
         return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 }

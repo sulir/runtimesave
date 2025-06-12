@@ -4,7 +4,6 @@ import com.github.sulir.runtimesave.nodes.*;
 import org.neo4j.driver.Session;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 public class DbWriter {
     private final Database db;
@@ -13,7 +12,7 @@ public class DbWriter {
         this.db = db;
     }
 
-    public String write(GraphNode variableNode) {
+    public String writeNode(GraphNode variableNode) {
         List<Map<String, Object>> nodes = new ArrayList<>();
         Map<GraphNode, String> nodeToId = new java.util.HashMap<>();
         List<Map<String, Object>> edges = new ArrayList<>();
@@ -62,12 +61,16 @@ public class DbWriter {
         Map<String, Object> properties = new HashMap<>();
         properties.put("id", UUID.randomUUID().toString());
 
-        if (node instanceof PrimitiveNode primitive)
+        if (node instanceof PrimitiveNode primitive) {
             properties.put("value", primitive.getValue());
-        else if (node instanceof StringNode string)
+            properties.put("type", primitive.getType());
+        } else if (node instanceof StringNode string) {
             properties.put("value", string.getValue());
-        else if (node instanceof TypeNode type)
-            properties.put("name", type.getName());
+        } else if (node instanceof ArrayNode array) {
+            properties.put("type", array.getType());
+        } else if (node instanceof ObjectNode object) {
+            properties.put("type", object.getType());
+        }
 
         return properties;
     }
@@ -75,14 +78,10 @@ public class DbWriter {
     private Iterable<GraphNode> iterate(GraphNode node) {
         if (node instanceof FrameNode frame)
             return frame.getVariables().values();
-        else if (node instanceof PrimitiveNode primitive)
-            return List.of(TypeNode.getInstance(primitive.getType()));
-        else if (node instanceof ObjectNode object)
-            return Stream.concat(Stream.of(TypeNode.getInstance(object.getType())),
-                    object.getFields().values().stream())::iterator;
         else if (node instanceof ArrayNode array)
-            return Stream.concat(Stream.of(TypeNode.getInstance(array.getType())),
-                    array.getElements().stream())::iterator;
+            return array.getElements();
+        else if (node instanceof ObjectNode object)
+            return object.getFields().values();
         else
             return List.of();
     }
@@ -96,25 +95,17 @@ public class DbWriter {
                     edges.add(Map.of("from", from, "type", "HAS_VARIABLE",
                             "props", Map.of("name", key), "to", nodeToId.get(value)))
             );
-        } else if (node instanceof PrimitiveNode primitive) {
-            TypeNode type = TypeNode.getInstance(primitive.getType());
-            edges.add(Map.of("from", from, "type", "HAS_TYPE", "props", Map.of(), "to", nodeToId.get(type)));
-        } else if (node instanceof ReferenceNode reference) {
-            TypeNode type = TypeNode.getInstance(reference.getType());
-            edges.add(Map.of("from", from, "type", "HAS_TYPE", "props", Map.of(), "to", nodeToId.get(type)));
-
-            if (node instanceof ObjectNode object) {
-                object.getFields().forEach((key, value) ->
-                        edges.add(Map.of("from", from, "type", "HAS_FIELD",
-                                "props", Map.of("name", key), "to", nodeToId.get(value)))
-                );
-            } else if (node instanceof ArrayNode array) {
-                int index = 0;
-                for (GraphNode element : array.getElements()) {
-                    edges.add(Map.of("from", from, "type", "HAS_ELEMENT",
-                            "props", Map.of("index", index++), "to", nodeToId.get(element)));
-                }
+        } else if (node instanceof ArrayNode array) {
+            int index = 0;
+            for (GraphNode element : array.getElements()) {
+                edges.add(Map.of("from", from, "type", "HAS_ELEMENT",
+                        "props", Map.of("index", index++), "to", nodeToId.get(element)));
             }
+        } else if (node instanceof ObjectNode object) {
+            object.getFields().forEach((key, value) ->
+                    edges.add(Map.of("from", from, "type", "HAS_FIELD",
+                            "props", Map.of("name", key), "to", nodeToId.get(value)))
+            );
         }
 
         return edges;

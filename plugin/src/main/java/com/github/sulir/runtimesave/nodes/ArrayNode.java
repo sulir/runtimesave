@@ -3,20 +3,29 @@ package com.github.sulir.runtimesave.nodes;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ArrayNode extends ReferenceNode {
+public class ArrayNode extends GraphNode {
+    private final String type;
     private final ArrayList<GraphNode> elements = new ArrayList<>();
 
-    public GraphNode getElement(int index) {
-        return elements.get(index);
+    public ArrayNode(String type) {
+        this.type = type;
+    }
+
+    public String getType() {
+        return type;
     }
 
     public List<GraphNode> getElements() {
         return elements;
     }
 
-    public void setElement(int index, GraphNode value) {
+    public GraphNode getElement(int index) {
+        return elements.get(index);
+    }
+
+    public void setElement(int index, GraphNode element) {
         setSize(index + 1);
-        elements.set(index, value);
+        elements.set(index, element);
     }
 
     public int getSize() {
