@@ -30,7 +30,7 @@ public final class RuntimePersistenceService {
 
     public void loadFrame(StackFrame frame) throws MismatchException {
         String frameId = dbMetadata.findFrame(SourceLocation.fromJDI(frame.location()));
-        FrameNode frameNode = dbReader.readFrame(frameId);
+        FrameNode frameNode = dbReader.read(frameId, FrameNode.class);
         new JdiWriter(frame).writeFrame(frameNode);
     }
 

@@ -2,7 +2,6 @@ package com.github.sulir.runtimesave.db;
 
 import com.github.sulir.runtimesave.nodes.*;
 import org.neo4j.driver.Record;
-import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.types.Node;
@@ -19,35 +18,13 @@ public class DbReader {
         this.db = db;
     }
 
-    public FrameNode readFrame(String frameId) {
-        FrameNode frameNode = new FrameNode();
-
-        try (Session session = db.createSession()) {
-            String query = "MATCH (f:Frame)"
-                    + " WHERE elementId(f) = $frameId"
-                    + " MATCH (f)-[h:HAS_VARIABLE]->(v)"
-                    + " RETURN elementId(v) AS variableId, h.name AS name";
-            Result result = session.run(query, Map.of("frameId", frameId));
-
-            while (result.hasNext()) {
-                Record record = result.next();
-                String variableId = record.get("variableId").asString();
-
-                GraphNode variableNode = readVariable(variableId);
-                frameNode.setVariable(record.get("name").asString(), variableNode);
-            }
-
-            return frameNode;
-        }
-    }
-
-    public GraphNode readVariable(String variableId) {
+    public <T extends GraphNode> T read(String elementId, Class<T> type) {
         try (Session session = db.createSession()) {
             String query = "MATCH (v)"
                     + " WHERE elementId(v) = $variableId"
                     + " CALL apoc.path.subgraphAll(v, {relationshipFilter: '>'}) YIELD nodes, relationships"
                     + " RETURN nodes, relationships";
-            Record record = session.run(query, Map.of("variableId", variableId)).single();
+            Record record = session.run(query, Map.of("variableId", elementId)).single();
             List<Node> nodes = record.get("nodes").asList(Value::asNode);
             List<Relationship> edges = record.get("relationships").asList(Value::asRelationship);
 
@@ -61,7 +38,7 @@ public class DbReader {
                 createEdge(from, to, edge);
             }
 
-            return idToNode.get(variableId);
+            return type.cast(idToNode.get(elementId));
         }
     }
 
@@ -70,6 +47,7 @@ public class DbReader {
         String type = node.get("type").asString();
 
         return switch (label) {
+            case "Frame" -> new FrameNode();
             case "Primitive" -> new PrimitiveNode(toBoxed(node.get("value"), type), type);
             case "Null" -> new NullNode();
             case "String" -> new StringNode(node.get("value").asString());
@@ -80,7 +58,9 @@ public class DbReader {
     }
 
     private void createEdge(GraphNode from, GraphNode to, Relationship edge) {
-        if (from instanceof ObjectNode object)
+        if (from instanceof FrameNode frame)
+            frame.setVariable(edge.get("name").asString(), to);
+        else if (from instanceof ObjectNode object)
             object.setField(edge.get("name").asString(), to);
         else if (from instanceof ArrayNode array)
             array.setElement(edge.get("index").asInt(), to);
