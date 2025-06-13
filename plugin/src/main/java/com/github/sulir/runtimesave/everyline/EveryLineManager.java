@@ -1,6 +1,7 @@
 package com.github.sulir.runtimesave.everyline;
 
 import com.github.sulir.runtimesave.RuntimePersistenceService;
+import com.github.sulir.runtimesave.SourceLocation;
 import com.intellij.debugger.engine.DebugProcessEvents;
 import com.sun.jdi.*;
 import com.sun.jdi.event.BreakpointEvent;
@@ -14,7 +15,7 @@ public class EveryLineManager {
     public static final int MAX_HITS = 1;
 
     private final ReferenceType clazz;
-    private final Map<Location, Integer> hitCounts = new HashMap<>();
+    private final Map<String, Integer> hitCounts = new HashMap<>();
 
     public EveryLineManager(ReferenceType clazz) {
         this.clazz = clazz;
@@ -25,6 +26,9 @@ public class EveryLineManager {
 
         try {
             for (Location location : clazz.allLineLocations()) {
+                if (hitCounts.putIfAbsent(SourceLocation.fromJDI(location).toString(), 0) != null)
+                    continue;
+
                 EventRequestManager manager = clazz.virtualMachine().eventRequestManager();
                 BreakpointRequest request = manager.createBreakpointRequest(location);
 
@@ -35,22 +39,18 @@ public class EveryLineManager {
     }
 
     private void handleBreakpoint(BreakpointEvent event) {
-        int newHitCount = hitCounts.getOrDefault(event.location(), 0) + 1;
-        hitCounts.put(event.location(), newHitCount);
+        String classLine = SourceLocation.fromJDI(event.location()).toString();
+        int newHitCount = hitCounts.get(classLine) + 1;
+        hitCounts.put(classLine, newHitCount);
 
         if (newHitCount >= MAX_HITS)
             event.virtualMachine().eventRequestManager().deleteEventRequest(event.request());
 
         try {
             System.out.println(event.location().sourcePath() + ":" + event.location().lineNumber());
-        } catch (AbsentInformationException e) {
-            throw new RuntimeException(e);
-        }
-
-        try {
             StackFrame frame = event.thread().frame(0);
             RuntimePersistenceService.getInstance().saveFrame(frame);
-        } catch (IncompatibleThreadStateException e) {
+        } catch (AbsentInformationException | IncompatibleThreadStateException e) {
             throw new RuntimeException(e);
         }
     }
