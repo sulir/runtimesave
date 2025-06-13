@@ -38,76 +38,18 @@ public class DbWriter {
 
     private void traverse(GraphNode node, List<Map<String, Object>> nodes, Map<GraphNode, String> nodeToId,
                           List<Map<String, Object>> edges) {
-        String label = createLabel(node);
-        Map<String, Object> properties = createProperties(node);
+        ObjectMapper mapper = ObjectMapper.getInstance(node.getClass());
+        String label = mapper.getLabel();
+        Map<String, Object> properties = mapper.createProperties(node);
 
         nodes.add(Map.of("label", label, "properties", properties));
         nodeToId.put(node, (String) properties.get("id"));
 
-        for (GraphNode target : iterate(node)) {
+        for (GraphNode target : node.iterate()) {
             if (!nodeToId.containsKey(target))
                 traverse(target, nodes, nodeToId, edges);
         }
 
-        edges.addAll(createOutEdges(node, nodeToId));
-    }
-
-    private String createLabel(GraphNode node) {
-        String className = node.getClass().getSimpleName();
-        return className.substring(0, className.lastIndexOf("Node"));
-    }
-
-    private Map<String, Object> createProperties(GraphNode node) {
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("id", UUID.randomUUID().toString());
-
-        if (node instanceof PrimitiveNode primitive) {
-            properties.put("value", primitive.getValue());
-            properties.put("type", primitive.getType());
-        } else if (node instanceof StringNode string) {
-            properties.put("value", string.getValue());
-        } else if (node instanceof ArrayNode array) {
-            properties.put("type", array.getType());
-        } else if (node instanceof ObjectNode object) {
-            properties.put("type", object.getType());
-        }
-
-        return properties;
-    }
-
-    private Iterable<GraphNode> iterate(GraphNode node) {
-        if (node instanceof FrameNode frame)
-            return frame.getVariables().values();
-        else if (node instanceof ArrayNode array)
-            return array.getElements();
-        else if (node instanceof ObjectNode object)
-            return object.getFields().values();
-        else
-            return List.of();
-    }
-
-    private List<Map<String, Object>> createOutEdges(GraphNode node, Map<GraphNode, String> nodeToId) {
-        List<Map<String, Object>> edges = new ArrayList<>();
-        String from = nodeToId.get(node);
-
-        if (node instanceof FrameNode frame) {
-            frame.getVariables().forEach((key, value) ->
-                    edges.add(Map.of("from", from, "type", "HAS_VARIABLE",
-                            "props", Map.of("name", key), "to", nodeToId.get(value)))
-            );
-        } else if (node instanceof ArrayNode array) {
-            int index = 0;
-            for (GraphNode element : array.getElements()) {
-                edges.add(Map.of("from", from, "type", "HAS_ELEMENT",
-                        "props", Map.of("index", index++), "to", nodeToId.get(element)));
-            }
-        } else if (node instanceof ObjectNode object) {
-            object.getFields().forEach((key, value) ->
-                    edges.add(Map.of("from", from, "type", "HAS_FIELD",
-                            "props", Map.of("name", key), "to", nodeToId.get(value)))
-            );
-        }
-
-        return edges;
+        edges.addAll(mapper.createOutEdges(node, nodeToId));
     }
 }

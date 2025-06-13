@@ -25,4 +25,9 @@ public class ObjectNode extends GraphNode {
     public void setField(String name, GraphNode field) {
         fields.put(name, field);
     }
+
+    @Override
+    public Iterable<GraphNode> iterate() {
+        return fields.values();
+    }
 }

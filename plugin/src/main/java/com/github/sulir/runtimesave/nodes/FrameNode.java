@@ -17,4 +17,9 @@ public class FrameNode extends GraphNode {
     public void setVariable(String name, GraphNode variable) {
         variables.put(name, variable);
     }
+
+    @Override
+    public Iterable<GraphNode> iterate() {
+        return variables.values();
+    }
 }

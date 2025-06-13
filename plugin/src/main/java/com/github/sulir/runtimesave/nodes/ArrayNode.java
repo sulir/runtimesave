@@ -37,4 +37,9 @@ public class ArrayNode extends GraphNode {
         while (elements.size() < size)
             elements.add(null);
     }
+
+    @Override
+    public Iterable<GraphNode> iterate() {
+        return elements;
+    }
 }

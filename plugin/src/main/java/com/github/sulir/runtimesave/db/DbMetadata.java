@@ -27,8 +27,7 @@ public class DbMetadata {
 
             return result.single().get("frameId").asString();
         } catch (NoSuchRecordException e) {
-            throw new MismatchException(String.format("No or multiple frames found for %s.%s:%d",
-                location.className(), location.method(), location.line()));
+            throw new MismatchException("No or multiple frames found for " + location);
         }
     }
 

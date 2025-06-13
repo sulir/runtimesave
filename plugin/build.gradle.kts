@@ -24,6 +24,10 @@ intellijPlatform {
     buildSearchableOptions = false
 }
 
+tasks.withType<JavaCompile> {
+    options.compilerArgs.add("-parameters")
+}
+
 tasks.assemble {
     dependsOn(tasks.buildPlugin)
 }

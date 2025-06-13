@@ -72,7 +72,7 @@ public class JdiWriter {
     private void assignValue(ValueAssigner assigner, GraphNode node) {
         try {
             if (node instanceof PrimitiveNode primitiveNode) {
-                assigner.setValue(toJdiPrimitive(primitiveNode.getValue()));
+                assigner.setValue(toJdiPrimitive(primitiveNode));
             } else if (node instanceof NullNode) {
                 assigner.setValue(null);
             } else if (node instanceof StringNode stringNode) {
@@ -149,16 +149,18 @@ public class JdiWriter {
         }
     }
 
-    private PrimitiveValue toJdiPrimitive(Object value) {
-        return switch(value.getClass().getSimpleName()) {
-            case "Character" -> vm.mirrorOf((char) value);
-            case "Byte" -> vm.mirrorOf((byte) value);
-            case "Short" -> vm.mirrorOf((short) value);
-            case "Integer" -> vm.mirrorOf((int) value);
-            case "Long" -> vm.mirrorOf((long) value);
-            case "Float" -> vm.mirrorOf((float) value);
-            case "Double" -> vm.mirrorOf((double) value);
-            case "Boolean" -> vm.mirrorOf((boolean) value);
+    private PrimitiveValue toJdiPrimitive(PrimitiveNode node) {
+        Object value = node.getValue();
+
+        return switch(node.getType()) {
+            case "char" -> vm.mirrorOf((char) value);
+            case "byte" -> vm.mirrorOf((byte) value);
+            case "short" -> vm.mirrorOf((short) value);
+            case "int" -> vm.mirrorOf((int) value);
+            case "long" -> vm.mirrorOf((long) value);
+            case "float" -> vm.mirrorOf((float) value);
+            case "double" -> vm.mirrorOf((double) value);
+            case "boolean" -> vm.mirrorOf((boolean) value);
             default -> throw new IllegalArgumentException("Unknown primitive type: " + value.getClass());
         };
     }
