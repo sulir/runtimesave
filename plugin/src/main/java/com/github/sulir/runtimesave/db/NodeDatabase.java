@@ -39,7 +39,7 @@ public class NodeDatabase {
                 GraphNode from = idToNode.get(edge.startNodeElementId());
                 GraphNode to = idToNode.get(edge.endNodeElementId());
                 Map<String, Value> properties = edge.asMap(Values.ofValue());
-                ObjectMapper.forClass(from.getClass()).connectNodeObjects(from, to, edge.type(), properties);
+                ObjectMapper.forClass(from.getClass()).connectNodeObjects(from, to, properties);
             }
 
             return type.cast(idToNode.get(elementId));

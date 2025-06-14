@@ -15,7 +15,8 @@ public class ArrayNode extends GraphNode {
         return type;
     }
 
-    public SortedMap<Integer, GraphNode> getElements() {
+    @Override
+    public SortedMap<Integer, GraphNode> outEdges() {
         return elements;
     }
 
@@ -27,12 +28,7 @@ public class ArrayNode extends GraphNode {
         elements.put(index, element);
     }
 
-    public int getLength() {
+    public int length() {
         return elements.isEmpty() ? 0 : elements.lastKey() + 1;
-    }
-
-    @Override
-    public SortedMap<Integer, GraphNode> outEdges() {
-        return getElements();
     }
 }

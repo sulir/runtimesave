@@ -6,7 +6,8 @@ import java.util.TreeMap;
 public class FrameNode extends GraphNode {
     private final SortedMap<String, GraphNode> variables = new TreeMap<>();
 
-    public SortedMap<String, GraphNode> getVariables() {
+    @Override
+    public SortedMap<String, GraphNode> outEdges() {
         return variables;
     }
 
@@ -16,10 +17,5 @@ public class FrameNode extends GraphNode {
 
     public void setVariable(String name, GraphNode variable) {
         variables.put(name, variable);
-    }
-
-    @Override
-    public SortedMap<String, GraphNode> outEdges() {
-        return getVariables();
     }
 }

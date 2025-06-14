@@ -8,11 +8,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 public class ObjectMapper {
     private static final Map<Class<? extends GraphNode>, ObjectMapper> classToMapper = new HashMap<>();
@@ -21,9 +17,9 @@ public class ObjectMapper {
 
     private final Class<? extends GraphNode> clazz;
     private final String label;
-    private final Constructor<? extends GraphNode> constructor;
+    private final MethodHandle constructorHandle;
     private final List<Property> properties = new ArrayList<>();
-    private final Map<String, Relation> relations = new HashMap<>();
+    private Relation relation;
 
     public static ObjectMapper forClass(Class<? extends GraphNode> nodeClass) {
         return classToMapper.computeIfAbsent(nodeClass, ObjectMapper::new);
@@ -36,8 +32,9 @@ public class ObjectMapper {
     public ObjectMapper(Class<? extends GraphNode> clazz) {
         this.clazz = clazz;
         label = clazz.getSimpleName().substring(0, clazz.getSimpleName().lastIndexOf("Node"));
-        constructor = findConstructor();
-        findProperties();
+        Constructor<? extends GraphNode> constructor = findConstructor();
+        constructorHandle = uncheck(() -> lookup.unreflectConstructor(constructor));
+        findProperties(constructor);
         findRelations();
     }
 
@@ -54,31 +51,29 @@ public class ObjectMapper {
         Object[] params = new Object[properties.size()];
         for (int i = 0; i < params.length; i++)
             params[i] = nodeProperties.get(properties.get(i).name()).as(properties.get(i).type());
-        return uncheck(() -> constructor.newInstance(params));
+        return uncheck(() -> (GraphNode) constructorHandle.invokeWithArguments(params));
     }
 
-    public void connectNodeObjects(GraphNode from, GraphNode to, String edgeType, Map<String, Value> edgeProperties) {
-        Relation relation = relations.get(edgeType);
-        Value key = edgeProperties.get(relation.property());
-        uncheck(() -> relation.setter().invoke(from, key.as(relation.keyType()), to));
+    public void connectNodeObjects(GraphNode from, GraphNode to, Map<String, Value> edgeProperties) {
+        Value key = edgeProperties.get(relation.propertyName());
+        @SuppressWarnings("unchecked")
+        SortedMap<Object, GraphNode> edges = (SortedMap<Object, GraphNode>) from.outEdges();
+        edges.put(key.as(relation.propertyType()), to);
     }
 
-    public Map<String, Object> getProperties(GraphNode node) {
-        return properties.stream().collect(Collectors.toMap(
-                Property::name,
-                p -> uncheck(() -> p.getter().invoke(node)))
-        );
+    public SortedMap<String, Object> getProperties(GraphNode node) {
+        SortedMap<String, Object> map = new TreeMap<>();
+        for (Property p : properties)
+            map.put(p.name(), uncheck(() -> p.getter().invoke(node)));
+        return map;
     }
 
     public List<Map<String, Object>> getRelationships(GraphNode node, Map<GraphNode, String> nodeToId) {
         List<Map<String, Object>> edges = new ArrayList<>();
         String from = nodeToId.get(node);
 
-        relations.forEach((type, relation) -> {
-            Map<?, ?> items = (Map<?, ?>) uncheck(() -> relation.getter().invoke(node));
-            items.forEach((key, value) -> edges.add(Map.of("from", from, "type", type,
-                    "props", Map.of(relation.property(), key), "to", nodeToId.get((GraphNode) value))));
-        });
+        node.outEdges().forEach((key, value) -> edges.add(Map.of("from", from, "type", relation.type(),
+                "props", Map.of(relation.propertyName(), key), "to", nodeToId.get(value))));
 
         return edges;
     }
@@ -90,7 +85,7 @@ public class ObjectMapper {
         return uncheck(() -> clazz.getConstructor(constructors[0].getParameterTypes()));
     }
 
-    private void findProperties() {
+    private void findProperties(Constructor<? extends GraphNode> constructor) {
         for (Parameter param : constructor.getParameters()) {
             uncheck(() -> {
                 String name = param.getName();
@@ -102,33 +97,22 @@ public class ObjectMapper {
 
     private void findRelations() {
         for (Method method : clazz.getMethods()) {
-            if (!method.getName().startsWith("set"))
-                continue;
-
             Parameter[] params = method.getParameters();
-            if (params.length != 2 || !GraphNode.class.isAssignableFrom(params[1].getType()))
+            if (!method.getName().startsWith("set") || params.length != 2
+                    || !GraphNode.class.isAssignableFrom(params[1].getType()))
                 continue;
 
-            String noun = method.getName().substring(3);
-            String type = "HAS_" + noun.toUpperCase();
-            String property = params[0].getName();
-            MethodHandle getter = uncheck(() -> lookup.unreflect(clazz.getMethod("get" + pluralize(noun))));
-            MethodHandle setter = uncheck(() -> lookup.unreflect(method));
-            Class<?> keyType = params[0].getType();
-            relations.put(type, new Relation(property, getter, setter, keyType));
-        }
-    }
+            if (relation != null)
+                throw new IllegalArgumentException("Multiple relation types are unsupported");
 
-    private static String pluralize(String noun) {
-        return noun.matches(".*(s|sh|ch|x|z|o)$") ? noun + "es" :
-               noun.matches(".*[^aeiou]y$") ? noun.replaceAll("y$", "ies") :
-               noun.matches(".*(f|fe)$") ? noun.replaceAll("f?e?$", "ves") :
-               noun + "s";
+            String type = "HAS_" + method.getName().substring(3).toUpperCase();
+            relation = new Relation(type, params[0].getName(), params[0].getType());
+        }
     }
 
     private record Property(String name, MethodHandle getter, Class<?> type) { }
 
-    private record Relation(String property, MethodHandle getter, MethodHandle setter, Class<?> keyType) { }
+    private record Relation(String type, String propertyName, Class<?> propertyType) { }
 
     private interface Throwing<T> {
         T call() throws Throwable;

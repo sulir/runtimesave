@@ -14,7 +14,8 @@ public class ObjectNode extends GraphNode {
         return type;
     }
 
-    public SortedMap<String, GraphNode> getFields() {
+    @Override
+    public SortedMap<String, GraphNode> outEdges() {
         return fields;
     }
 
@@ -24,10 +25,5 @@ public class ObjectNode extends GraphNode {
 
     public void setField(String name, GraphNode field) {
         fields.put(name, field);
-    }
-
-    @Override
-    public SortedMap<String, GraphNode> outEdges() {
-        return getFields();
     }
 }
