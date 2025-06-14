@@ -1,9 +1,11 @@
 package com.github.sulir.runtimesave.db;
 
+import com.github.sulir.runtimesave.ObjectMapper;
 import com.github.sulir.runtimesave.nodes.*;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
 import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
@@ -29,13 +31,15 @@ public class NodeDatabase {
             Map<String, GraphNode> idToNode = new HashMap<>();
             for (Node node : nodes) {
                 String label = node.labels().iterator().next();
-                idToNode.put(node.elementId(), ObjectMapper.forLabel(label).createNodeObject(node));
+                Map<String, Value> properties = node.asMap(Values.ofValue());
+                idToNode.put(node.elementId(), ObjectMapper.forLabel(label).createNodeObject(properties));
             }
 
             for (Relationship edge : edges) {
                 GraphNode from = idToNode.get(edge.startNodeElementId());
                 GraphNode to = idToNode.get(edge.endNodeElementId());
-                ObjectMapper.forClass(from.getClass()).connectNodeObjects(from, to, edge);
+                Map<String, Value> properties = edge.asMap(Values.ofValue());
+                ObjectMapper.forClass(from.getClass()).connectNodeObjects(from, to, edge.type(), properties);
             }
 
             return type.cast(idToNode.get(elementId));
@@ -70,7 +74,7 @@ public class NodeDatabase {
                           List<Map<String, Object>> edges) {
         ObjectMapper mapper = ObjectMapper.forClass(node.getClass());
 
-        Map<String, Object> properties = mapper.createProperties(node);
+        Map<String, Object> properties = mapper.getProperties(node);
         String id = UUID.randomUUID().toString();
         properties.put("id", id);
 
@@ -82,6 +86,6 @@ public class NodeDatabase {
                 traverse(target, nodes, nodeToId, edges);
         }
 
-        edges.addAll(mapper.createOutEdges(node, nodeToId));
+        edges.addAll(mapper.getRelationships(node, nodeToId));
     }
 }

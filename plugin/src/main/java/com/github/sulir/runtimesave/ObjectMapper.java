@@ -1,16 +1,17 @@
-package com.github.sulir.runtimesave.db;
+package com.github.sulir.runtimesave;
 
 import com.github.sulir.runtimesave.nodes.GraphNode;
 import org.neo4j.driver.Value;
-import org.neo4j.driver.types.Node;
-import org.neo4j.driver.types.Relationship;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ObjectMapper {
@@ -49,27 +50,27 @@ public class ObjectMapper {
         return label;
     }
 
-    public GraphNode createNodeObject(Node node) {
+    public GraphNode createNodeObject(Map<String, Value> nodeProperties) {
         Object[] params = new Object[properties.size()];
         for (int i = 0; i < params.length; i++)
-            params[i] = node.get(properties.get(i).name()).as(properties.get(i).type());
+            params[i] = nodeProperties.get(properties.get(i).name()).as(properties.get(i).type());
         return uncheck(() -> constructor.newInstance(params));
     }
 
-    public void connectNodeObjects(GraphNode from, GraphNode to, Relationship edge) {
-        Relation relation = relations.get(edge.type());
-        Value keyOrIndex = edge.get(relation.property());
-        uncheck(() -> relation.setter().invoke(from, keyOrIndex.as(relation.keyType()), to));
+    public void connectNodeObjects(GraphNode from, GraphNode to, String edgeType, Map<String, Value> edgeProperties) {
+        Relation relation = relations.get(edgeType);
+        Value key = edgeProperties.get(relation.property());
+        uncheck(() -> relation.setter().invoke(from, key.as(relation.keyType()), to));
     }
 
-    public Map<String, Object> createProperties(GraphNode node) {
+    public Map<String, Object> getProperties(GraphNode node) {
         return properties.stream().collect(Collectors.toMap(
                 Property::name,
                 p -> uncheck(() -> p.getter().invoke(node)))
         );
     }
 
-    public List<Map<String, Object>> createOutEdges(GraphNode node, Map<GraphNode, String> nodeToId) {
+    public List<Map<String, Object>> getRelationships(GraphNode node, Map<GraphNode, String> nodeToId) {
         List<Map<String, Object>> edges = new ArrayList<>();
         String from = nodeToId.get(node);
 
