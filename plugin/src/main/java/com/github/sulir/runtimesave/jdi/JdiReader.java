@@ -46,17 +46,16 @@ public class JdiReader {
             if (existing != null)
                 return existing;
 
-            if (value instanceof ArrayReference array) {
-                ArrayNode node = new ArrayNode(object.referenceType().name());
-                created.put(array.uniqueID(), node);
-                addElements(node, array);
-                return node;
-            } else {
-                ObjectNode node = new ObjectNode(object.referenceType().name());
-                created.put(object.uniqueID(), node);
-                saveFields(node, object);
-                return node;
-            }
+            String type = object.referenceType().name();
+            GraphNode node = value instanceof ArrayReference ? new ArrayNode(type) : new ObjectNode(type);
+            created.put(object.uniqueID(), node);
+
+            if (value instanceof ArrayReference array)
+                addElements((ArrayNode) node, array);
+            else
+                saveFields((ObjectNode) node, object);
+
+            return node;
         } else {
             throw new IllegalArgumentException("Unknown value type: " + value.type().name());
         }

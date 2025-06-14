@@ -1,10 +1,11 @@
 package com.github.sulir.runtimesave.nodes;
 
+import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 public class FrameNode extends GraphNode {
-    private final SortedMap<String, GraphNode> variables = new TreeMap<>();
+    private SortedMap<String, GraphNode> variables = new TreeMap<>();
 
     @Override
     public SortedMap<String, GraphNode> outEdges() {
@@ -17,5 +18,10 @@ public class FrameNode extends GraphNode {
 
     public void setVariable(String name, GraphNode variable) {
         variables.put(name, variable);
+    }
+
+    @Override
+    public void freeze() {
+        variables = Collections.unmodifiableSortedMap(variables);
     }
 }

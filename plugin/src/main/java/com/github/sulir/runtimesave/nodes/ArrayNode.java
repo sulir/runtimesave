@@ -1,11 +1,13 @@
 package com.github.sulir.runtimesave.nodes;
 
+
+import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 public class ArrayNode extends GraphNode {
     private final String type;
-    private final SortedMap<Integer, GraphNode> elements = new TreeMap<>();
+    private SortedMap<Integer, GraphNode> elements = new TreeMap<>();
 
     public ArrayNode(String type) {
         this.type = type;
@@ -30,5 +32,10 @@ public class ArrayNode extends GraphNode {
 
     public int length() {
         return elements.isEmpty() ? 0 : elements.lastKey() + 1;
+    }
+
+    @Override
+    public void freeze() {
+        elements = Collections.unmodifiableSortedMap(elements);
     }
 }

@@ -4,7 +4,7 @@ import java.util.*;
 
 public class ObjectNode extends GraphNode {
     private final String type;
-    private final SortedMap<String, GraphNode> fields = new TreeMap<>();
+    private SortedMap<String, GraphNode> fields = new TreeMap<>();
 
     public ObjectNode(String type) {
         this.type = type;
@@ -25,5 +25,10 @@ public class ObjectNode extends GraphNode {
 
     public void setField(String name, GraphNode field) {
         fields.put(name, field);
+    }
+
+    @Override
+    public void freeze() {
+        fields = Collections.unmodifiableSortedMap(fields);
     }
 }
