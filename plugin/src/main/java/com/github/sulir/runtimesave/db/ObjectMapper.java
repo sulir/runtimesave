@@ -11,6 +11,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ObjectMapper {
     private static final Map<Class<? extends GraphNode>, ObjectMapper> classToMapper = new HashMap<>();
@@ -23,12 +24,12 @@ public class ObjectMapper {
     private final List<Property> properties = new ArrayList<>();
     private final Map<String, Relation> relations = new HashMap<>();
 
-    public static ObjectMapper getInstance(Class<? extends GraphNode> nodeClass) {
+    public static ObjectMapper forClass(Class<? extends GraphNode> nodeClass) {
         return classToMapper.computeIfAbsent(nodeClass, ObjectMapper::new);
     }
 
-    public static ObjectMapper getInstance(String nodeLabel) {
-        return stringToMapper.computeIfAbsent(nodeLabel, label -> getInstance(uncheck(() -> findClass(nodeLabel))));
+    public static ObjectMapper forLabel(String nodeLabel) {
+        return stringToMapper.computeIfAbsent(nodeLabel, label -> forClass(uncheck(() -> findClass(label))));
     }
 
     public ObjectMapper(Class<? extends GraphNode> clazz) {
@@ -48,27 +49,24 @@ public class ObjectMapper {
         return label;
     }
 
-    public GraphNode createNode(Node node) {
+    public GraphNode createNodeObject(Node node) {
         Object[] params = new Object[properties.size()];
         for (int i = 0; i < params.length; i++)
-            params[i] = node.get(properties.get(i).name()).asObject();
+            params[i] = node.get(properties.get(i).name()).as(properties.get(i).type());
         return uncheck(() -> constructor.newInstance(params));
     }
 
-    public Map<String, Object> createProperties(GraphNode node) {
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("id", UUID.randomUUID().toString());
-
-        for (Property property : this.properties)
-            uncheck(() -> properties.put(property.name(), property.getter().invoke(node)));
-
-        return properties;
-    }
-
-    public void createEdge(GraphNode from, GraphNode to, Relationship edge) {
+    public void connectNodeObjects(GraphNode from, GraphNode to, Relationship edge) {
         Relation relation = relations.get(edge.type());
         Value keyOrIndex = edge.get(relation.property());
-        uncheck(() -> relation.setter().invoke(from, keyOrIndex.asObject(), to));
+        uncheck(() -> relation.setter().invoke(from, keyOrIndex.as(relation.keyType()), to));
+    }
+
+    public Map<String, Object> createProperties(GraphNode node) {
+        return properties.stream().collect(Collectors.toMap(
+                Property::name,
+                p -> uncheck(() -> p.getter().invoke(node)))
+        );
     }
 
     public List<Map<String, Object>> createOutEdges(GraphNode node, Map<GraphNode, String> nodeToId) {
@@ -103,7 +101,7 @@ public class ObjectMapper {
             uncheck(() -> {
                 String name = param.getName();
                 Method getter = clazz.getMethod("get" + name.substring(0, 1).toUpperCase() + name.substring(1));
-                return properties.add(new Property(name, lookup.unreflect(getter)));
+                return properties.add(new Property(name, lookup.unreflect(getter), param.getType()));
             });
         }
     }
@@ -122,7 +120,8 @@ public class ObjectMapper {
             String property = params[0].getName();
             MethodHandle getter = uncheck(() -> lookup.unreflect(clazz.getMethod("get" + pluralize(noun))));
             MethodHandle setter = uncheck(() -> lookup.unreflect(method));
-            relations.put(type, new Relation(property, getter, setter));
+            Class<?> keyType = params[0].getType();
+            relations.put(type, new Relation(property, getter, setter, keyType));
         }
     }
 
@@ -133,9 +132,9 @@ public class ObjectMapper {
                noun + "s";
     }
 
-    private record Property(String name, MethodHandle getter) { }
+    private record Property(String name, MethodHandle getter, Class<?> type) { }
 
-    private record Relation(String property, MethodHandle getter, MethodHandle setter) { }
+    private record Relation(String property, MethodHandle getter, MethodHandle setter, Class<?> keyType) { }
 
     private interface Throwing<T> {
         T call() throws Throwable;

@@ -8,10 +8,10 @@ import org.neo4j.driver.exceptions.NoSuchRecordException;
 
 import java.util.Map;
 
-public class DbMetadata {
-    private final Database db;
+public class Metadata {
+    private final DbConnection db;
 
-    public DbMetadata(Database db) {
+    public Metadata(DbConnection db) {
         this.db = db;
     }
 
