@@ -104,12 +104,12 @@ public class JdiWriter {
 
     private ArrayReference allocateArray(ArrayNode node) {
         Value result = invokeHelperMethod("allocateArray", "(Ljava/lang/String;I)Ljava/lang/Object;",
-                List.of(vm.mirrorOf(node.getType()), vm.mirrorOf(node.getSize())));
+                List.of(vm.mirrorOf(node.getType()), vm.mirrorOf(node.getLength())));
         return (ArrayReference) result;
     }
 
     private void assignElements(ArrayReference array, ArrayNode node) {
-        int size = node.getSize();
+        int size = node.getLength();
 
         for (int i = 0; i < size; i++)
             assignElement(array, i, node.getElement(i));

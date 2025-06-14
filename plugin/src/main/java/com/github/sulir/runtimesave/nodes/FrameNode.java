@@ -19,7 +19,7 @@ public class FrameNode extends GraphNode {
     }
 
     @Override
-    public Iterable<GraphNode> iterate() {
-        return variables.values();
+    public SortedMap<String, GraphNode> outEdges() {
+        return getVariables();
     }
 }

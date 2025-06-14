@@ -1,11 +1,11 @@
 package com.github.sulir.runtimesave.nodes;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class ArrayNode extends GraphNode {
     private final String type;
-    private final ArrayList<GraphNode> elements = new ArrayList<>();
+    private final SortedMap<Integer, GraphNode> elements = new TreeMap<>();
 
     public ArrayNode(String type) {
         this.type = type;
@@ -15,7 +15,7 @@ public class ArrayNode extends GraphNode {
         return type;
     }
 
-    public List<GraphNode> getElements() {
+    public SortedMap<Integer, GraphNode> getElements() {
         return elements;
     }
 
@@ -24,22 +24,15 @@ public class ArrayNode extends GraphNode {
     }
 
     public void setElement(int index, GraphNode element) {
-        setSize(index + 1);
-        elements.set(index, element);
+        elements.put(index, element);
     }
 
-    public int getSize() {
-        return elements.size();
-    }
-
-    public void setSize(int size) {
-        elements.ensureCapacity(size);
-        while (elements.size() < size)
-            elements.add(null);
+    public int getLength() {
+        return elements.isEmpty() ? 0 : elements.lastKey() + 1;
     }
 
     @Override
-    public Iterable<GraphNode> iterate() {
-        return elements;
+    public SortedMap<Integer, GraphNode> outEdges() {
+        return getElements();
     }
 }

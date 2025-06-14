@@ -27,7 +27,7 @@ public class ObjectNode extends GraphNode {
     }
 
     @Override
-    public Iterable<GraphNode> iterate() {
-        return fields.values();
+    public SortedMap<String, GraphNode> outEdges() {
+        return getFields();
     }
 }

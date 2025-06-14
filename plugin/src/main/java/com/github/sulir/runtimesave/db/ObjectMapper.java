@@ -74,16 +74,9 @@ public class ObjectMapper {
         String from = nodeToId.get(node);
 
         relations.forEach((type, relation) -> {
-            Object items = uncheck(() -> relation.getter().invoke(node));
-            if (items instanceof Map<?,?> map) {
-                map.forEach((key, value) -> edges.add(Map.of("from", from, "type", type,
-                        "props", Map.of(relation.property(), key), "to", nodeToId.get((GraphNode) value))));
-            } else if (items instanceof List<?> list) {
-                int index = 0;
-                for (var element : list)
-                    edges.add(Map.of("from", from, "type", type, "props", Map.of(relation.property(), index++),
-                            "to", nodeToId.get((GraphNode) element)));
-            }
+            Map<?, ?> items = (Map<?, ?>) uncheck(() -> relation.getter().invoke(node));
+            items.forEach((key, value) -> edges.add(Map.of("from", from, "type", type,
+                    "props", Map.of(relation.property(), key), "to", nodeToId.get((GraphNode) value))));
         });
 
         return edges;

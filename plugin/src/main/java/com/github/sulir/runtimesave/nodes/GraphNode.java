@@ -1,9 +1,14 @@
 package com.github.sulir.runtimesave.nodes;
 
-import java.util.List;
+import java.util.Collections;
+import java.util.SortedMap;
 
 public abstract class GraphNode {
+    public SortedMap<?, GraphNode> outEdges() {
+        return Collections.emptySortedMap();
+    }
+
     public Iterable<GraphNode> iterate() {
-        return List.of();
+        return outEdges().values();
     }
 }
