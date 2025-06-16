@@ -81,7 +81,7 @@ public class NodeDatabase {
         nodes.add(Map.of("label", mapper.getLabel(), "properties", properties));
         nodeToId.put(node, id);
 
-        for (GraphNode target : node.iterate())
+        for (GraphNode target : node.targets())
             if (!nodeToId.containsKey(target))
                 traverse(target, nodes, nodeToId, edges);
 

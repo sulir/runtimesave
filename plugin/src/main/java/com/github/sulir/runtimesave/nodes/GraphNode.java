@@ -4,14 +4,15 @@ import com.github.sulir.runtimesave.ObjectMapper;
 import com.github.sulir.runtimesave.hash.GraphHasher;
 import com.github.sulir.runtimesave.hash.Hash;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.SortedMap;
+import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class GraphNode {
     private Hash hash;
+
+    public String label() {
+        return ObjectMapper.forClass(getClass()).getLabel();
+    }
 
     public SortedMap<String, Object> properties() {
         return ObjectMapper.forClass(getClass()).getProperties(this);
@@ -21,7 +22,7 @@ public abstract class GraphNode {
         return Collections.emptySortedMap();
     }
 
-    public Iterable<GraphNode> iterate() {
+    public Collection<GraphNode> targets() {
         return outEdges().values();
     }
 
@@ -46,8 +47,20 @@ public abstract class GraphNode {
         function.accept(this);
         visited.add(this);
 
-        for (GraphNode target : iterate())
+        for (GraphNode target : targets())
             if (!visited.contains(target))
                 target.traverse(function, visited);
+    }
+
+    @Override
+    public String toString() {
+        String nodeInfo = label() + "@" + Integer.toHexString(hashCode()) + "(";
+        String properties = properties().values().toString();
+        StringBuilder result = new StringBuilder(nodeInfo + properties.substring(1, properties.length() - 1));
+        outEdges().forEach((key, target) -> {
+            String targetInfo = target.label() + "@" + Integer.toHexString(target.hashCode());
+            result.append(", ").append(key).append("->").append(targetInfo);
+        });
+        return result + ")";
     }
 }
