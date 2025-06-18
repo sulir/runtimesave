@@ -2,13 +2,13 @@ package com.github.sulir.runtimesave.nodes;
 
 import com.github.sulir.runtimesave.ObjectMapper;
 import com.github.sulir.runtimesave.hash.GraphHasher;
-import com.github.sulir.runtimesave.hash.Hash;
+import com.github.sulir.runtimesave.hash.NodeHash;
 
 import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class GraphNode {
-    private Hash hash;
+    private NodeHash hash;
 
     public String label() {
         return ObjectMapper.forClass(getClass()).getLabel();
@@ -30,14 +30,14 @@ public abstract class GraphNode {
         traverse(function, new HashSet<>());
     }
 
-    public Hash hash() {
+    public NodeHash hash() {
         if (hash == null)
-            new GraphHasher(this).updateHashes();
+            new GraphHasher(this).assignHashes();
 
         return hash;
     }
 
-    public void setHash(Hash hash) {
+    public void setHash(NodeHash hash) {
         this.hash = hash;
     }
 

@@ -11,10 +11,10 @@ public class GraphHasher {
         this.root = root;
     }
 
-    public void updateHashes() {
+    public void assignHashes() {
+        root.traverse(GraphNode::freeze);
         List<StrongComponent> components = new TarjanScc(root).computeComponents();
 
-        root.traverse(GraphNode::freeze);
-        root.traverse(node -> node.setHash(new Hash()));
+        root.traverse(node -> node.setHash(new NodeHash(new byte[0])));
     }
 }
