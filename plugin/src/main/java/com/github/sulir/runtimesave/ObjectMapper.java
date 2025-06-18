@@ -10,6 +10,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
 
+import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
+
 public class ObjectMapper {
     private static final Map<Class<? extends GraphNode>, ObjectMapper> classToMapper = new HashMap<>();
     private static final Map<String, ObjectMapper> stringToMapper = new HashMap<>();
@@ -113,16 +115,4 @@ public class ObjectMapper {
     private record Property(String name, MethodHandle getter, Class<?> type) { }
 
     private record Relation(String type, String propertyName, Class<?> propertyType) { }
-
-    private interface Throwing<T> {
-        T call() throws Throwable;
-    }
-
-    private static <T> T uncheck(Throwing<T> callable) {
-        try {
-            return callable.call();
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

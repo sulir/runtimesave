@@ -1,7 +1,6 @@
 package com.github.sulir.runtimesave.savepoints;
 
 import com.github.sulir.runtimesave.RuntimePersistenceService;
-import com.intellij.debugger.engine.evaluation.EvaluateException;
 import com.intellij.debugger.engine.jdi.StackFrameProxy;
 import com.intellij.debugger.impl.DebuggerManagerListener;
 import com.intellij.debugger.impl.DebuggerSession;
@@ -16,6 +15,8 @@ import com.intellij.xdebugger.XDebuggerManager;
 import com.intellij.xdebugger.breakpoints.XBreakpointManager;
 import com.sun.jdi.StackFrame;
 
+import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
+
 public class SavepointListener implements DebuggerManagerListener {
     @Override
     public void sessionAttached(DebuggerSession session) {
@@ -26,18 +27,14 @@ public class SavepointListener implements DebuggerManagerListener {
             @Override
             public void sessionPaused() {
                 if (isPausedAtSavepoint(session)) {
-                    try {
-                        StackFrameProxy proxy = session.getContextManager().getContext().getFrameProxy();
-                        if (proxy == null)
-                            return;
+                    StackFrameProxy proxy = session.getContextManager().getContext().getFrameProxy();
+                    if (proxy == null)
+                        return;
 
-                        StackFrame frame = proxy.getStackFrame();
-                        RuntimePersistenceService.getInstance().saveFrame(frame);
+                    StackFrame frame = uncheck(proxy::getStackFrame);
+                    RuntimePersistenceService.getInstance().saveFrame(frame);
 
-                        ApplicationManager.getApplication().invokeLater(session::resume);
-                    } catch (EvaluateException e) {
-                        throw new RuntimeException(e);
-                    }
+                    ApplicationManager.getApplication().invokeLater(session::resume);
                 }
             }
         });

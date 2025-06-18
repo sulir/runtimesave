@@ -3,13 +3,18 @@ package com.github.sulir.runtimesave.everyline;
 import com.github.sulir.runtimesave.RuntimePersistenceService;
 import com.github.sulir.runtimesave.SourceLocation;
 import com.intellij.debugger.engine.DebugProcessEvents;
-import com.sun.jdi.*;
+import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.Location;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.StackFrame;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.EventRequestManager;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
 
 public class EveryLineManager {
     public static final int MAX_HITS = 1;
@@ -46,12 +51,8 @@ public class EveryLineManager {
         if (newHitCount >= MAX_HITS)
             event.virtualMachine().eventRequestManager().deleteEventRequest(event.request());
 
-        try {
-            System.out.println(event.location().sourcePath() + ":" + event.location().lineNumber());
-            StackFrame frame = event.thread().frame(0);
-            RuntimePersistenceService.getInstance().saveFrame(frame);
-        } catch (AbsentInformationException | IncompatibleThreadStateException e) {
-            throw new RuntimeException(e);
-        }
+        System.out.println(uncheck(event.location()::sourcePath) + ":" + event.location().lineNumber());
+        StackFrame frame = uncheck(() -> event.thread().frame(0));
+        RuntimePersistenceService.getInstance().saveFrame(frame);
     }
 }

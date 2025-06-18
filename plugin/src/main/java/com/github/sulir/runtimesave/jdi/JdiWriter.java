@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
+
 public class JdiWriter {
     private static final String UNSAFE_HELPER = "com.github.sulir.runtimesave.starter.UnsafeHelper";
 
@@ -139,14 +141,10 @@ public class JdiWriter {
     private Value invokeHelperMethod(String methodName, String signature, List<Value> args) {
         ClassType helper = (ClassType) vm.classesByName(UNSAFE_HELPER).get(0);
         Method method = helper.concreteMethodByName(methodName, signature);
-        try {
-            ThreadReference thread = frame.thread();
-            Value result = helper.invokeMethod(thread, method, args, ClassType.INVOKE_SINGLE_THREADED);
-            frame = thread.frame(0);
-            return result;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        ThreadReference thread = frame.thread();
+        Value result = uncheck(() -> helper.invokeMethod(thread, method, args, ClassType.INVOKE_SINGLE_THREADED));
+        frame = uncheck(() -> thread.frame(0));
+        return result;
     }
 
     private PrimitiveValue toJdiPrimitive(PrimitiveNode node) {
