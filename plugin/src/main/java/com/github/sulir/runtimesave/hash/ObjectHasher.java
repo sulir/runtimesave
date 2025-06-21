@@ -26,6 +26,10 @@ public class ObjectHasher {
     private final MessageDigest sha = uncheck(() -> MessageDigest.getInstance("SHA-224"));
     private final int shaBytes = sha.getDigestLength();
 
+    public void reset() {
+        sha.reset();
+    }
+
     public void add(Object object) {
         if (object == null)
             addNull();
@@ -86,7 +90,7 @@ public class ObjectHasher {
     }
 
     public byte[] hash(Object object) {
-        sha.reset();
+        reset();
         add(object);
         return finish();
     }
