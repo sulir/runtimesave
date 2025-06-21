@@ -122,7 +122,7 @@ class ObjectHasherTest {
             hasher.addPrimitive(pair[0]);
             secondHasher.addPrimitive(pair[0]);
         }
-        assertArrayEquals(hasher.hash(), secondHasher.hash());
+        assertArrayEquals(hasher.finish(), secondHasher.finish());
     }
 
     @Test
@@ -131,12 +131,12 @@ class ObjectHasherTest {
             hasher.addPrimitive(pair[0]);
             secondHasher.addPrimitive(pair[1]);
         }
-        assertFalse(Arrays.equals(hasher.hash(), secondHasher.hash()));
+        assertFalse(Arrays.equals(hasher.finish(), secondHasher.finish()));
     }
 
     @Test
     void gettingHashResetsState() {
         hasher.addString("");
-        assertFalse(Arrays.equals(hasher.hash(), hasher.hash()));
+        assertFalse(Arrays.equals(hasher.finish(), hasher.finish()));
     }
 }

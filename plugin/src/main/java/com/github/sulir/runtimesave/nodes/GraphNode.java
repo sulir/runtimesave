@@ -1,7 +1,6 @@
 package com.github.sulir.runtimesave.nodes;
 
 import com.github.sulir.runtimesave.ObjectMapper;
-import com.github.sulir.runtimesave.hash.GraphHasher;
 import com.github.sulir.runtimesave.hash.NodeHash;
 
 import java.util.*;
@@ -33,9 +32,6 @@ public abstract class GraphNode {
     }
 
     public NodeHash hash() {
-        if (hash == null)
-            new GraphHasher(this).assignHashes();
-
         return hash;
     }
 

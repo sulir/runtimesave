@@ -30,6 +30,10 @@ public class ArrayNode extends GraphNode {
         elements.put(index, element);
     }
 
+    public void addElement(GraphNode element) {
+        elements.put(elements.size(), element);
+    }
+
     public int length() {
         return elements.isEmpty() ? 0 : elements.lastKey() + 1;
     }

@@ -5,17 +5,12 @@ import com.github.sulir.runtimesave.nodes.GraphNode;
 import java.util.*;
 
 public class TarjanScc {
-    private final GraphNode root;
     private Map<GraphNode, NodeData> nodeToData;
     private int index;
     private Deque<GraphNode> stack;
     private List<StrongComponent> result;
 
-    public TarjanScc(GraphNode root) {
-        this.root = root;
-    }
-
-    public List<StrongComponent> computeComponents() {
+    public List<StrongComponent> computeComponents(GraphNode root) {
         nodeToData = new HashMap<>();
         index = 0;
         stack = new ArrayDeque<>();

@@ -7,17 +7,21 @@ import java.util.Base64;
 public class NodeHash {
     private static final Base64.Encoder base64 = Base64.getEncoder().withoutPadding();
 
-    private final byte[] digest;
+    private final byte[] bytes;
     private String string;
 
-    public NodeHash(byte[] digest) {
-        this.digest = digest;
+    public NodeHash(byte[] bytes) {
+        this.bytes = bytes;
+    }
+
+    public byte[] getBytes() {
+        return bytes;
     }
 
     @Override
     public String toString() {
         if (string == null)
-            string = base64.encodeToString(digest);
+            string = base64.encodeToString(bytes);
         return string;
     }
 
@@ -27,11 +31,11 @@ public class NodeHash {
 
     @Override
     public boolean equals(Object object) {
-        return object instanceof NodeHash hash && MessageDigest.isEqual(digest, hash.digest);
+        return object instanceof NodeHash hash && MessageDigest.isEqual(bytes, hash.bytes);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(digest);
+        return Arrays.hashCode(bytes);
     }
 }

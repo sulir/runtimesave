@@ -62,9 +62,8 @@ public class JdiReader {
     }
 
     private void addElements(ArrayNode arrayNode, ArrayReference array) {
-        int index = 0;
         for (Value element : array.getValues())
-            arrayNode.setElement(index++, createNode(element));
+            arrayNode.addElement(createNode(element));
     }
 
     private void saveFields(ObjectNode objectNode, ObjectReference object) {

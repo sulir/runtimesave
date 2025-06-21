@@ -23,6 +23,11 @@ class NodeHashTest {
     }
 
     @Test
+    void bytesOfSameHashesAreEqual() {
+        assertArrayEquals(hashOf1.getBytes(), alsoHashOf1.getBytes());
+    }
+
+    @Test
     void stringHasCorrectLength() {
         int expectedLength = (int) Math.ceil(4 * algorithm.getDigestLength() / 3.0);
         assertEquals(expectedLength, hashOf1.toString().length());

@@ -81,13 +81,14 @@ public class ObjectHasher {
         sha.update(hash);
     }
 
-    public byte[] hash() {
+    public byte[] finish() {
         return sha.digest();
     }
 
     public byte[] hash(Object object) {
+        sha.reset();
         add(object);
-        return hash();
+        return finish();
     }
 
     private void addType(Type type) {
