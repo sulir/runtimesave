@@ -6,6 +6,8 @@ import com.github.sulir.runtimesave.hash.NodeHash;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class GraphNode {
     private NodeHash hash;
@@ -43,6 +45,24 @@ public abstract class GraphNode {
 
     public void freeze() { }
 
+    @Override
+    public String toString() {
+        String properties = properties().values().stream()
+                .map(Object::toString)
+                .collect(Collectors.joining(", "));
+        int edgeLimit = 8;
+        int[] edgeCount = {0};
+        String edges = outEdges().entrySet().stream()
+                .map(entry -> entry.getKey() + "->" + entry.getValue().shortId())
+                .map(string -> (++edgeCount[0] > edgeLimit) ? "..." : string)
+                .limit(edgeLimit + 1)
+                .collect(Collectors.joining(", "));
+        String details = Stream.of(properties, edges)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.joining(", "));
+        return shortId() + (details.isEmpty() ? "" : "(" + details + ")");
+    }
+
     private void traverse(Consumer<GraphNode> function, Set<GraphNode> visited) {
         function.accept(this);
         visited.add(this);
@@ -52,15 +72,7 @@ public abstract class GraphNode {
                 target.traverse(function, visited);
     }
 
-    @Override
-    public String toString() {
-        String nodeInfo = label() + "@" + Integer.toHexString(hashCode()) + "(";
-        String properties = properties().values().toString();
-        StringBuilder result = new StringBuilder(nodeInfo + properties.substring(1, properties.length() - 1));
-        outEdges().forEach((key, target) -> {
-            String targetInfo = target.label() + "@" + Integer.toHexString(target.hashCode());
-            result.append(", ").append(key).append("->").append(targetInfo);
-        });
-        return result + ")";
+    private String shortId() {
+        return label() + ":" + Integer.toHexString(hashCode() & 0xFFFF);
     }
 }
