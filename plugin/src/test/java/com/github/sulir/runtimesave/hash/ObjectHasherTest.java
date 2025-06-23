@@ -136,7 +136,6 @@ class ObjectHasherTest {
 
     @Test
     void gettingHashResetsState() {
-        hasher.addString("");
-        assertFalse(Arrays.equals(hasher.finish(), hasher.finish()));
+        assertFalse(Arrays.equals(hasher.addString("").finish(), hasher.finish()));
     }
 }

@@ -59,6 +59,11 @@ class NodeHashTest {
     }
 
     @Test
+    void toStringRemainsSame() {
+        assertEquals(hashOf1.toString(), hashOf1.toString());
+    }
+
+    @Test
     void sameHashesAreEqual() {
         assertEquals(hashOf1, alsoHashOf1);
     }
@@ -69,12 +74,18 @@ class NodeHashTest {
     }
 
     @Test
-    void sameHashesHaveSameHashCode() {
+    void hashDoesNotEqualByteArray() {
+        Object bytes = hashOf1.getBytes();
+        assertNotEquals(hashOf1, bytes);
+    }
+
+    @Test
+    void sameHashesHaveSameHashCodes() {
         assertEquals(hashOf1.hashCode(), alsoHashOf1.hashCode());
     }
 
     @Test
-    void differentHashesHaveDifferentHashCode() {
+    void differentHashesHaveDifferentHashCodes() {
         assertNotEquals(hashOf1.hashCode(), hashOf2.hashCode());
     }
 }
