@@ -1,6 +1,7 @@
 package com.github.sulir.runtimesave.hash;
 
 import com.github.sulir.runtimesave.nodes.GraphNode;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -13,107 +14,80 @@ public class GraphHasher {
         List<StrongComponent> components = tarjanScc.computeComponents(root);
 
         for (StrongComponent scc : components) {
-            SccEncoding minEncoding = minimumEncoding(scc);
-            byte[] minSequenceHash = hasher.hash(minEncoding.sequence());
+            SccEncoding minEncoding = scc.nodes().stream()
+                    .map(node -> new Traversal(node, scc))
+                    .min(Comparator.naturalOrder()).orElseThrow()
+                    .encode();
+            byte[] minSequenceHash = hasher.hash(minEncoding.hashSequence());
 
             for (GraphNode node : scc.nodes()) {
-                int order = minEncoding.order().get(node);
-                hasher.reset();
-                hasher.add(minSequenceHash);
-                hasher.add(order);
-                node.setHash(new NodeHash(hasher.finish()));
+                node.setHash(new NodeHash(hasher.reset()
+                        .add(minSequenceHash)
+                        .add(minEncoding.order().get(node))
+                        .finish()));
             }
         }
-
         return root.hash();
     }
 
-    private SccEncoding minimumEncoding(StrongComponent scc) {
-        Iterator<GraphNode> nodes = scc.nodes().iterator();
-        Traversal minTraversal = new Traversal(nodes.next(), scc);
-
-        while (nodes.hasNext()) {
-            Traversal traversal = new Traversal(nodes.next(), scc);
-            minTraversal = minTraversal.competeWith(traversal);
-        }
-
-        return minTraversal.encode();
-    }
-
-    private class Traversal {
+    private class Traversal implements Comparable<Traversal> {
         private final StrongComponent scc;
-        private final List<byte[]> sequence = new ArrayList<>();
+        private final List<byte[]> hashes = new ArrayList<>();
         private final Map<GraphNode, Integer> order = new HashMap<>();
         private final List<GraphNode> visits = new ArrayList<>();
 
-        public Traversal(GraphNode first, StrongComponent scc) {
+        Traversal(GraphNode first, StrongComponent scc) {
             this.scc = scc;
             order.put(first, 0);
             visits.add(first);
         }
 
-        Traversal competeWith(Traversal other) {
-            int i = 0;
-            while (true) {
-                int comparison = Arrays.compare(sequenceAt(i), other.sequenceAt(i));
-
-                if (comparison < 0)
-                    return this;
-                else if (comparison > 0)
-                    return other;
-                else if (sequenceAt(i + 1) == null)
-                    return handleTie(other);
-                else
-                    i++;
+        @Override
+        public int compareTo(@NotNull Traversal other) {
+            byte[] hash;
+            for (int i = 0; (hash = hashAt(i)) != null; i++) {
+                int comparison = Arrays.compare(hash, other.hashAt(i));
+                if (comparison != 0)
+                    return comparison;
             }
+            return handleTie(other);
         }
 
         SccEncoding encode() {
-            while (sequence.size() < visits.size())
-                sequence.add(localHash(visits.get(sequence.size())));
-
-            return new SccEncoding(sequence, order);
+            hashAt(Integer.MAX_VALUE);
+            return new SccEncoding(hashes, order);
         }
 
-        private byte[] sequenceAt(int sequenceIndex) {
-            if (sequenceIndex >= visits.size())
-                return null;
+        private byte[] hashAt(int index) {
+            while (hashes.size() <= index && hashes.size() < visits.size())
+                hashes.add(localHash(visits.get(hashes.size())));
 
-            while (sequence.size() <= sequenceIndex)
-                sequence.add(localHash(visits.get(sequence.size())));
-
-            return sequence.get(sequenceIndex);
+            return index < hashes.size() ? hashes.get(index) : null;
         }
 
         private byte[] localHash(GraphNode node) {
-            if (scc.contains(node)) {
-                hasher.reset();
-                hasher.add(node.label());
-                hasher.add(node.properties());
-
-                node.outEdges().forEach((property, target) -> {
-                    if (!order.containsKey(target)) {
-                        visits.add(target);
-                        order.put(target, visits.size() - 1);
-                    }
-                    hasher.add(property);
-                    hasher.add(order.get(target));
-                });
-
-                return hasher.finish();
-            } else {
+            if (!scc.contains(node))
                 return node.hash().getBytes();
-            }
+
+            hasher.reset().add(node.label()).add(node.properties());
+
+            node.outEdges().forEach((property, target) -> {
+                int targetOrder = order.computeIfAbsent(target, t -> {
+                    visits.add(t);
+                    return visits.size() - 1;
+                });
+                hasher.add(property).add(targetOrder);
+            });
+
+            return hasher.finish();
         }
 
-        private Traversal handleTie(Traversal other) {
-            other.order.forEach((node, otherIndex) -> {
-                if (otherIndex < order.get(node))
-                    order.put(node, otherIndex);
-            });
-            return this;
+        private int handleTie(Traversal other) {
+            other.order.forEach((node, otherIndex) -> order.merge(node, otherIndex, Math::min));
+            return -1;
         }
     }
 
-    private record SccEncoding(List<byte[]> sequence, Map<GraphNode, Integer> order) {  }
+    private record SccEncoding(List<byte[]> hashSequence, Map<GraphNode, Integer> order) {
+    }
 }

@@ -26,63 +26,69 @@ public class ObjectHasher {
     private final MessageDigest sha = uncheck(() -> MessageDigest.getInstance("SHA-224"));
     private final int shaBytes = sha.getDigestLength();
 
-    public void reset() {
+    public ObjectHasher reset() {
         sha.reset();
+        return this;
     }
 
-    public void add(Object object) {
+    public ObjectHasher add(Object object) {
         if (object == null)
-            addNull();
-        else if (object instanceof String string)
-            addString(string);
-        else if (object instanceof Collection<?> collection)
-            addCollection(collection);
-        else if (object instanceof SortedMap<?, ?> map)
-            addMap(map);
-        else if (object instanceof byte[] hash && hash.length == shaBytes)
-            addHash(hash);
-        else
-            addPrimitive(object);
+            return addNull();
+        if (object instanceof String string)
+            return addString(string);
+        if (object instanceof Collection<?> collection)
+            return addCollection(collection);
+        if (object instanceof SortedMap<?, ?> map)
+            return addMap(map);
+        if (object instanceof byte[] hash && hash.length == shaBytes)
+            return addHash(hash);
+        return addPrimitive(object);
     }
 
-    public void addPrimitive(Object primitive) {
+    public ObjectHasher addPrimitive(Object primitive) {
         Primitive properties = primitiveProperties.get(primitive.getClass());
         if (properties == null)
             throw new IllegalArgumentException("Unsupported type: " + primitive.getClass().getName());
 
         addType(properties.type());
         sha.update(properties.putValue().apply(allocate(properties.size()), primitive).array());
+        return this;
     }
 
-    public void addNull() {
+    public ObjectHasher addNull() {
         addType(Type.NULL);
+        return this;
     }
 
-    public void addString(String string) {
+    public ObjectHasher addString(String string) {
         addType(Type.STRING);
         byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
         addLength(bytes.length);
         sha.update(bytes);
+        return this;
     }
 
-    public void addCollection(Collection<?> collection) {
+    public ObjectHasher addCollection(Collection<?> collection) {
         addType(Type.COLLECTION);
         addLength(collection.size());
         collection.forEach(this::add);
+        return this;
     }
 
-    public void addMap(SortedMap<?, ?> map) {
+    public ObjectHasher addMap(SortedMap<?, ?> map) {
         addType(Type.MAP);
         addLength(map.size());
         map.forEach((key, value) -> {
             add(key);
             add(value);
         });
+        return this;
     }
 
-    public void addHash(byte[] hash) {
+    public ObjectHasher addHash(byte[] hash) {
         addType(Type.HASH);
         sha.update(hash);
+        return this;
     }
 
     public byte[] finish() {
