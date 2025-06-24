@@ -3,6 +3,8 @@ package com.github.sulir.runtimesave;
 import com.github.sulir.runtimesave.db.DbConnection;
 import com.github.sulir.runtimesave.db.Metadata;
 import com.github.sulir.runtimesave.db.NodeDatabase;
+import com.github.sulir.runtimesave.hash.GraphHasher;
+import com.github.sulir.runtimesave.hash.NodeHash;
 import com.github.sulir.runtimesave.jdi.JdiReader;
 import com.github.sulir.runtimesave.jdi.JdiWriter;
 import com.github.sulir.runtimesave.nodes.FrameNode;
@@ -12,27 +14,24 @@ import com.sun.jdi.StackFrame;
 
 @Service
 public final class RuntimePersistenceService {
-    private final NodeDatabase database;
-    private final Metadata metadata;
+    private final GraphHasher hasher = new GraphHasher();
+    private final NodeDatabase database  = new NodeDatabase(DbConnection.getInstance());
+    private final Metadata metadata = new Metadata(DbConnection.getInstance());
 
     public static RuntimePersistenceService getInstance() {
        return ApplicationManager.getApplication().getService(RuntimePersistenceService.class);
     }
 
-    public RuntimePersistenceService() {
-        database = new NodeDatabase(DbConnection.getInstance());
-        metadata = new Metadata(DbConnection.getInstance());
-    }
-
     public void loadFrame(StackFrame frame) throws MismatchException {
-        String frameId = metadata.findFrame(SourceLocation.fromJDI(frame.location()));
-        FrameNode frameNode = database.read(frameId, FrameNode.class);
+        NodeHash hash = metadata.findFrame(SourceLocation.fromJDI(frame.location()));
+        FrameNode frameNode = database.read(hash, FrameNode.class);
         new JdiWriter(frame).writeFrame(frameNode);
     }
 
     public void saveFrame(StackFrame frame) {
         FrameNode frameNode = new JdiReader(frame).readFrame();
-        String frameId = database.write(frameNode);
-        metadata.addLocation(frameId, SourceLocation.fromJDI(frame.location()));
+        hasher.assignHashes(frameNode);
+        database.write(frameNode);
+        metadata.addLocation(frameNode.hash(), SourceLocation.fromJDI(frame.location()));
     }
 }

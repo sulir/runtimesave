@@ -1,6 +1,7 @@
 package com.github.sulir.runtimesave.db;
 
 import com.github.sulir.runtimesave.ObjectMapper;
+import com.github.sulir.runtimesave.hash.NodeHash;
 import com.github.sulir.runtimesave.nodes.*;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
@@ -18,21 +19,24 @@ public class NodeDatabase {
         this.db = db;
     }
 
-    public <T extends GraphNode> T read(String elementId, Class<T> type) {
+    public <T extends GraphNode> T read(NodeHash hash, Class<T> type) {
         try (Session session = db.createSession()) {
-            String query = "MATCH (v)"
-                    + " WHERE elementId(v) = $variableId"
-                    + " CALL apoc.path.subgraphAll(v, {relationshipFilter: '>'}) YIELD nodes, relationships"
-                    + " RETURN nodes, relationships";
-            Record record = session.run(query, Map.of("variableId", elementId)).single();
+            String query = "MATCH (root {hash: $hash})"
+                    + " LIMIT 1"
+                    + " CALL apoc.path.subgraphAll(root, {relationshipFilter: '>'}) YIELD nodes, relationships"
+                    + " RETURN elementId(root) as rootId, nodes, relationships";
+            Record record = session.run(query, Map.of("hash", hash.toString())).single();
+            String rootId = record.get("rootId").asString();
             List<Node> nodes = record.get("nodes").asList(Value::asNode);
             List<Relationship> edges = record.get("relationships").asList(Value::asRelationship);
 
             Map<String, GraphNode> idToNode = new HashMap<>();
-            for (Node node : nodes) {
-                String label = node.labels().iterator().next();
-                Map<String, Value> properties = node.asMap(Values.ofValue());
-                idToNode.put(node.elementId(), ObjectMapper.forLabel(label).createNodeObject(properties));
+            for (Node dbNode : nodes) {
+                String label = dbNode.labels().iterator().next();
+                Map<String, Value> properties = dbNode.asMap(Values.ofValue());
+                GraphNode graphNode = ObjectMapper.forLabel(label).createNodeObject(properties);
+                graphNode.setHash(NodeHash.fromString(properties.get("hash").asString()));
+                idToNode.put(dbNode.elementId(), graphNode);
             }
 
             for (Relationship edge : edges) {
@@ -42,49 +46,36 @@ public class NodeDatabase {
                 ObjectMapper.forClass(from.getClass()).connectNodeObjects(from, to, properties);
             }
 
-            return type.cast(idToNode.get(elementId));
+            return type.cast(idToNode.get(rootId));
         }
     }
 
-    public String write(GraphNode variableNode) {
+    public void write(GraphNode rootNode) {
         List<Map<String, Object>> nodes = new ArrayList<>();
-        Map<GraphNode, String> nodeToId = new java.util.HashMap<>();
         List<Map<String, Object>> edges = new ArrayList<>();
 
-        traverse(variableNode, nodes, nodeToId, edges);
+        rootNode.traverse(node -> {
+            ObjectMapper mapper = ObjectMapper.forClass(node.getClass());
+            nodes.add(Map.of("label", mapper.getLabel(), "hash", node.hash().toString(),
+                    "props", mapper.getProperties(node)));
+            edges.addAll(mapper.getRelationships(node));
+        });
 
         String query = "UNWIND $nodes AS node"
-                + " CALL apoc.create.node([node.label], node.properties) YIELD node AS created "
-                + " WITH elementId(collect(created)[0]) AS variableId"
-                + " UNWIND $edges AS edge"
-                + " MATCH (f {id: edge.from}), (t {id: edge.to})"
-                + " CALL apoc.create.relationship(f, edge.type, edge.props, t) YIELD rel"
-                + " WITH variableId"
-                + " MATCH (n)"
-                + " REMOVE n.id"
-                + " RETURN variableId"
-                + " LIMIT 1";
+                + " CALL apoc.merge.node([node.label], {hash: node.hash}, node.props) YIELD node AS merged"
+                + " RETURN 0";
 
         try (Session session = db.createSession()) {
-            return session.run(query, Map.of("nodes", nodes, "edges", edges)).single().get("variableId").asString();
+            session.run(query, Map.of("nodes", nodes));
         }
-    }
 
-    private void traverse(GraphNode node, List<Map<String, Object>> nodes, Map<GraphNode, String> nodeToId,
-                          List<Map<String, Object>> edges) {
-        ObjectMapper mapper = ObjectMapper.forClass(node.getClass());
+        query = "UNWIND $edges AS edge"
+                + " MATCH (from {hash: edge.from}), (to {hash: edge.to})"
+                + " CALL apoc.merge.relationship(from, edge.type, edge.props, {}, to) YIELD rel"
+                + " RETURN 0";
 
-        Map<String, Object> properties = mapper.getProperties(node);
-        String id = UUID.randomUUID().toString();
-        properties.put("id", id);
-
-        nodes.add(Map.of("label", mapper.getLabel(), "properties", properties));
-        nodeToId.put(node, id);
-
-        for (GraphNode target : node.targets())
-            if (!nodeToId.containsKey(target))
-                traverse(target, nodes, nodeToId, edges);
-
-        edges.addAll(mapper.getRelationships(node, nodeToId));
+        try (Session session = db.createSession()) {
+            session.run(query, Map.of("edges", edges));
+        }
     }
 }

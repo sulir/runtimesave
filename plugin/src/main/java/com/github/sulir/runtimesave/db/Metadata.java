@@ -2,6 +2,7 @@ package com.github.sulir.runtimesave.db;
 
 import com.github.sulir.runtimesave.MismatchException;
 import com.github.sulir.runtimesave.SourceLocation;
+import com.github.sulir.runtimesave.hash.NodeHash;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.exceptions.NoSuchRecordException;
@@ -15,30 +16,30 @@ public class Metadata {
         this.db = db;
     }
 
-    public String findFrame(SourceLocation location) throws MismatchException {
+    public NodeHash findFrame(SourceLocation location) throws MismatchException {
         try (Session session = db.createSession()) {
             String query = "MATCH (:Class {name: $class})"
                     + "-->(:Method {signature: $method})"
                     + "-->(l:Line {number: $line})"
                     + "-->(f:Frame)"
-                    + " RETURN elementId(f) AS frameId";
+                    + " RETURN f.hash AS frameHash";
             Result result = session.run(query, Map.of("class", location.className(), "method", location.method(),
                 "line", location.line()));
 
-            return result.single().get("frameId").asString();
+            return NodeHash.fromString(result.single().get("frameHash").asString());
         } catch (NoSuchRecordException e) {
             throw new MismatchException("No or multiple frames found for " + location);
         }
     }
 
-    public void addLocation(String frameId, SourceLocation location) {
+    public void addLocation(NodeHash frameHash, SourceLocation location) {
         try (Session session = db.createSession()) {
-            String query = "MATCH (f:Frame) WHERE elementId(f) = $frameId"
+            String query = "MATCH (f:Frame) WHERE f.hash = $hash"
                     + " MERGE (c:Class {name: $class})"
                     + " MERGE (c)-[:DEFINES]->(m:Method {signature: $method})"
                     + " MERGE (m)-[:CONTAINS]->(l:Line {number: $line})"
                     + " MERGE (l)-[:HAS_FRAME]->(f)";
-            session.run(query, Map.of("frameId", frameId, "class", location.className(),
+            session.run(query, Map.of("hash", frameHash.toString(), "class", location.className(),
                 "method", location.method(), "line", location.line()));
         }
     }

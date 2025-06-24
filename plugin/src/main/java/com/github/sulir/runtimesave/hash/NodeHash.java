@@ -5,10 +5,15 @@ import java.util.Arrays;
 import java.util.Base64;
 
 public class NodeHash {
-    private static final Base64.Encoder base64 = Base64.getEncoder().withoutPadding();
+    private static final Base64.Encoder base64Encoder = Base64.getEncoder().withoutPadding();
+    private static final Base64.Decoder base64Decoder = Base64.getDecoder();
 
     private final byte[] bytes;
     private String string;
+
+    public static NodeHash fromString(String base64String) {
+        return new NodeHash(base64Decoder.decode(base64String));
+    }
 
     public NodeHash(byte[] bytes) {
         this.bytes = bytes;
@@ -21,7 +26,7 @@ public class NodeHash {
     @Override
     public String toString() {
         if (string == null)
-            string = base64.encodeToString(bytes);
+            string = base64Encoder.encodeToString(bytes);
         return string;
     }
 
