@@ -70,11 +70,16 @@ public class ObjectMapper {
         return map;
     }
 
-    public List<Map<String, Object>> getRelationships(GraphNode from) {
+    public List<Map<String, Object>> getRelationships(GraphNode from, Map<GraphNode, Integer> nodeCopies) {
         List<Map<String, Object>> edges = new ArrayList<>(from.outEdges().size());
 
-        from.outEdges().forEach((key, to) -> edges.add(Map.of("from", from.hash().toString(), "type", relation.type(),
-                "props", Map.of(relation.propertyName(), key), "to", to.hash().toString())));
+        from.outEdges().forEach((key, to) -> edges.add(Map.of(
+                "fromHash", from.hash().toString(),
+                "fromCopy", nodeCopies.get(from),
+                "toHash", to.hash().toString(),
+                "toCopy", nodeCopies.get(to),
+                "type", relation.type(),
+                "props", Map.of(relation.propertyName(), key))));
 
         return edges;
     }

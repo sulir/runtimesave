@@ -51,18 +51,25 @@ public class NodeDatabase {
     }
 
     public void write(GraphNode rootNode) {
+        Map<NodeHash, Integer> hashCopies = new HashMap<>();
+        Map<GraphNode, Integer> nodeCopies = new HashMap<>();
         List<Map<String, Object>> nodes = new ArrayList<>();
         List<Map<String, Object>> edges = new ArrayList<>();
 
         rootNode.traverse(node -> {
+            int copy = hashCopies.compute(node.hash(), (hash, n) -> n == null ? 0 : n + 1);
+            nodeCopies.put(node, copy);
+        });
+
+        rootNode.traverse(node -> {
             ObjectMapper mapper = ObjectMapper.forClass(node.getClass());
-            nodes.add(Map.of("label", mapper.getLabel(), "hash", node.hash().toString(),
-                    "props", mapper.getProperties(node)));
-            edges.addAll(mapper.getRelationships(node));
+            Map<String, Object> match = Map.of("hash", node.hash().toString(), "copy", nodeCopies.get(node));
+            nodes.add(Map.of("label", mapper.getLabel(), "match", match, "props", mapper.getProperties(node)));
+            edges.addAll(mapper.getRelationships(node, nodeCopies));
         });
 
         String query = "UNWIND $nodes AS node"
-                + " CALL apoc.merge.node([node.label], {hash: node.hash}, node.props) YIELD node AS merged"
+                + " CALL apoc.merge.node([node.label], node.match, node.props) YIELD node AS merged"
                 + " RETURN 0";
 
         try (Session session = db.createSession()) {
@@ -70,7 +77,8 @@ public class NodeDatabase {
         }
 
         query = "UNWIND $edges AS edge"
-                + " MATCH (from {hash: edge.from}), (to {hash: edge.to})"
+                + " MATCH (from {hash: edge.fromHash, copy: edge.fromCopy})"
+                + " MATCH (to {hash: edge.toHash, copy: edge.toCopy})"
                 + " CALL apoc.merge.relationship(from, edge.type, edge.props, {}, to) YIELD rel"
                 + " RETURN 0";
 

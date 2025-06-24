@@ -2,7 +2,9 @@ package com.github.sulir.runtimesave.hash;
 
 import com.github.sulir.runtimesave.nodes.FrameNode;
 import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.nodes.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -45,6 +47,22 @@ class GraphHasherTest {
 
         hasher.assignHashes(same);
         assertEquals(graph.hash(), same.hash());
+    }
+
+    @Test
+    void edgesToIdenticalNodeAndCopiesAreDistinguished() {
+        ObjectNode parentOfCopies = new ObjectNode("Parent");
+        ObjectNode childCopy1 = new ObjectNode("Child");
+        ObjectNode childCopy2 = new ObjectNode("Child");
+        parentOfCopies.setField("left", childCopy1);
+        parentOfCopies.setField("right", childCopy2);
+
+        ObjectNode parentOfIdentical = new ObjectNode("Parent");
+        ObjectNode childIdentical = new ObjectNode("Child");
+        parentOfIdentical.setField("left", childIdentical);
+        parentOfIdentical.setField("right", childIdentical);
+
+        assertNotEquals(parentOfCopies.hash(), parentOfIdentical.hash());
     }
 
     static Stream<Arguments> sameGraphPairs() {
