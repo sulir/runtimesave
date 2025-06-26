@@ -1,22 +1,17 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.FrameNode;
-import com.github.sulir.runtimesave.nodes.GraphNode;
-import com.github.sulir.runtimesave.nodes.ObjectNode;
+import com.github.sulir.runtimesave.nodes.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class GraphHasherTest {
     private GraphHasher hasher;
@@ -50,34 +45,82 @@ class GraphHasherTest {
     }
 
     @Test
-    void edgesToIdenticalNodeAndCopiesAreDistinguished() {
+    void uniqueRandomGraphsHaveUniqueHashes() {
+        TestGraphGenerator generator = new TestGraphGenerator();
+        List<GraphNode> graphs = generator.random();
+        Map<NodeHash, GraphNode> hashes = new HashMap<>();
+
+        for (GraphNode graph : graphs)
+            checkCollision(graph, hashes);
+    }
+
+    @Test
+    void uniqueGeneratedGraphsHaveUniqueHashes() {
+        TestGraphGenerator generator = new TestGraphGenerator();
+        Map<NodeHash, GraphNode> hashes = new HashMap<>();
+
+        generator.sequentiallyGenerated().forEach(graph -> checkCollision(graph, hashes));
+    }
+
+    @Test
+    void edgesToIdenticalNodeAndCopiesAreDiscerned() {
+        ObjectNode parentOfIdentical = new ObjectNode("Parent");
+        ObjectNode childIdentical = new ObjectNode("Child");
+        parentOfIdentical.setField("left", childIdentical);
+        parentOfIdentical.setField("right", childIdentical);
+
         ObjectNode parentOfCopies = new ObjectNode("Parent");
         ObjectNode childCopy1 = new ObjectNode("Child");
         ObjectNode childCopy2 = new ObjectNode("Child");
         parentOfCopies.setField("left", childCopy1);
         parentOfCopies.setField("right", childCopy2);
 
-        ObjectNode parentOfIdentical = new ObjectNode("Parent");
-        ObjectNode childIdentical = new ObjectNode("Child");
-        parentOfIdentical.setField("left", childIdentical);
-        parentOfIdentical.setField("right", childIdentical);
+        assertNotEquals(parentOfIdentical.hash(), parentOfCopies.hash());
+    }
 
-        assertNotEquals(parentOfCopies.hash(), parentOfIdentical.hash());
+    @Test
+    void dagMergePointAndNodeCopiesAreDiscerned() {
+        ObjectNode dag = new ObjectNode("Top");
+        ObjectNode left = new ObjectNode("Left");
+        ObjectNode right = new ObjectNode("Right");
+        StringNode bottom = new StringNode("");
+        dag.setField("left", left);
+        dag.setField("right", right);
+        left.setField("target", bottom);
+        right.setField("target", bottom);
+
+        ObjectNode copy = new ObjectNode("Top");
+        ObjectNode leftCopy = new ObjectNode("Left");
+        ObjectNode rightCopy = new ObjectNode("Right");
+        StringNode bottomCopy1 = new StringNode("");
+        StringNode bottomCopy2 = new StringNode("");
+        copy.setField("left", leftCopy);
+        copy.setField("right", rightCopy);
+        leftCopy.setField("target", bottomCopy1);
+        rightCopy.setField("target", bottomCopy2);
+
+        assertNotEquals(dag.hash(), copy.hash());
     }
 
     static Stream<Arguments> sameGraphPairs() {
         TestGraphGenerator generator = new TestGraphGenerator();
-        List<GraphNode> graphs = generator.all();
-        List<GraphNode> same = generator.all();
+        List<GraphNode> graphs = generator.cyclicAndAcyclic();
+        List<GraphNode> same = generator.cyclicAndAcyclic();
 
         return IntStream.range(0, graphs.size()).mapToObj(i -> Arguments.of(graphs.get(i), same.get(i)));
     }
 
     static Stream<Arguments> differentGraphPairs() {
-        List<GraphNode> graphs = new TestGraphGenerator().all();
+        List<GraphNode> graphs = new TestGraphGenerator().cyclicAndAcyclic();
         List<GraphNode> shifted = new ArrayList<>(graphs);
         Collections.rotate(shifted, 1);
 
         return IntStream.range(0, graphs.size()).mapToObj(i -> Arguments.of(graphs.get(i), shifted.get(i)));
+    }
+
+    private void checkCollision(GraphNode graph, Map<NodeHash, GraphNode> hashes) {
+        NodeHash hash = hasher.assignHashes(graph);
+        GraphNode colliding = hashes.put(hash, graph);
+        assertNull(colliding, "Hash collision for %s and %s".formatted(graph, colliding));
     }
 }
