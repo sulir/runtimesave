@@ -7,8 +7,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 class TestGraphGenerator {
-    private static final int RANDOM_COUNT = 50;
-    private static final int RANDOM_MIN_SIZE = 2;
+    private static final int RANDOM_COUNT = 1000;
+    private static final int RANDOM_MIN_SIZE = 5;
     private static final int RANDOM_MAX_SIZE = 15;
     private static final int SEQ_PARALLEL_NONTREE_EDGES = 1;
     private static final int SEQ_MIN_SIZE = 2;
