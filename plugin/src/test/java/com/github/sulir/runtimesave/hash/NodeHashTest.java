@@ -64,6 +64,11 @@ class NodeHashTest {
     }
 
     @Test
+    void toStringIsInverseOfFromString() {
+        assertEquals(hashOf1, NodeHash.fromString(hashOf1.toString()));
+    }
+
+    @Test
     void sameHashesAreEqual() {
         assertEquals(hashOf1, alsoHashOf1);
     }

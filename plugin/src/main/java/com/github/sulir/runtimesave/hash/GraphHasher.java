@@ -8,11 +8,21 @@ import java.util.Map;
 import java.util.Queue;
 
 public class GraphHasher {
-    private final ObjectHasher hasher = new ObjectHasher();
+    private final TreeHasher treeHasher = new TreeHasher();
+    private final ObjectHasher objectHasher = new ObjectHasher();
 
-    public NodeHash assignHashes(GraphNode root) {
-        root.traverse(GraphNode::freeze);
-        root.traverse(node -> node.setHash(computeHash(node)));
+    public NodeHash assignHashes(GraphNode graph) {
+        return assignHashes(AcyclicGraph.multiCondensationOf(graph));
+    }
+
+    public NodeHash assignHashes(AcyclicGraph dag) {
+        treeHasher.assignHashes(dag);
+
+        GraphNode root = dag.getRootNode();
+        root.traverse(node -> {
+            if (!node.hasHash())
+                node.setHash(computeHash(node));
+        });
         return root.hash();
     }
 
@@ -21,20 +31,20 @@ public class GraphHasher {
         toVisit.add(node);
         Map<GraphNode, Integer> orders = new HashMap<>();
         orders.put(node, 0);
-        hasher.reset();
+        objectHasher.reset();
 
         while (!toVisit.isEmpty()) {
             GraphNode current = toVisit.remove();
-            hasher.add(current.label()).add(current.properties());
+            objectHasher.add(current.label()).add(current.properties());
             current.outEdges().forEach((property, target) -> {
                 int targetOrder = orders.computeIfAbsent(target, t -> {
                     toVisit.add(target);
                     return orders.size();
                 });
-                hasher.add(property).add(targetOrder);
+                objectHasher.add(property).add(targetOrder);
             });
         }
 
-        return new NodeHash(hasher.finish());
+        return new NodeHash(objectHasher.finish());
     }
 }

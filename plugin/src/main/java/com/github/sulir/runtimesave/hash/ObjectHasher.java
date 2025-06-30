@@ -3,7 +3,7 @@ package com.github.sulir.runtimesave.hash;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.function.BiFunction;
@@ -24,7 +24,6 @@ public class ObjectHasher {
     );
 
     private final MessageDigest sha = uncheck(() -> MessageDigest.getInstance("SHA-224"));
-    private final int shaBytes = sha.getDigestLength();
 
     public ObjectHasher reset() {
         sha.reset();
@@ -36,11 +35,11 @@ public class ObjectHasher {
             return addNull();
         if (object instanceof String string)
             return addString(string);
-        if (object instanceof Collection<?> collection)
-            return addCollection(collection);
+        if (object instanceof List<?> list)
+            return addList(list);
         if (object instanceof SortedMap<?, ?> map)
             return addMap(map);
-        if (object instanceof byte[] hash && hash.length == shaBytes)
+        if (object instanceof NodeHash hash)
             return addHash(hash);
         return addPrimitive(object);
     }
@@ -68,10 +67,10 @@ public class ObjectHasher {
         return this;
     }
 
-    public ObjectHasher addCollection(Collection<?> collection) {
-        addType(Type.COLLECTION);
-        addLength(collection.size());
-        collection.forEach(this::add);
+    public ObjectHasher addList(List<?> list) {
+        addType(Type.LIST);
+        addLength(list.size());
+        list.forEach(this::add);
         return this;
     }
 
@@ -85,9 +84,9 @@ public class ObjectHasher {
         return this;
     }
 
-    public ObjectHasher addHash(byte[] hash) {
+    public ObjectHasher addHash(NodeHash hash) {
         addType(Type.HASH);
-        sha.update(hash);
+        sha.update(hash.getBytes());
         return this;
     }
 
@@ -112,6 +111,6 @@ public class ObjectHasher {
     private record Primitive(Type type, int size, BiFunction<ByteBuffer, Object, ByteBuffer> putValue) { }
 
     private enum Type {
-        CHAR, BYTE, SHORT, INT, LONG, FLOAT, DOUBLE, BOOLEAN, NULL, STRING, COLLECTION, MAP, HASH
+        CHAR, BYTE, SHORT, INT, LONG, FLOAT, DOUBLE, BOOLEAN, NULL, STRING, LIST, MAP, HASH
     }
 }

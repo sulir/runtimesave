@@ -6,6 +6,8 @@ import java.util.*;
 
 public class StrongComponent {
     private final Set<GraphNode> nodes = new HashSet<>();
+    private final List<StrongComponent> targets = new ArrayList<>();
+    private GraphNode soleNode;
 
     public StrongComponent(GraphNode... nodes) {
         Collections.addAll(this.nodes, nodes);
@@ -25,6 +27,26 @@ public class StrongComponent {
 
     public Collection<GraphNode> nodes() {
         return nodes;
+    }
+
+    public List<StrongComponent> targets() {
+        return targets;
+    }
+
+    public void addTarget(StrongComponent target) {
+        targets.add(target);
+    }
+
+    public boolean isTrivial() {
+        return nodes.size() == 1 && !getSoleNode().targets().contains(getSoleNode());
+    }
+
+    public GraphNode getSoleNode() {
+        if (nodes.size() != 1)
+            throw new IllegalStateException("SCC has " + nodes.size() + "nodes");
+        if (soleNode == null)
+            soleNode = nodes.iterator().next();
+        return soleNode;
     }
 
     @Override

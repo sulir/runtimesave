@@ -3,6 +3,7 @@ package com.github.sulir.runtimesave;
 import com.github.sulir.runtimesave.db.DbConnection;
 import com.github.sulir.runtimesave.db.Metadata;
 import com.github.sulir.runtimesave.db.NodeDatabase;
+import com.github.sulir.runtimesave.hash.AcyclicGraph;
 import com.github.sulir.runtimesave.hash.GraphHasher;
 import com.github.sulir.runtimesave.hash.NodeHash;
 import com.github.sulir.runtimesave.jdi.JdiReader;
@@ -30,7 +31,8 @@ public final class RuntimePersistenceService {
 
     public void saveFrame(StackFrame frame) {
         FrameNode frameNode = new JdiReader(frame).readFrame();
-        hasher.assignHashes(frameNode);
+        AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frameNode);
+        hasher.assignHashes(dag);
         database.write(frameNode);
         metadata.addLocation(frameNode.hash(), SourceLocation.fromJDI(frame.location()));
     }

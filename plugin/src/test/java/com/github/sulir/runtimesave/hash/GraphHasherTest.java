@@ -1,19 +1,23 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.*;
+import com.github.sulir.runtimesave.nodes.FrameNode;
+import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.nodes.ObjectNode;
+import com.github.sulir.runtimesave.nodes.StringNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.*;
-import java.util.stream.IntStream;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class GraphHasherTest {
+    private static final TestGraphGenerator generator = new TestGraphGenerator();
     private GraphHasher hasher;
 
     @BeforeEach
@@ -46,20 +50,14 @@ class GraphHasherTest {
 
     @Test
     void uniqueRandomGraphsHaveUniqueHashes() {
-        TestGraphGenerator generator = new TestGraphGenerator();
-        List<GraphNode> graphs = generator.random();
-        Map<NodeHash, GraphNode> hashes = new HashMap<>();
-
-        for (GraphNode graph : graphs)
-            checkCollision(graph, hashes);
+        Set<NodeHash> hashes = new HashSet<>();
+        generator.randomGraphs().forEach(graph -> checkCollision(graph, hashes));
     }
 
     @Test
     void uniqueGeneratedGraphsHaveUniqueHashes() {
-        TestGraphGenerator generator = new TestGraphGenerator();
-        Map<NodeHash, GraphNode> hashes = new HashMap<>();
-
-        generator.sequentiallyGenerated().forEach(graph -> checkCollision(graph, hashes));
+        Set<NodeHash> hashes = new HashSet<>();
+        generator.allSmallGraphs().forEach(graph -> checkCollision(graph, hashes));
     }
 
     @Test
@@ -75,6 +73,8 @@ class GraphHasherTest {
         parentOfCopies.setField("left", childCopy1);
         parentOfCopies.setField("right", childCopy2);
 
+        hasher.assignHashes(parentOfIdentical);
+        hasher.assignHashes(parentOfCopies);
         assertNotEquals(parentOfIdentical.hash(), parentOfCopies.hash());
     }
 
@@ -99,28 +99,21 @@ class GraphHasherTest {
         leftCopy.setField("target", bottomCopy1);
         rightCopy.setField("target", bottomCopy2);
 
+        hasher.assignHashes(dag);
+        hasher.assignHashes(copy);
         assertNotEquals(dag.hash(), copy.hash());
     }
 
     static Stream<Arguments> sameGraphPairs() {
-        TestGraphGenerator generator = new TestGraphGenerator();
-        List<GraphNode> graphs = generator.cyclicAndAcyclic();
-        List<GraphNode> same = generator.cyclicAndAcyclic();
-
-        return IntStream.range(0, graphs.size()).mapToObj(i -> Arguments.of(graphs.get(i), same.get(i)));
+        return generator.samePairs(generator::examples);
     }
 
     static Stream<Arguments> differentGraphPairs() {
-        List<GraphNode> graphs = new TestGraphGenerator().cyclicAndAcyclic();
-        List<GraphNode> shifted = new ArrayList<>(graphs);
-        Collections.rotate(shifted, 1);
-
-        return IntStream.range(0, graphs.size()).mapToObj(i -> Arguments.of(graphs.get(i), shifted.get(i)));
+        return generator.differentPairs(generator::examples);
     }
 
-    private void checkCollision(GraphNode graph, Map<NodeHash, GraphNode> hashes) {
+    private void checkCollision(GraphNode graph, Set<NodeHash> hashes) {
         NodeHash hash = hasher.assignHashes(graph);
-        GraphNode colliding = hashes.put(hash, graph);
-        assertNull(colliding, "Hash collision for %s and %s".formatted(graph, colliding));
+        assertTrue(hashes.add(hash), () -> "Hash collision for " + graph);
     }
 }

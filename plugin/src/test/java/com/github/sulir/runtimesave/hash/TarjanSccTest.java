@@ -31,7 +31,7 @@ class TarjanSccTest {
     @ParameterizedTest
     @ValueSource(ints = {1, 2, 3, 4})
     void circularGraphHasOneScc(int size) {
-        List<ArrayNode> cycle = generator.circularGraph(size);
+        List<ArrayNode> cycle = generator.circularNodes(size);
         List<StrongComponent> components = tarjanScc.computeComponents(cycle.get(0));
         List<StrongComponent> expected = List.of(new StrongComponent(cycle));
         assertEquals(expected, components);
@@ -39,7 +39,7 @@ class TarjanSccTest {
 
     @Test
     void cycleAndSinkHaveTwoSCCs() {
-        List<ArrayNode> cycle = generator.circularGraph(3);
+        List<ArrayNode> cycle = generator.circularNodes(3);
         NullNode sink = new NullNode();
         cycle.get(1).setElement(1, sink);
 
@@ -50,8 +50,8 @@ class TarjanSccTest {
 
     @Test
     void twoCyclesConnectedViaNodeWayHaveThreeSCCs() {
-        List<ArrayNode> left = generator.circularGraph(5);
-        List<ArrayNode> right = generator.circularGraph(4);
+        List<ArrayNode> left = generator.circularNodes(5);
+        List<ArrayNode> right = generator.circularNodes(4);
         ObjectNode middle = new ObjectNode("Between");
         left.get(2).setElement(1, middle);
         middle.setField("oneWay", right.get(2));

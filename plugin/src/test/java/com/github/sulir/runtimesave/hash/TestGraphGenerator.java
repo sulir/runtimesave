@@ -1,8 +1,10 @@
 package com.github.sulir.runtimesave.hash;
 
 import com.github.sulir.runtimesave.nodes.*;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -10,17 +12,31 @@ class TestGraphGenerator {
     private static final int RANDOM_COUNT = 1000;
     private static final int RANDOM_MIN_SIZE = 5;
     private static final int RANDOM_MAX_SIZE = 15;
-    private static final int SEQ_PARALLEL_NONTREE_EDGES = 1;
-    private static final int SEQ_MIN_SIZE = 2;
-    private static final int SEQ_MAX_SIZE = 4;
-
+    private static final int SMALL_PARALLEL_NONTREE_EDGES = 1;
+    private static final int SMALL_MIN_SIZE = 2;
+    private static final int SMALL_MAX_SIZE = 4;
     private Random random;
 
-    List<GraphNode> cyclicAndAcyclic() {
-        return Stream.of(acyclic().stream(), cyclic().stream()).flatMap(s -> s).toList();
+    Stream<Arguments> samePairs(Supplier<Stream<GraphNode>> graphProvider) {
+        List<GraphNode> graphs = graphProvider.get().toList();
+        List<GraphNode> same = graphProvider.get().toList();
+
+        return IntStream.range(0, graphs.size()).mapToObj(i -> Arguments.of(graphs.get(i), same.get(i)));
     }
 
-    List<GraphNode> acyclic() {
+    Stream<Arguments> differentPairs(Supplier<Stream<GraphNode>> graphProvider) {
+        List<GraphNode> graphs = graphProvider.get().toList();
+        List<GraphNode> shifted = new ArrayList<>(graphs);
+        Collections.rotate(shifted, 1);
+
+        return IntStream.range(0, graphs.size()).mapToObj(i -> Arguments.of(graphs.get(i), shifted.get(i)));
+    }
+
+    Stream<GraphNode> examples() {
+        return Stream.of(trees(), dags(), cyclicGraphs()).flatMap(s -> s);
+    }
+
+    Stream<GraphNode> trees() {
         GraphNode singleNode = new PrimitiveNode(1, "int");
         GraphNode otherSingleNode = new NullNode();
 
@@ -31,74 +47,82 @@ class TestGraphGenerator {
         tree.setElement(0, otherSingleNode);
         tree.setElement(1, oneChild);
 
-        ObjectNode dag = new ObjectNode("Top");
-        NullNode dagChild = new NullNode();
-        dag.setField("left", dagChild);
-        dag.setField("right", dagChild);
-
-        return List.of(singleNode, otherSingleNode, oneChild, tree, dag);
+        return Stream.of(singleNode, otherSingleNode, oneChild, tree);
     }
 
-    List<GraphNode> cyclic() {
-        GraphNode oneCycle = circularGraph(1).get(0);
-        GraphNode twoCycle = circularGraph(2).get(0);
-        GraphNode threeCycle = circularGraph(3).get(0);
+    Stream<GraphNode> dags() {
+        ObjectNode parallelEdges = new ObjectNode("Top");
+        NullNode child = new NullNode();
+        parallelEdges.setField("left", child);
+        parallelEdges.setField("right", child);
 
-        List<ArrayNode> fourCycle = circularGraph(4);
+        ObjectNode triangle = new ObjectNode("Triangle");
+        ObjectNode triangleA = new ObjectNode("A");
+        ObjectNode triangleB = new ObjectNode("B");
+        triangle.setField("a", triangleA);
+        triangle.setField("b", triangleB);
+        triangleA.setField("b", triangleB);
+
+        return Stream.of(parallelEdges, triangle);
+    }
+
+    Stream<GraphNode> cyclicGraphs() {
+        GraphNode oneCycle = circularNodes(1).get(0);
+        GraphNode twoCycle = circularNodes(2).get(0);
+        GraphNode threeCycle = circularNodes(3).get(0);
+
+        List<ArrayNode> fourCycle = circularNodes(4);
         fourCycle.get(2).setElement(0, new NullNode());
 
-        List<ArrayNode> fiveCycle = circularGraph(5);
+        List<ArrayNode> fiveCycle = circularNodes(5);
         fiveCycle.get(1).setElement(0, new StringNode("a"));
         fiveCycle.get(1).setElement(1, new StringNode("b"));
         fiveCycle.get(2).setElement(0, new StringNode("c"));
 
-        return List.of(oneCycle, twoCycle, threeCycle, fourCycle.get(0), fiveCycle.get(0));
+        return Stream.of(oneCycle, twoCycle, threeCycle, fourCycle.get(0), fiveCycle.get(0));
     }
 
-    List<GraphNode> random() {
+    Stream<GraphNode> randomGraphs() {
         random = new Random(0);
-        List<GraphNode> graphs = new ArrayList<>(RANDOM_COUNT);
         Set<Traversal> uniqueTraversals = new HashSet<>(RANDOM_COUNT);
 
-        while (graphs.size() < RANDOM_COUNT) {
-            GraphNode graph = randomGraph();
-            if (uniqueTraversals.add(getTraversal(graph)))
-                graphs.add(graph);
-        }
-        return graphs;
+        return IntStream.range(0, RANDOM_COUNT)
+                .mapToObj(i -> randomGraph())
+                .filter(graph -> uniqueTraversals.add(getTraversal(graph)));
     }
 
-    Stream<GraphNode> sequentiallyGenerated() {
+    Stream<GraphNode> allSmallGraphs() {
         Set<Traversal> uniqueTraversals = new HashSet<>();
 
-        return IntStream.range(SEQ_MIN_SIZE, SEQ_MAX_SIZE + 1).boxed().flatMap(nodeCount ->
-            spanningSourcesList(nodeCount).flatMap(spanningSources -> {
-                List<int[]> possibleEdges = allNumbers(2, nodeCount).toList();
-                List<int[]> edgeCountsList = allNumbers(possibleEdges.size(), SEQ_PARALLEL_NONTREE_EDGES + 1).toList();
-                return edgeCountsList.stream().map(edgeCounts -> {
+        return IntStream.range(SMALL_MIN_SIZE, SMALL_MAX_SIZE + 1).boxed().flatMap(nodeCount -> {
+            List<int[]> possibleEdges = allNumbers(2, nodeCount).toList();
+            return possibleSpanningSources(nodeCount).flatMap(spanningSources -> {
+                Stream<int[]> possibleEdgeCounts = allNumbers(possibleEdges.size(),
+                        SMALL_PARALLEL_NONTREE_EDGES + 1);
+                return possibleEdgeCounts.map(edgeCounts -> {
                     List<EdgeSet> edgeSets = new ArrayList<>();
                     for (int i = 0; i < edgeCounts.length; i++) {
                         int[] edge = possibleEdges.get(i);
                         edgeSets.add(new EdgeSet(edge[0], edge[1], edgeCounts[i]));
                     }
-                    return graphFromSequence(spanningSources, edgeSets);
+                    return createGraph(spanningSources, edgeSets);
                 }).filter(graph -> uniqueTraversals.add(getTraversal(graph)));
-            })
-        );
+            });
+        });
     }
 
-    List<ArrayNode> circularGraph(int size) {
+    List<ArrayNode> circularNodes(int length) {
         List<ArrayNode> nodes = new ArrayList<>();
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < length; i++)
             nodes.add(new ArrayNode("Cls[]"));
 
-        for (int i = 0; i < size; i++)
-            nodes.get(i).setElement(0, nodes.get((i + 1) % size));
+        for (int i = 0; i < length; i++)
+            nodes.get(i).setElement(0, nodes.get((i + 1) % length));
 
         return nodes;
     }
 
-    private Stream<int[]> spanningSourcesList(int nodeCount) {
+    private Stream<int[]> possibleSpanningSources(int nodeCount) {
         return allNumbers(nodeCount - 1, nodeCount - 1)
                 .filter(n -> IntStream.range(1, n.length).allMatch(i -> n[i] <= i && n[i - 1] <= n[i]))
                 .takeWhile(n -> n[0] == 0);
@@ -112,7 +136,7 @@ class TestGraphGenerator {
         });
     }
 
-    private GraphNode graphFromSequence(int[] spanningSources, List<EdgeSet> edgeSets) {
+    private GraphNode createGraph(int[] spanningSources, List<EdgeSet> edgeSets) {
         int nodeCount = spanningSources.length + 1;
         ArrayNode[] nodes = new ArrayNode[nodeCount];
         for (int i = 0; i < nodeCount; i++)
@@ -156,6 +180,7 @@ class TestGraphGenerator {
 
         Traversal traversal = new Traversal();
         graph.traverse(node -> traversal.add(node.targets().stream().map(nodeNumbers::get).toList()));
+        traversal.trimToSize();
         return traversal;
     }
 

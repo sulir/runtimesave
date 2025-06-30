@@ -49,24 +49,24 @@ class ObjectHasherTest {
     }
 
     @Test
-    void sameCollectionsHaveSameHashes() {
-        assertArrayEquals(hasher.hash(Arrays.asList(1, 2, 3)), hasher.hash(Arrays.asList(1, 2, 3)));
+    void sameListsHaveSameHashes() {
+        assertArrayEquals(hasher.hash(List.of(1, 2, 3)), hasher.hash(List.of(1, 2, 3)));
     }
 
     @Test
-    void differentCollectionsHaveDifferentHashes() {
-        assertFalse(Arrays.equals(hasher.hash(Arrays.asList(1, 2, 3)), hasher.hash(Arrays.asList(3, 2, 1))));
+    void differentListsHaveDifferentHashes() {
+        assertFalse(Arrays.equals(hasher.hash(List.of(1, 2, 3)), hasher.hash(List.of(3, 2, 1))));
     }
 
     @Test
-    void sameNestedCollectionsHaveSameHashes() {
+    void sameNestedListsHaveSameHashes() {
         List<Object> list = List.of(List.of(1), List.of(3, 4), "str", 5.0);
         List<Object> sameList = new ArrayList<>(list);
         assertArrayEquals(hasher.hash(list), hasher.hash(sameList));
     }
 
     @Test
-    void differentNestedCollectionsHaveDifferentHashes() {
+    void differentNestedListsHaveDifferentHashes() {
         List<Object> firstList = List.of(List.of(1), List.of(3, 4), "str", 5.0);
         List<Object> otherList = List.of(List.of(1), List.of(3, "difference"), "str", 5.0);
         assertFalse(Arrays.equals(hasher.hash(firstList), hasher.hash(otherList)));
@@ -88,15 +88,15 @@ class ObjectHasherTest {
 
     @Test
     void sameHashesHaveSameHashes() {
-        byte[] hash = hasher.hash("test");
-        byte[] sameHash = hasher.hash("test");
+        NodeHash hash = new NodeHash(hasher.hash("test"));
+        NodeHash sameHash = new NodeHash(hasher.hash("test"));
         assertArrayEquals(hasher.hash(hash), hasher.hash(sameHash));
     }
 
     @Test
     void differentHashesHaveDifferentHashes() {
-        byte[] firstHash = hasher.hash("test");
-        byte[] otherHash = hasher.hash("different");
+        NodeHash firstHash = new NodeHash(hasher.hash("test"));
+        NodeHash otherHash = new NodeHash(hasher.hash("different"));
         assertFalse(Arrays.equals(hasher.hash(firstHash), hasher.hash(otherHash)));
     }
 
