@@ -2,14 +2,12 @@ package com.github.sulir.runtimesave.hash;
 
 import com.github.sulir.runtimesave.nodes.GraphNode;
 
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 
 public class GraphHasher {
     private final TreeHasher treeHasher = new TreeHasher();
-    private final ObjectHasher objectHasher = new ObjectHasher();
+    private final ObjectHasher hasher = new ObjectHasher();
+    private Map<GraphNode, Integer> orders;
 
     public NodeHash assignHashes(GraphNode graph) {
         return assignHashes(AcyclicGraph.multiCondensationOf(graph));
@@ -20,31 +18,33 @@ public class GraphHasher {
 
         GraphNode root = dag.getRootNode();
         root.traverse(node -> {
-            if (!node.hasHash())
-                node.setHash(computeHash(node));
+            if (!node.hasHash()) {
+                hasher.reset();
+                orders = new HashMap<>();
+                computeHash(node);
+                node.setHash(new NodeHash(hasher.finish()));
+            }
         });
         return root.hash();
     }
 
-    private NodeHash computeHash(GraphNode node) {
-        Queue<GraphNode> toVisit = new ArrayDeque<>();
-        toVisit.add(node);
-        Map<GraphNode, Integer> orders = new HashMap<>();
-        orders.put(node, 0);
-        objectHasher.reset();
+    private void computeHash(GraphNode node) {
+        orders.put(node, orders.size());
+        hasher.add(node.label()).add(node.properties());
 
-        while (!toVisit.isEmpty()) {
-            GraphNode current = toVisit.remove();
-            objectHasher.add(current.label()).add(current.properties());
-            current.outEdges().forEach((property, target) -> {
-                int targetOrder = orders.computeIfAbsent(target, t -> {
-                    toVisit.add(target);
-                    return orders.size();
-                });
-                objectHasher.add(property).add(targetOrder);
+        if (!node.outEdges().isEmpty()) {
+            hasher.add(Marker.TARGETS_START);
+            node.outEdges().forEach((property, target) -> {
+                hasher.add(property);
+                Integer targetOrder = orders.get(target);
+                if (targetOrder == null)
+                    computeHash(target);
+                else
+                    hasher.add(orders.get(target));
             });
+            hasher.add(Marker.TARGETS_END);
         }
-
-        return new NodeHash(objectHasher.finish());
     }
+
+    private enum Marker { TARGETS_START, TARGETS_END }
 }

@@ -10,7 +10,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -56,8 +58,13 @@ class GraphHasherTest {
 
     @Test
     void uniqueGeneratedGraphsHaveUniqueHashes() {
-        Set<NodeHash> hashes = new HashSet<>();
-        generator.allSmallGraphs().forEach(graph -> checkCollision(graph, hashes));
+        if (System.getProperty("REPORT_COLLIDED_GRAPH") == null) {
+            Set<NodeHash> hashes = new HashSet<>();
+            generator.allSmallGraphs().forEach(graph -> checkCollision(graph, hashes));
+        } else {
+            Map<NodeHash, GraphNode> hashes = new HashMap<>();
+            generator.allSmallGraphs().forEach(graph -> checkCollision(graph, hashes));
+        }
     }
 
     @Test
@@ -115,5 +122,11 @@ class GraphHasherTest {
     private void checkCollision(GraphNode graph, Set<NodeHash> hashes) {
         NodeHash hash = hasher.assignHashes(graph);
         assertTrue(hashes.add(hash), () -> "Hash collision for " + graph);
+    }
+
+    private void checkCollision(GraphNode graph, Map<NodeHash, GraphNode> hashes) {
+        NodeHash hash = hasher.assignHashes(graph);
+        GraphNode original = hashes.put(hash, graph);
+        assertNull(original, () -> "Hash collision for %s and %s".formatted(original, graph));
     }
 }

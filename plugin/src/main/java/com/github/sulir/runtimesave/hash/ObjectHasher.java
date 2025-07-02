@@ -38,6 +38,8 @@ public class ObjectHasher {
             return addList(list);
         if (object instanceof SortedMap<?, ?> map)
             return addMap(map);
+        if (object instanceof Enum<?> enumeration)
+            return addEnum(enumeration);
         if (object instanceof NodeHash hash)
             return addHash(hash);
         return addPrimitive(object);
@@ -83,15 +85,15 @@ public class ObjectHasher {
         return this;
     }
 
-    public ObjectHasher addHash(NodeHash hash) {
-        addType(Type.HASH);
-        sha.update(hash.getBytes());
+    public ObjectHasher addEnum(Enum<?> enumeration) {
+        addType(Type.ENUM);
+        sha.update((byte) enumeration.ordinal());
         return this;
     }
 
-    public ObjectHasher addMarker(byte marker) {
-        addType(Type.MARKER);
-        sha.update(marker);
+    public ObjectHasher addHash(NodeHash hash) {
+        addType(Type.HASH);
+        sha.update(hash.getBytes());
         return this;
     }
 
@@ -116,6 +118,6 @@ public class ObjectHasher {
     private record Primitive(Type type, int size, BiFunction<ByteBuffer, Object, ByteBuffer> putValue) { }
 
     private enum Type {
-        CHAR, BYTE, SHORT, INT, LONG, FLOAT, DOUBLE, BOOLEAN, NULL, STRING, LIST, MAP, HASH, MARKER
+        CHAR, BYTE, SHORT, INT, LONG, FLOAT, DOUBLE, BOOLEAN, NULL, STRING, LIST, MAP, ENUM, HASH
     }
 }

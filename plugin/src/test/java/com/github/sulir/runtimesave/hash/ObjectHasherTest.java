@@ -87,6 +87,16 @@ class ObjectHasherTest {
     }
 
     @Test
+    void sameEnumValuesHaveSameHashes() {
+        assertArrayEquals(hasher.hash(SampleEnum.ONE), hasher.hash(SampleEnum.ONE));
+    }
+
+    @Test
+    void differentEnumValuesHaveDifferentHashes() {
+        assertFalse(Arrays.equals(hasher.hash(SampleEnum.ONE), hasher.hash(SampleEnum.TWO)));
+    }
+
+    @Test
     void sameHashesHaveSameHashes() {
         NodeHash hash = new NodeHash(hasher.hash("test"));
         NodeHash sameHash = new NodeHash(hasher.hash("test"));
@@ -98,16 +108,6 @@ class ObjectHasherTest {
         NodeHash firstHash = new NodeHash(hasher.hash("test"));
         NodeHash otherHash = new NodeHash(hasher.hash("different"));
         assertFalse(Arrays.equals(hasher.hash(firstHash), hasher.hash(otherHash)));
-    }
-
-    @Test
-    void sameMarkersHaveSameHashes() {
-        assertArrayEquals(hasher.addMarker((byte) 0).finish(), hasher.addMarker((byte) 0).finish());
-    }
-
-    @Test
-    void differentMarkersHaveDifferentHashes() {
-        assertFalse(Arrays.equals(hasher.addMarker((byte) 0).finish(), hasher.addMarker((byte) 1).finish()));
     }
 
     @Test
@@ -142,4 +142,6 @@ class ObjectHasherTest {
     void gettingHashResetsState() {
         assertFalse(Arrays.equals(hasher.addString("").finish(), hasher.finish()));
     }
+
+    private enum SampleEnum { ONE, TWO }
 }
