@@ -38,7 +38,7 @@ public class JdiReader {
         if (value instanceof PrimitiveValue primitive) {
             return new PrimitiveNode(toBoxed(primitive), primitive.type().name());
         } else if (value == null) {
-            return new NullNode();
+            return NullNode.getInstance();
         } else if (value instanceof ObjectReference object) {
             GraphNode existing = created.get(object.uniqueID());
             if (existing != null)
