@@ -67,19 +67,19 @@ class TestGraphGenerator {
     }
 
     Stream<GraphNode> cyclicGraphs() {
-        GraphNode oneCycle = circularNodes(1).get(0);
-        GraphNode twoCycle = circularNodes(2).get(0);
-        GraphNode threeCycle = circularNodes(3).get(0);
+        GraphNode oneCycle = circularNodes(1)[0];
+        GraphNode twoCycle = circularNodes(2)[0];
+        GraphNode threeCycle = circularNodes(3)[0];
 
-        List<ArrayNode> fourCycle = circularNodes(4);
-        fourCycle.get(2).setElement(0, new NullNode());
+        ArrayNode[] fourCycle = circularNodes(4);
+        fourCycle[2].setElement(0, new NullNode());
 
-        List<ArrayNode> fiveCycle = circularNodes(5);
-        fiveCycle.get(1).setElement(0, new StringNode("a"));
-        fiveCycle.get(1).setElement(1, new StringNode("b"));
-        fiveCycle.get(2).setElement(0, new StringNode("c"));
+        ArrayNode[] fiveCycle = circularNodes(5);
+        fiveCycle[1].setElement(0, new StringNode("a"));
+        fiveCycle[1].setElement(1, new StringNode("b"));
+        fiveCycle[2].setElement(0, new StringNode("c"));
 
-        return Stream.of(oneCycle, twoCycle, threeCycle, fourCycle.get(0), fiveCycle.get(0));
+        return Stream.of(oneCycle, twoCycle, threeCycle, fourCycle[0], fiveCycle[0]);
     }
 
     Stream<GraphNode> randomGraphs() {
@@ -111,13 +111,13 @@ class TestGraphGenerator {
         });
     }
 
-    List<ArrayNode> circularNodes(int length) {
-        List<ArrayNode> nodes = new ArrayList<>();
+    ArrayNode[] circularNodes(int length) {
+        ArrayNode[] nodes = new ArrayNode[length];
         for (int i = 0; i < length; i++)
-            nodes.add(new ArrayNode("Cls[]"));
+            nodes[i] = new ArrayNode("Cls[]");
 
         for (int i = 0; i < length; i++)
-            nodes.get(i).setElement(0, nodes.get((i + 1) % length));
+            nodes[i].setElement(0, nodes[(i + 1) % length]);
 
         return nodes;
     }

@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 public abstract class GraphNode {
     private NodeHash hash;
+    private NodeHash idHash;
 
     public String label() {
         return ObjectMapper.forClass(getClass()).getLabel();
@@ -43,6 +44,16 @@ public abstract class GraphNode {
 
     public void setHash(NodeHash hash) {
         this.hash = hash;
+    }
+
+    public NodeHash idHash() {
+        if (idHash == null)
+            throw new IllegalStateException("ID-hash not yet computed");
+        return idHash;
+    }
+
+    public void setIdHash(NodeHash idHash) {
+        this.idHash = idHash;
     }
 
     public void freeze() { }

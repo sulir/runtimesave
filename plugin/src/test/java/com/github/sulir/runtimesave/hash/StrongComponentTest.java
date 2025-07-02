@@ -80,6 +80,12 @@ class StrongComponentTest {
     }
 
     @Test
+    void firstNodeAndRestAreDisjunct() {
+        StrongComponent component = new StrongComponent(node, otherNode);
+        assertFalse(component.getRestOfNodes().contains(component.getFirstNode()));
+    }
+
+    @Test
     void componentDoesNotEqualOtherClassInstance() {
         Object nodes = new Object();
         assertNotEquals(new StrongComponent(), nodes);

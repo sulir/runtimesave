@@ -9,7 +9,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,11 +23,11 @@ class TreeHasherTest {
 
     @Test
     void nonTreeNodesDoNotGetHash() {
-        List<ArrayNode> cycle = new TestGraphGenerator().circularNodes(2);
-        AcyclicGraph dag = AcyclicGraph.multiCondensationOf(cycle.get(0));
+        ArrayNode[] cycle = new TestGraphGenerator().circularNodes(2);
+        AcyclicGraph dag = AcyclicGraph.multiCondensationOf(cycle[0]);
         hasher.assignHashes(dag);
-        assertAll(() -> assertFalse(cycle.get(0).hasHash()),
-                  () -> assertFalse(cycle.get(1).hasHash()));
+        assertAll(() -> assertFalse(cycle[0].hasHash()),
+                  () -> assertFalse(cycle[1].hasHash()));
     }
 
     @ParameterizedTest

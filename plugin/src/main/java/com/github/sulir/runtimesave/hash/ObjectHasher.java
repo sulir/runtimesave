@@ -9,7 +9,6 @@ import java.util.SortedMap;
 import java.util.function.BiFunction;
 
 import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
-import static java.nio.ByteBuffer.allocate;
 
 public class ObjectHasher {
     private static final Map<Class<?>, Primitive> primitiveProperties = Map.of(
@@ -50,7 +49,7 @@ public class ObjectHasher {
             throw new IllegalArgumentException("Unsupported type: " + primitive.getClass().getName());
 
         addType(properties.type());
-        sha.update(properties.putValue().apply(allocate(properties.size()), primitive).array());
+        sha.update(properties.putValue().apply(ByteBuffer.allocate(properties.size()), primitive).array());
         return this;
     }
 
@@ -90,6 +89,12 @@ public class ObjectHasher {
         return this;
     }
 
+    public ObjectHasher addMarker(byte marker) {
+        addType(Type.MARKER);
+        sha.update(marker);
+        return this;
+    }
+
     public byte[] finish() {
         return sha.digest();
     }
@@ -105,12 +110,12 @@ public class ObjectHasher {
     }
 
     private void addLength(int length) {
-        sha.update(allocate(Integer.BYTES).putInt(length).array());
+        sha.update(ByteBuffer.allocate(Integer.BYTES).putInt(length).array());
     }
 
     private record Primitive(Type type, int size, BiFunction<ByteBuffer, Object, ByteBuffer> putValue) { }
 
     private enum Type {
-        CHAR, BYTE, SHORT, INT, LONG, FLOAT, DOUBLE, BOOLEAN, NULL, STRING, LIST, MAP, HASH
+        CHAR, BYTE, SHORT, INT, LONG, FLOAT, DOUBLE, BOOLEAN, NULL, STRING, LIST, MAP, HASH, MARKER
     }
 }

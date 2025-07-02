@@ -1,8 +1,10 @@
 package com.github.sulir.runtimesave.db;
 
 import com.github.sulir.runtimesave.ObjectMapper;
+import com.github.sulir.runtimesave.hash.AcyclicGraph;
 import com.github.sulir.runtimesave.hash.NodeHash;
-import com.github.sulir.runtimesave.nodes.*;
+import com.github.sulir.runtimesave.hash.StrongComponent;
+import com.github.sulir.runtimesave.nodes.GraphNode;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
@@ -11,6 +13,7 @@ import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 public class NodeDatabase {
     private final DbConnection db;
@@ -50,36 +53,71 @@ public class NodeDatabase {
         }
     }
 
-    public void write(GraphNode rootNode) {
-        Map<NodeHash, Integer> hashCopies = new HashMap<>();
-        Map<GraphNode, Integer> nodeCopies = new HashMap<>();
-        List<Map<String, Object>> nodes = new ArrayList<>();
-        List<Map<String, Object>> edges = new ArrayList<>();
+    public void write(AcyclicGraph dag) {
+        Set<StrongComponent> visited = new HashSet<>();
+        List<StrongComponent> created = new ArrayList<>();
+        writeComponent(dag.getRootComponent(), visited, created);
+        writeOutEdges(created.stream().flatMap(scc -> scc.nodes().stream()));
+    }
 
-        rootNode.traverse(node -> {
-            int copy = hashCopies.compute(node.hash(), (hash, n) -> n == null ? 0 : n + 1);
-            nodeCopies.put(node, copy);
-        });
+    private void writeComponent(StrongComponent scc, Set<StrongComponent> visited, List<StrongComponent> created) {
+        visited.add(scc);
+        if (writeNode(scc.getFirstNode())) {
+            created.add(scc);
+            writeNodes(scc.getRestOfNodes());
 
-        rootNode.traverse(node -> {
-            ObjectMapper mapper = ObjectMapper.forClass(node.getClass());
-            Map<String, Object> match = Map.of("hash", node.hash().toString(), "copy", nodeCopies.get(node));
-            nodes.add(Map.of("label", mapper.getLabel(), "match", match, "props", mapper.getProperties(node)));
-            edges.addAll(mapper.getRelationships(node, nodeCopies));
-        });
+            for (StrongComponent target : scc.targets())
+                if (!visited.contains(target))
+                    writeComponent(target, visited, created);
+        }
+    }
+
+    private boolean writeNode(GraphNode node) {
+        Map<String, Object> nodeMap = nodeToMap(node);
+
+        String query = "CALL apoc.merge.nodeWithStats([$node.label], {idHash: $node.idHash}, $node.props)"
+                + " YIELD stats, node"
+                + " RETURN stats.nodesCreated > 0 AS created";
+
+        try (Session session = db.createSession()) {
+            return session.run(query, Map.of("node", nodeMap)).single().get("created").asBoolean();
+        }
+    }
+
+    private void writeNodes(Set<GraphNode> nodes) {
+        List<Map<String, Object>> nodesMap = nodes.stream().map(this::nodeToMap).toList();
+        if (nodesMap.isEmpty())
+            return;
 
         String query = "UNWIND $nodes AS node"
-                + " CALL apoc.merge.node([node.label], node.match, node.props) YIELD node AS merged"
+                + " CALL apoc.merge.node([$node.label], {idHash: $node.idHash}, $node.props) YIELD node AS merged"
                 + " RETURN 0";
 
         try (Session session = db.createSession()) {
-            session.run(query, Map.of("nodes", nodes));
+            session.run(query, Map.of("nodes", nodesMap));
         }
+    }
 
-        query = "UNWIND $edges AS edge"
-                + " MATCH (from {hash: edge.fromHash, copy: edge.fromCopy})"
-                + " MATCH (to {hash: edge.toHash, copy: edge.toCopy})"
-                + " CALL apoc.merge.relationship(from, edge.type, edge.props, {}, to) YIELD rel"
+    private Map<String, Object> nodeToMap(GraphNode node) {
+        ObjectMapper mapper = ObjectMapper.forClass(node.getClass());
+        Map<String, Object> properties = mapper.getProperties(node);
+        properties.put("hash", node.hash().toString());
+        return Map.of("label", mapper.getLabel(), "idHash", node.idHash().toString(), "props", properties);
+    }
+
+    private void writeOutEdges(Stream<GraphNode> nodes) {
+        List<Map<String, Object>> edges = new ArrayList<>();
+        nodes.forEach(node -> {
+            ObjectMapper mapper = ObjectMapper.forClass(node.getClass());
+            edges.addAll(mapper.getRelationships(node));
+        });
+        if (edges.isEmpty())
+            return;
+
+        String query = "UNWIND $edges AS edge"
+                + " MATCH (from {idHash: edge.from})"
+                + " MATCH (to {idHash: edge.to})"
+                + " CALL apoc.create.relationship(from, edge.type, edge.props, to) YIELD rel"
                 + " RETURN 0";
 
         try (Session session = db.createSession()) {

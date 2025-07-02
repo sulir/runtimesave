@@ -1,0 +1,48 @@
+package com.github.sulir.runtimesave.hash;
+
+import com.github.sulir.runtimesave.nodes.GraphNode;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+public class GraphIdHasher {
+    private static final byte VISIT_END = 0;
+    private final ObjectHasher hasher = new ObjectHasher();
+    private Map<NodeHash, Integer> copies;
+    private Map<GraphNode, Integer> nodeCopies;
+    private Set<GraphNode> visited;
+
+    public NodeHash assignIdHashes(GraphNode graph) {
+        copies = new HashMap<>();
+        nodeCopies = new HashMap<>();
+        graph.traverse(this::assignHashCopy);
+        graph.traverse(node -> {
+            hasher.reset();
+            visited = new HashSet<>();
+            computeIdHash(node);
+            node.setIdHash(new NodeHash(hasher.finish()));
+        });
+        return graph.idHash();
+    }
+
+    private void computeIdHash(GraphNode node) {
+        hasher.add(node.hash()).add(nodeCopies.get(node));
+        visited.add(node);
+
+        node.outEdges().forEach((property, target) -> {
+            if (!visited.contains(target)) {
+                hasher.add(property);
+                computeIdHash(target);
+            }
+        });
+
+        hasher.addMarker(VISIT_END);
+    }
+
+    private void assignHashCopy(GraphNode node) {
+        int copy = copies.compute(node.hash(), (hash, n) -> n == null ? 0 : n + 1);
+        nodeCopies.put(node, copy);
+    }
+}

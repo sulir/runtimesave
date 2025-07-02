@@ -2,18 +2,17 @@ package com.github.sulir.runtimesave.hash;
 
 import com.github.sulir.runtimesave.nodes.GraphNode;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.*;
 
 public class AcyclicGraph {
-    private final List<StrongComponent> components;
+    private final List<StrongComponent> reverseComponents;
+    private final List<StrongComponent> topoComponents;
     private final GraphNode rootNode;
 
-    AcyclicGraph(List<StrongComponent> components, GraphNode rootNode) {
-        this.components = components;
+    AcyclicGraph(List<StrongComponent> reverseComponents, GraphNode rootNode) {
+        this.reverseComponents = reverseComponents;
+        topoComponents = new ArrayList<>(reverseComponents);
+        Collections.reverse(topoComponents);
         this.rootNode = rootNode;
     }
 
@@ -37,15 +36,19 @@ public class AcyclicGraph {
         return rootNode;
     }
 
+    public StrongComponent getRootComponent() {
+        return topoComponents.get(0);
+    }
+
     public int getComponentCount() {
-        return components.size();
+        return topoComponents.size();
     }
 
-    public Stream<StrongComponent> topoOrder() {
-        return IntStream.range(0, components.size()).map(i -> components.size() - i - 1).mapToObj(components::get);
+    public List<StrongComponent> topoOrder() {
+        return topoComponents;
     }
 
-    public Stream<StrongComponent> reverseTopoOrder() {
-        return components.stream();
+    public List<StrongComponent> reverseTopoOrder() {
+        return reverseComponents;
     }
 }

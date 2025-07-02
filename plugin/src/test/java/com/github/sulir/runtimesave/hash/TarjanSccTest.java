@@ -31,32 +31,32 @@ class TarjanSccTest {
     @ParameterizedTest
     @ValueSource(ints = {1, 2, 3, 4})
     void circularGraphHasOneScc(int size) {
-        List<ArrayNode> cycle = generator.circularNodes(size);
-        List<StrongComponent> components = tarjanScc.computeComponents(cycle.get(0));
+        ArrayNode[] cycle = generator.circularNodes(size);
+        List<StrongComponent> components = tarjanScc.computeComponents(cycle[0]);
         List<StrongComponent> expected = List.of(new StrongComponent(cycle));
         assertEquals(expected, components);
     }
 
     @Test
     void cycleAndSinkHaveTwoSCCs() {
-        List<ArrayNode> cycle = generator.circularNodes(3);
+        ArrayNode[] cycle = generator.circularNodes(3);
         NullNode sink = new NullNode();
-        cycle.get(1).setElement(1, sink);
+        cycle[1].setElement(1, sink);
 
-        List<StrongComponent> components = tarjanScc.computeComponents(cycle.get(0));
+        List<StrongComponent> components = tarjanScc.computeComponents(cycle[0]);
         List<StrongComponent> expected = List.of(new StrongComponent(sink), new StrongComponent(cycle));
         assertEquals(expected, components);
     }
 
     @Test
     void twoCyclesConnectedViaNodeWayHaveThreeSCCs() {
-        List<ArrayNode> left = generator.circularNodes(5);
-        List<ArrayNode> right = generator.circularNodes(4);
+        ArrayNode[] left = generator.circularNodes(5);
+        ArrayNode[] right = generator.circularNodes(4);
         ObjectNode middle = new ObjectNode("Between");
-        left.get(2).setElement(1, middle);
-        middle.setField("oneWay", right.get(2));
+        left[2].setElement(1, middle);
+        middle.setField("oneWay", right[2]);
 
-        List<StrongComponent> components = tarjanScc.computeComponents(left.get(3));
+        List<StrongComponent> components = tarjanScc.computeComponents(left[3]);
         List<StrongComponent> expected = List.of(new StrongComponent(right), new StrongComponent(middle),
                 new StrongComponent(left));
         assertEquals(expected, components);

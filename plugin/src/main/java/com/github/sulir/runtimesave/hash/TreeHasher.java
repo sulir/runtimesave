@@ -18,7 +18,7 @@ public class TreeHasher {
     }
 
     private void markTreeNodes(AcyclicGraph dag) {
-        dag.topoOrder().forEach(scc -> {
+        for (StrongComponent scc : dag.topoOrder()) {
             SccData data = getData(scc);
             if (!scc.isTrivial())
                 for (StrongComponent pathScc : data.path)
@@ -32,18 +32,18 @@ public class TreeHasher {
                 }
             }
             data.path = null;
-        });
+        }
     }
 
     private void computeHashes(AcyclicGraph dag) {
-        dag.reverseTopoOrder().forEach(scc -> {
+        for (StrongComponent scc : dag.reverseTopoOrder()) {
             if (getData(scc).tree) {
                 GraphNode node = scc.getSoleNode();
                 hasher.reset().add(node.label()).add(node.properties());
                 node.outEdges().forEach((property, target) -> hasher.add(property).add(target.hash()));
                 node.setHash(new NodeHash(hasher.finish()));
             }
-        });
+        }
     }
 
     private static class SccData {

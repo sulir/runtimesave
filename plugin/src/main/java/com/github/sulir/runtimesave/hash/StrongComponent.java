@@ -13,10 +13,6 @@ public class StrongComponent {
         Collections.addAll(this.nodes, nodes);
     }
 
-    public StrongComponent(Collection<? extends GraphNode> nodes) {
-        this(nodes.toArray(new GraphNode[]{}));
-    }
-
     public void add(GraphNode node) {
         nodes.add(node);
     }
@@ -47,6 +43,16 @@ public class StrongComponent {
         if (soleNode == null)
             soleNode = nodes.iterator().next();
         return soleNode;
+    }
+
+    public GraphNode getFirstNode() {
+        return nodes.iterator().next();
+    }
+
+    public Set<GraphNode> getRestOfNodes() {
+        Set<GraphNode> rest = new HashSet<>(nodes);
+        rest.remove(getFirstNode());
+        return rest;
     }
 
     @Override

@@ -101,9 +101,13 @@ class ObjectHasherTest {
     }
 
     @Test
-    void nonHashByteArraysAreUnsupported() {
-        byte[] threeBytes = new byte[3];
-        assertThrows(IllegalArgumentException.class, () -> hasher.hash(threeBytes));
+    void sameMarkersHaveSameHashes() {
+        assertArrayEquals(hasher.addMarker((byte) 0).finish(), hasher.addMarker((byte) 0).finish());
+    }
+
+    @Test
+    void differentMarkersHaveDifferentHashes() {
+        assertFalse(Arrays.equals(hasher.addMarker((byte) 0).finish(), hasher.addMarker((byte) 1).finish()));
     }
 
     @Test
