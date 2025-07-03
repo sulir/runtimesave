@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave.savepoints;
+package com.github.sulir.runtimesave.savepoint;
 
 import com.intellij.debugger.ui.breakpoints.LineBreakpoint;
 import com.intellij.icons.AllIcons;

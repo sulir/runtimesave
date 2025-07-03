@@ -12,21 +12,19 @@
   <extensions defaultExtensionNs="com.intellij">
     <executor implementation="com.github.sulir.runtimesave.everyline.EveryLineExecutor"/>
     <programRunner implementation="com.github.sulir.runtimesave.everyline.EveryLineRunner"/>
-    <xdebugger.breakpointType implementation="com.github.sulir.runtimesave.savepoints.SavepointType"/>
+    <xdebugger.breakpointType implementation="com.github.sulir.runtimesave.savepoint.SavepointType"/>
     <debugger.javaBreakpointHandlerFactory
-            implementation="com.github.sulir.runtimesave.savepoints.SavepointHandlerFactory"/>
+            implementation="com.github.sulir.runtimesave.savepoint.SavepointHandlerFactory"/>
   </extensions>
 
   <actions>
-    <action id="com.github.sulir.runtimesave.start.StartProgramAction"
-            class="com.github.sulir.runtimesave.start.StartProgramAction"
-            text="Start Program at Current Line..." icon="AllIcons.Debugger.SmartStepInto">
+    <action id="RuntimeSave.StartProgramAction" class="com.github.sulir.runtimesave.start.StartProgramAction"
+            icon="AllIcons.Debugger.SmartStepInto">
       <add-to-group group-id="RunMenu" anchor="after" relative-to-action="ChooseDebugConfiguration"/>
       <keyboard-shortcut keymap="$default" first-keystroke="F10"/>
     </action>
 
-    <action id="com.github.sulir.runtimesave.savepoints.AddSavepointAction"
-            class="com.github.sulir.runtimesave.savepoints.AddSavepointAction" text="Add Savepoint">
+    <action id="RuntimeSave.AddSavepointAction" class="com.github.sulir.runtimesave.savepoint.AddSavepointAction">
       <add-to-group group-id="XDebugger.Hover.Breakpoint.Context.Menu" anchor="last"/>
     </action>
   </actions>
@@ -34,7 +32,7 @@
   <projectListeners>
     <listener class="com.github.sulir.runtimesave.everyline.EveryLineListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
-    <listener class="com.github.sulir.runtimesave.savepoints.SavepointListener"
+    <listener class="com.github.sulir.runtimesave.savepoint.SavepointListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
     <listener class="com.github.sulir.runtimesave.start.StartLineListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>

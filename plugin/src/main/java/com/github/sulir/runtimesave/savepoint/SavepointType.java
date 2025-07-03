@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave.savepoints;
+package com.github.sulir.runtimesave.savepoint;
 
 import com.intellij.debugger.ui.breakpoints.Breakpoint;
 import com.intellij.debugger.ui.breakpoints.JavaLineBreakpointType;

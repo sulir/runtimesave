@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave.savepoints;
+package com.github.sulir.runtimesave.savepoint;
 
 import com.github.sulir.runtimesave.RuntimePersistenceService;
 import com.intellij.debugger.engine.jdi.StackFrameProxy;

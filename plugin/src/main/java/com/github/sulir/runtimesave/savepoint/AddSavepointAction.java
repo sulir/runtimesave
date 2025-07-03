@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave.savepoints;
+package com.github.sulir.runtimesave.savepoint;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
