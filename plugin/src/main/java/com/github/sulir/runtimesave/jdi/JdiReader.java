@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class JdiReader {
     private final StackFrame frame;
-    private final Map<Long, GraphNode> created = new java.util.HashMap<>();
+    private final Map<Long, ValueNode> created = new java.util.HashMap<>();
 
     public JdiReader(StackFrame frame) {
         this.frame = frame;
@@ -34,17 +34,17 @@ public class JdiReader {
         } catch (AbsentInformationException ignored) { }
     }
 
-    private GraphNode createNode(Value value) {
+    private ValueNode createNode(Value value) {
         if (value instanceof PrimitiveValue primitive) {
             return new PrimitiveNode(toBoxed(primitive), primitive.type().name());
         } else if (value == null) {
             return NullNode.getInstance();
         } else if (value instanceof ObjectReference object) {
-            GraphNode existing = created.get(object.uniqueID());
+            ValueNode existing = created.get(object.uniqueID());
             if (existing != null)
                 return existing;
 
-            GraphNode node;
+            ValueNode node;
             if (object instanceof StringReference string) {
                 node = new StringNode(string.value());
                 created.put(object.uniqueID(), node);

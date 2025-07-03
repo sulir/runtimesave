@@ -2,7 +2,7 @@ package com.github.sulir.runtimesave.hash;
 
 import com.github.sulir.runtimesave.nodes.ArrayNode;
 import com.github.sulir.runtimesave.nodes.FrameNode;
-import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.nodes.ValueNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,7 +32,7 @@ class TreeHasherTest {
 
     @ParameterizedTest
     @MethodSource("sameTreePairs")
-    void sameTreesHaveSameHashes(GraphNode tree, GraphNode same) {
+    void sameTreesHaveSameHashes(ValueNode tree, ValueNode same) {
         hasher.assignHashes(AcyclicGraph.multiCondensationOf(tree));
         hasher.assignHashes(AcyclicGraph.multiCondensationOf(same));
         assertEquals(tree.hash(), same.hash());
@@ -41,7 +41,7 @@ class TreeHasherTest {
 
     @ParameterizedTest
     @MethodSource("differentTreePairs")
-    void differentTreesHaveDifferentHashes(GraphNode tree, GraphNode different) {
+    void differentTreesHaveDifferentHashes(ValueNode tree, ValueNode different) {
         hasher.assignHashes(AcyclicGraph.multiCondensationOf(tree));
         hasher.assignHashes(AcyclicGraph.multiCondensationOf(different));
         assertNotEquals(tree.hash(), different.hash());
@@ -49,7 +49,7 @@ class TreeHasherTest {
 
     @ParameterizedTest
     @MethodSource("sameTreePairs")
-    void sameSubTreesHaveSameHashes(GraphNode tree, GraphNode same) {
+    void sameSubTreesHaveSameHashes(ValueNode tree, ValueNode same) {
         FrameNode parent = new FrameNode();
         parent.setVariable("subtree", tree);
         hasher.assignHashes(AcyclicGraph.multiCondensationOf(parent));

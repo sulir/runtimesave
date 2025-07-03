@@ -15,7 +15,7 @@ public class JdiWriter {
 
     private StackFrame frame;
     private final VirtualMachine vm;
-    private final Map<GraphNode, ObjectReference> visited = new HashMap<>();
+    private final Map<ValueNode, ObjectReference> visited = new HashMap<>();
 
     public JdiWriter(StackFrame frame) {
         this.frame = frame;
@@ -27,14 +27,14 @@ public class JdiWriter {
         writeLocalVariables(node);
     }
 
-    public void writeVariable(LocalVariable variable, GraphNode node) {
+    public void writeVariable(LocalVariable variable, ValueNode node) {
         assignValue((value) -> frame.setValue(variable, value), node);
     }
 
     private void writeThisObjectFields(FrameNode frameNode) throws MismatchException {
         ObjectReference thisObject = frame.thisObject();
         if (thisObject != null) {
-            GraphNode thisNode = frameNode.getVariable("this");
+            ValueNode thisNode = frameNode.getVariable("this");
             if (thisNode instanceof ObjectNode objectNode)
                 assignFields(thisObject, objectNode);
             else
@@ -45,7 +45,7 @@ public class JdiWriter {
     private void writeLocalVariables(FrameNode frameNode) throws MismatchException {
         try {
             for (LocalVariable variable : frame.visibleVariables()) {
-                GraphNode node = frameNode.getVariable(variable.name());
+                ValueNode node = frameNode.getVariable(variable.name());
                 if (node != null)
                     writeVariable(variable, node);
                 else
@@ -58,7 +58,7 @@ public class JdiWriter {
         void setValue(Value value) throws InvalidTypeException, ClassNotLoadedException;
     }
 
-    private void assignField(ObjectReference object, Field field, GraphNode node) {
+    private void assignField(ObjectReference object, Field field, ValueNode node) {
         assignValue((value) -> {
             if (!field.isFinal())
                 object.setValue(field, value);
@@ -67,11 +67,11 @@ public class JdiWriter {
         }, node);
     }
 
-    private void assignElement(ArrayReference array, int index, GraphNode node) {
+    private void assignElement(ArrayReference array, int index, ValueNode node) {
         assignValue((value) -> array.setValue(index, value), node);
     }
 
-    private void assignValue(ValueAssigner assigner, GraphNode node) {
+    private void assignValue(ValueAssigner assigner, ValueNode node) {
         try {
             if (node instanceof PrimitiveNode primitiveNode) {
                 assigner.setValue(toJdiPrimitive(primitiveNode));

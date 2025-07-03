@@ -1,22 +1,25 @@
 package com.github.sulir.runtimesave.nodes;
 
-import java.util.Collections;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 public class FrameNode extends GraphNode {
-    private SortedMap<String, GraphNode> variables = new TreeMap<>();
+    private SortedMap<String, ValueNode> variables = new TreeMap<>();
 
     @Override
-    public SortedMap<String, GraphNode> outEdges() {
+    public SortedMap<String, ValueNode> outEdges() {
         return variables;
     }
 
-    public GraphNode getVariable(String name) {
+    @Override
+    public Collection<ValueNode> targets() {
+        return variables.values();
+    }
+
+    public ValueNode getVariable(String name) {
         return variables.get(name);
     }
 
-    public void setVariable(String name, GraphNode variable) {
+    public void setVariable(String name, ValueNode variable) {
         variables.put(name, variable);
     }
 

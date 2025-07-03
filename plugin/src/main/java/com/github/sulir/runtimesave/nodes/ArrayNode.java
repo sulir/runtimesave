@@ -5,9 +5,9 @@ import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-public class ArrayNode extends GraphNode {
+public class ArrayNode extends ValueNode {
     private final String type;
-    private SortedMap<Integer, GraphNode> elements = new TreeMap<>();
+    private SortedMap<Integer, ValueNode> elements = new TreeMap<>();
 
     public ArrayNode(String type) {
         this.type = type;
@@ -18,19 +18,19 @@ public class ArrayNode extends GraphNode {
     }
 
     @Override
-    public SortedMap<Integer, GraphNode> outEdges() {
+    public SortedMap<Integer, ValueNode> outEdges() {
         return elements;
     }
 
-    public GraphNode getElement(int index) {
+    public ValueNode getElement(int index) {
         return elements.get(index);
     }
 
-    public void setElement(int index, GraphNode element) {
+    public void setElement(int index, ValueNode element) {
         elements.put(index, element);
     }
 
-    public void addElement(GraphNode element) {
+    public void addElement(ValueNode element) {
         elements.put(elements.size(), element);
     }
 

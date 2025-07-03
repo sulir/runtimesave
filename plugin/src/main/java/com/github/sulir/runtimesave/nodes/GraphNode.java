@@ -20,13 +20,9 @@ public abstract class GraphNode {
         return ObjectMapper.forClass(getClass()).getProperties(this);
     }
 
-    public SortedMap<?, GraphNode> outEdges() {
-        return Collections.emptySortedMap();
-    }
+    public abstract SortedMap<?, ? extends GraphNode> outEdges();
 
-    public Collection<GraphNode> targets() {
-        return outEdges().values();
-    }
+    public abstract Collection<? extends GraphNode> targets();
 
     public void traverse(Consumer<GraphNode> function) {
         traverse(function, new HashSet<>());
@@ -76,6 +72,10 @@ public abstract class GraphNode {
         return shortId() + (details.isEmpty() ? "" : "(" + details + ")");
     }
 
+    protected String shortId() {
+        return label() + ":" + Integer.toHexString(hashCode() & 0xFFFF);
+    }
+
     private void traverse(Consumer<GraphNode> function, Set<GraphNode> visited) {
         function.accept(this);
         visited.add(this);
@@ -83,9 +83,5 @@ public abstract class GraphNode {
         for (GraphNode target : targets())
             if (!visited.contains(target))
                 target.traverse(function, visited);
-    }
-
-    private String shortId() {
-        return label() + ":" + Integer.toHexString(hashCode() & 0xFFFF);
     }
 }

@@ -1,9 +1,6 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.FrameNode;
-import com.github.sulir.runtimesave.nodes.GraphNode;
-import com.github.sulir.runtimesave.nodes.ObjectNode;
-import com.github.sulir.runtimesave.nodes.StringNode;
+import com.github.sulir.runtimesave.nodes.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,19 +26,19 @@ class GraphHasherTest {
 
     @ParameterizedTest
     @MethodSource("sameGraphPairs")
-    void sameGraphsHaveSameHashes(GraphNode graph, GraphNode same) {
+    void sameGraphsHaveSameHashes(ValueNode graph, ValueNode same) {
         assertEquals(hasher.assignHashes(graph), hasher.assignHashes(same));
     }
 
     @ParameterizedTest
     @MethodSource("differentGraphPairs")
-    void differentGraphsHaveDifferentHashes(GraphNode graph, GraphNode different) {
+    void differentGraphsHaveDifferentHashes(ValueNode graph, ValueNode different) {
         assertNotEquals(hasher.assignHashes(graph), hasher.assignHashes(different));
     }
 
     @ParameterizedTest
     @MethodSource("sameGraphPairs")
-    void sameSubGraphsHaveSameHashes(GraphNode graph, GraphNode same) {
+    void sameSubGraphsHaveSameHashes(ValueNode graph, ValueNode same) {
         FrameNode parent = new FrameNode();
         parent.setVariable("subgraph", graph);
         hasher.assignHashes(parent);

@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.nodes;
 
-public class StringNode extends GraphNode {
+public class StringNode extends ValueNode {
     private final String value;
 
     public StringNode(String value) {

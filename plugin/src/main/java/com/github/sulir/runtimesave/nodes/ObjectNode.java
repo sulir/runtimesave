@@ -2,9 +2,9 @@ package com.github.sulir.runtimesave.nodes;
 
 import java.util.*;
 
-public class ObjectNode extends GraphNode {
+public class ObjectNode extends ValueNode {
     private final String type;
-    private SortedMap<String, GraphNode> fields = new TreeMap<>();
+    private SortedMap<String, ValueNode> fields = new TreeMap<>();
 
     public ObjectNode(String type) {
         this.type = type;
@@ -15,15 +15,15 @@ public class ObjectNode extends GraphNode {
     }
 
     @Override
-    public SortedMap<String, GraphNode> outEdges() {
+    public SortedMap<String, ValueNode> outEdges() {
         return fields;
     }
 
-    public GraphNode getField(String name) {
+    public ValueNode getField(String name) {
         return fields.get(name);
     }
 
-    public void setField(String name, GraphNode field) {
+    public void setField(String name, ValueNode field) {
         fields.put(name, field);
     }
 

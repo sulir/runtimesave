@@ -17,28 +17,28 @@ class TestGraphGenerator {
     private static final int SMALL_MAX_SIZE = 4;
     private Random random;
 
-    Stream<Arguments> samePairs(Supplier<Stream<GraphNode>> graphProvider) {
-        List<GraphNode> graphs = graphProvider.get().toList();
-        List<GraphNode> same = graphProvider.get().toList();
+    Stream<Arguments> samePairs(Supplier<Stream<ValueNode>> graphProvider) {
+        List<ValueNode> graphs = graphProvider.get().toList();
+        List<ValueNode> same = graphProvider.get().toList();
 
         return IntStream.range(0, graphs.size()).mapToObj(i -> Arguments.of(graphs.get(i), same.get(i)));
     }
 
-    Stream<Arguments> differentPairs(Supplier<Stream<GraphNode>> graphProvider) {
-        List<GraphNode> graphs = graphProvider.get().toList();
-        List<GraphNode> shifted = new ArrayList<>(graphs);
+    Stream<Arguments> differentPairs(Supplier<Stream<ValueNode>> graphProvider) {
+        List<ValueNode> graphs = graphProvider.get().toList();
+        List<ValueNode> shifted = new ArrayList<>(graphs);
         Collections.rotate(shifted, 1);
 
         return IntStream.range(0, graphs.size()).mapToObj(i -> Arguments.of(graphs.get(i), shifted.get(i)));
     }
 
-    Stream<GraphNode> examples() {
+    Stream<ValueNode> examples() {
         return Stream.of(trees(), dags(), cyclicGraphs()).flatMap(s -> s);
     }
 
-    Stream<GraphNode> trees() {
-        GraphNode singleNode = new PrimitiveNode(1, "int");
-        GraphNode otherSingleNode = new NullNode();
+    Stream<ValueNode> trees() {
+        PrimitiveNode singleNode = new PrimitiveNode(1, "int");
+        NullNode otherSingleNode = new NullNode();
 
         ObjectNode oneChild = new ObjectNode("Type");
         oneChild.setField("field", singleNode);
@@ -50,7 +50,7 @@ class TestGraphGenerator {
         return Stream.of(singleNode, otherSingleNode, oneChild, tree);
     }
 
-    Stream<GraphNode> dags() {
+    Stream<ValueNode> dags() {
         ObjectNode parallelEdges = new ObjectNode("Top");
         NullNode child = new NullNode();
         parallelEdges.setField("left", child);
@@ -66,10 +66,10 @@ class TestGraphGenerator {
         return Stream.of(parallelEdges, triangle);
     }
 
-    Stream<GraphNode> cyclicGraphs() {
-        GraphNode oneCycle = circularNodes(1)[0];
-        GraphNode twoCycle = circularNodes(2)[0];
-        GraphNode threeCycle = circularNodes(3)[0];
+    Stream<ValueNode> cyclicGraphs() {
+        ArrayNode oneCycle = circularNodes(1)[0];
+        ArrayNode twoCycle = circularNodes(2)[0];
+        ArrayNode threeCycle = circularNodes(3)[0];
 
         ArrayNode[] fourCycle = circularNodes(4);
         fourCycle[2].setElement(0, new NullNode());

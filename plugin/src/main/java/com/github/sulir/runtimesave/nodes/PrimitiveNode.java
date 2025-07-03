@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.nodes;
 
-public class PrimitiveNode extends GraphNode {
+public class PrimitiveNode extends ValueNode {
     private final Object value;
     private final String type;
 
