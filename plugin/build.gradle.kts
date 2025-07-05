@@ -1,8 +1,16 @@
+group = project.property("project.group") as String
+version = project.property("project.version") as String
+
 plugins {
+    java
     id("org.jetbrains.intellij.platform")
 }
 
+apply(plugin = "java")
+java.sourceCompatibility = JavaVersion.VERSION_21
+
 repositories {
+    mavenCentral()
     intellijPlatform {
         defaultRepositories()
     }
@@ -13,15 +21,15 @@ dependencies {
         intellijIdeaCommunity("_")
         bundledPlugin("com.intellij.java")
     }
+
     implementation("org.neo4j.driver:neo4j-java-driver:_")
+    testImplementation("org.junit.jupiter:junit-jupiter:_")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:_")
+    testRuntimeOnly("junit:junit:_")
 
     runtimeOnly(project(":runtimesave-starter")) {
         isTransitive = false
     }
-}
-
-intellijPlatform {
-    buildSearchableOptions = false
 }
 
 tasks.withType<JavaCompile> {
@@ -32,6 +40,13 @@ tasks.assemble {
     dependsOn(tasks.buildPlugin)
 }
 
+tasks.jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(rootProject.file("LICENSE.txt")) {
+        into("META-INF/")
+    }
+}
+
 tasks.buildPlugin {
     dependsOn(":runtimesave-starter:jar")
     destinationDirectory = project.rootProject.file("dist")
@@ -39,6 +54,10 @@ tasks.buildPlugin {
 
 tasks.runIde {
     dependsOn(":runtimesave-starter:jar")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 tasks.clean {

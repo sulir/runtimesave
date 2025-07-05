@@ -1,11 +1,24 @@
+group = project.property("project.group") as String
+version = project.property("project.version") as String
+
 plugins {
+    java
     id("com.gradleup.shadow")
+}
+
+apply(plugin = "java")
+java.sourceCompatibility = JavaVersion.VERSION_17
+
+repositories {
+    mavenCentral()
 }
 
 dependencies {
     implementation("org.ow2.asm:asm:_")
     implementation("org.ow2.asm:asm-tree:_")
     implementation("org.ow2.asm:asm-util:_")
+    testImplementation("org.junit.jupiter:junit-jupiter:_")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:_")
 }
 
 val distDir = project.rootProject.file("dist")
@@ -28,6 +41,10 @@ tasks.jar {
     archiveFileName = agentArchive
     enabled = false
     dependsOn(tasks.shadowJar)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 tasks.clean {
