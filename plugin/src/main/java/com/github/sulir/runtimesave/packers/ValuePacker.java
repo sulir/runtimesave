@@ -21,6 +21,10 @@ public class ValuePacker {
         this.packers = packers;
     }
 
+    public Packer[] getPackers() {
+        return packers;
+    }
+
     public GraphNode pack(GraphNode graph) {
         return transform(graph, new Transformation(Packer::canPack, Packer::pack));
     }

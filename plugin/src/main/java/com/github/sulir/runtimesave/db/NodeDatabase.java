@@ -90,7 +90,7 @@ public class NodeDatabase {
             return;
 
         String query = "UNWIND $nodes AS node"
-                + " CALL apoc.merge.node([$node.label], {idHash: $node.idHash}, $node.props) YIELD node AS merged"
+                + " CALL apoc.merge.node([node.label], {idHash: node.idHash}, node.props) YIELD node AS merged"
                 + " RETURN 0";
 
         try (Session session = db.createSession()) {

@@ -1,6 +1,5 @@
 package com.github.sulir.runtimesave.nodes;
 
-
 import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;

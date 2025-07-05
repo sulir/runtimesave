@@ -1,6 +1,7 @@
 package com.github.sulir.runtimesave;
 
 import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.packers.Packer;
 import org.neo4j.driver.Value;
 
 import java.lang.invoke.MethodHandle;
@@ -41,8 +42,18 @@ public class ObjectMapper {
     }
 
     private static Class<? extends GraphNode> findClass(String nodeLabel) throws ClassNotFoundException {
-        String packageName = GraphNode.class.getPackageName();
-        return Class.forName(packageName + "." + nodeLabel + "Node").asSubclass(GraphNode.class);
+        String className = nodeLabel + "Node";
+        try {
+            return Class.forName(GraphNode.class.getPackageName() + "." + className).asSubclass(GraphNode.class);
+        } catch (ClassNotFoundException e) {
+            Packer[] packers = RuntimePersistenceService.getInstance().getValuePackers();
+            for (Packer packer : packers) {
+                for (Class<?> nested : packer.getClass().getClasses())
+                    if (nested.getSimpleName().equals(className) && GraphNode.class.isAssignableFrom(nested))
+                        return nested.asSubclass(GraphNode.class);
+            }
+            throw new ClassNotFoundException("Node class not found: " + className);
+        }
     }
 
     public String getLabel() {
