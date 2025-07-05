@@ -1,27 +1,15 @@
 package com.github.sulir.runtimesave.hash;
 
+import com.github.sulir.runtimesave.nodes.GraphNode;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
 import java.util.function.BiFunction;
 
 import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
 
 public class ObjectHasher {
-    private static final Map<Class<?>, Primitive> primitiveProperties = Map.of(
-            Character.class, new Primitive(Type.CHAR, Character.BYTES, (buf, o) -> buf.putChar((char) o)),
-            Byte.class, new Primitive(Type.BYTE, Byte.BYTES, (buf, o) -> buf.put((byte) o)),
-            Short.class, new Primitive(Type.SHORT, Short.BYTES, (buf, o) -> buf.putShort((short) o)),
-            Integer.class, new Primitive(Type.INT, Integer.BYTES, (buf, o) -> buf.putInt((int) o)),
-            Long.class, new Primitive(Type.LONG, Long.BYTES, (buf, o) -> buf.putLong((long) o)),
-            Float.class, new Primitive(Type.FLOAT, Float.BYTES, (buf, o) -> buf.putFloat((float) o)),
-            Double.class, new Primitive(Type.DOUBLE, Double.BYTES, (buf, o) -> buf.putDouble((double) o)),
-            Boolean.class, new Primitive(Type.BOOLEAN, 1, (buf, o) -> buf.put((byte) ((boolean) o ? 1 : 0)))
-    );
-
     private final MessageDigest sha = uncheck(() -> MessageDigest.getInstance("SHA-224"));
 
     public ObjectHasher reset() {
@@ -30,71 +18,50 @@ public class ObjectHasher {
     }
 
     public ObjectHasher add(Object object) {
-        if (object == null)
-            return addNull();
-        if (object instanceof String string)
-            return addString(string);
-        if (object instanceof List<?> list)
-            return addList(list);
-        if (object instanceof SortedMap<?, ?> map)
-            return addMap(map);
-        if (object instanceof Enum<?> enumeration)
-            return addEnum(enumeration);
-        if (object instanceof NodeHash hash)
-            return addHash(hash);
-        return addPrimitive(object);
+        return switch (object) {
+            case Integer integer -> addInt(integer);
+            case String string -> addString(string);
+            case Enum<?> enumeration -> addEnum(enumeration);
+            case GraphNode.Property[] properties -> addProperties(properties);
+            case NodeHash hash -> addHash(hash);
+            case Character character -> addFixed(Type.CHAR, character, Character.BYTES, ByteBuffer::putChar);
+            case Byte aByte -> addFixed(Type.BYTE, aByte, Byte.BYTES, ByteBuffer::put);
+            case Short aShort -> addFixed(Type.SHORT, aShort, Short.BYTES, ByteBuffer::putShort);
+            case Long aLong -> addFixed(Type.LONG, aLong, Long.BYTES, ByteBuffer::putLong);
+            case Float aFloat -> addFixed(Type.FLOAT, aFloat, Float.BYTES, ByteBuffer::putFloat);
+            case Double aDouble -> addFixed(Type.DOUBLE, aDouble, Double.BYTES, ByteBuffer::putDouble);
+            case Boolean aBoolean -> addFixed(Type.BOOLEAN, aBoolean, 1, (buf, o) -> buf.put((byte) (o ? 1 : 0)));
+            default -> throw new IllegalArgumentException("Unsupported type: " + object.getClass().getName());
+        };
     }
 
-    public ObjectHasher addPrimitive(Object primitive) {
-        Primitive properties = primitiveProperties.get(primitive.getClass());
-        if (properties == null)
-            throw new IllegalArgumentException("Unsupported type: " + primitive.getClass().getName());
-
-        addType(properties.type());
-        sha.update(properties.putValue().apply(ByteBuffer.allocate(properties.size()), primitive).array());
-        return this;
-    }
-
-    public ObjectHasher addNull() {
-        addType(Type.NULL);
-        return this;
+    public ObjectHasher addInt(int value) {
+        return addTypeAndIntBytes(Type.INT, value);
     }
 
     public ObjectHasher addString(String string) {
-        addType(Type.STRING);
         byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
-        addLength(bytes.length);
+        addTypeAndIntBytes(Type.STRING, bytes.length);
         sha.update(bytes);
         return this;
     }
 
-    public ObjectHasher addList(List<?> list) {
-        addType(Type.LIST);
-        addLength(list.size());
-        list.forEach(this::add);
-        return this;
-    }
-
-    public ObjectHasher addMap(SortedMap<?, ?> map) {
-        addType(Type.MAP);
-        addLength(map.size());
-        map.forEach((key, value) -> {
-            add(key);
-            add(value);
-        });
-        return this;
-    }
-
     public ObjectHasher addEnum(Enum<?> enumeration) {
-        addType(Type.ENUM);
-        sha.update((byte) enumeration.ordinal());
+        return addTypeAndIntBytes(Type.ENUM, enumeration.ordinal());
+    }
+
+    public ObjectHasher addProperties(GraphNode.Property[] properties) {
+        addTypeAndIntBytes(Type.PROPERTIES, properties.length);
+        for (GraphNode.Property property : properties) {
+            addString(property.key());
+            add(property.value());
+        }
         return this;
     }
 
     public ObjectHasher addHash(NodeHash hash) {
-        addType(Type.HASH);
-        sha.update(hash.getBytes());
-        return this;
+        byte[] bytes = hash.getBytes();
+        return addFixed(Type.HASH, bytes, bytes.length, ByteBuffer::put);
     }
 
     public byte[] finish() {
@@ -107,17 +74,21 @@ public class ObjectHasher {
         return finish();
     }
 
-    private void addType(Type type) {
-        sha.update((byte) type.ordinal());
+    private <T> ObjectHasher addFixed(Type type, T value, int size, BiFunction<ByteBuffer, T, ByteBuffer> putter) {
+        ByteBuffer buffer = ByteBuffer.allocate(size + 1);
+        buffer.put((byte) type.ordinal());
+        putter.apply(buffer, value);
+        sha.update(buffer.array());
+        return this;
     }
 
-    private void addLength(int length) {
-        sha.update(ByteBuffer.allocate(Integer.BYTES).putInt(length).array());
+    private ObjectHasher addTypeAndIntBytes(Type type, int i) {
+        byte[] bytes = {(byte) type.ordinal(), (byte) (i >>> 24), (byte) (i >>> 16), (byte) (i >>> 8), (byte) i};
+        sha.update(bytes);
+        return this;
     }
-
-    private record Primitive(Type type, int size, BiFunction<ByteBuffer, Object, ByteBuffer> putValue) { }
 
     private enum Type {
-        CHAR, BYTE, SHORT, INT, LONG, FLOAT, DOUBLE, BOOLEAN, NULL, STRING, LIST, MAP, ENUM, HASH
+        INT, STRING, ENUM, PROPERTIES, HASH, CHAR, BYTE, SHORT, LONG, FLOAT, DOUBLE, BOOLEAN
     }
 }

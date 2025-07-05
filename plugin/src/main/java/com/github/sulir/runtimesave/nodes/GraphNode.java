@@ -12,6 +12,8 @@ public abstract class GraphNode {
     private NodeHash hash;
     private NodeHash idHash;
 
+    public record Property(String key, Object value) { }
+
     public String label() {
         return ObjectMapper.forClass(getClass()).getLabel();
     }

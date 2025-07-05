@@ -1,11 +1,13 @@
 package com.github.sulir.runtimesave.hash;
 
+import com.github.sulir.runtimesave.nodes.GraphNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.FieldSource;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,11 +36,6 @@ class ObjectHasherTest {
     }
 
     @Test
-    void nullHashIsSame() {
-        assertArrayEquals(hasher.hash(null), hasher.hash(null));
-    }
-
-    @Test
     void sameStringsHaveSameHashes() {
         assertArrayEquals(hasher.hash("same"), hasher.hash("same"));
     }
@@ -49,44 +46,6 @@ class ObjectHasherTest {
     }
 
     @Test
-    void sameListsHaveSameHashes() {
-        assertArrayEquals(hasher.hash(List.of(1, 2, 3)), hasher.hash(List.of(1, 2, 3)));
-    }
-
-    @Test
-    void differentListsHaveDifferentHashes() {
-        assertFalse(Arrays.equals(hasher.hash(List.of(1, 2, 3)), hasher.hash(List.of(3, 2, 1))));
-    }
-
-    @Test
-    void sameNestedListsHaveSameHashes() {
-        List<Object> list = List.of(List.of(1), List.of(3, 4), "str", 5.0);
-        List<Object> sameList = new ArrayList<>(list);
-        assertArrayEquals(hasher.hash(list), hasher.hash(sameList));
-    }
-
-    @Test
-    void differentNestedListsHaveDifferentHashes() {
-        List<Object> firstList = List.of(List.of(1), List.of(3, 4), "str", 5.0);
-        List<Object> otherList = List.of(List.of(1), List.of(3, "difference"), "str", 5.0);
-        assertFalse(Arrays.equals(hasher.hash(firstList), hasher.hash(otherList)));
-    }
-
-    @Test
-    void sameMapsHaveSameHashes() {
-        SortedMap<String, Integer> map = new TreeMap<>(Map.of("key1", 1, "key2", 2));
-        SortedMap<String, Integer> sameMap = new TreeMap<>(map);
-        assertArrayEquals(hasher.hash(map), hasher.hash(sameMap));
-    }
-
-    @Test
-    void differentMapsHaveDifferentHashes() {
-        SortedMap<String, Integer> firstMap = new TreeMap<>(Map.of("key1", 1, "key2", 2));
-        SortedMap<String, Integer> otherMap = new TreeMap<>(Map.of("key1", 1, "key2", 3));
-        assertFalse(Arrays.equals(hasher.hash(firstMap), hasher.hash(otherMap)));
-    }
-
-    @Test
     void sameEnumValuesHaveSameHashes() {
         assertArrayEquals(hasher.hash(SampleEnum.ONE), hasher.hash(SampleEnum.ONE));
     }
@@ -94,6 +53,19 @@ class ObjectHasherTest {
     @Test
     void differentEnumValuesHaveDifferentHashes() {
         assertFalse(Arrays.equals(hasher.hash(SampleEnum.ONE), hasher.hash(SampleEnum.TWO)));
+    }
+
+    @Test
+    void samePropertiesHaveSameHashes() {
+        GraphNode.Property[] properties = {new GraphNode.Property("k", "v"), new GraphNode.Property("k2", "v")};
+        assertArrayEquals(hasher.hash(properties), hasher.hash(properties));
+    }
+
+    @Test
+    void differentPropertiesHaveDifferentHashes() {
+        GraphNode.Property[] first = {new GraphNode.Property("key", "value")};
+        GraphNode.Property[] second = {new GraphNode.Property("key", "different")};
+        assertFalse(Arrays.equals(hasher.hash(first), hasher.hash(second)));
     }
 
     @Test
@@ -123,8 +95,8 @@ class ObjectHasherTest {
     @Test
     void sameObjectSequencesHaveSameHashes() {
         for (Object[] pair : primitives) {
-            hasher.addPrimitive(pair[0]);
-            secondHasher.addPrimitive(pair[0]);
+            hasher.add(pair[0]);
+            secondHasher.add(pair[0]);
         }
         assertArrayEquals(hasher.finish(), secondHasher.finish());
     }
@@ -132,8 +104,8 @@ class ObjectHasherTest {
     @Test
     void differentObjectSequencesHaveDifferentHashes() {
         for (Object[] pair : primitives) {
-            hasher.addPrimitive(pair[0]);
-            secondHasher.addPrimitive(pair[1]);
+            hasher.add(pair[0]);
+            secondHasher.add(pair[1]);
         }
         assertFalse(Arrays.equals(hasher.finish(), secondHasher.finish()));
     }
