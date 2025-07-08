@@ -1,14 +1,14 @@
 package com.github.sulir.runtimesave.packers;
 
+import com.github.sulir.runtimesave.graph.Mapping;
+import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.NullNode;
 import com.github.sulir.runtimesave.nodes.ObjectNode;
 import com.github.sulir.runtimesave.nodes.PrimitiveNode;
-import com.github.sulir.runtimesave.nodes.ValueNode;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
 public class LinkedListPacker implements Packer {
     private static final String LIST_TYPE = "java.util.LinkedList";
@@ -48,7 +48,7 @@ public class LinkedListPacker implements Packer {
         result.setField("first", NullNode.getInstance());
         result.setField("last", NullNode.getInstance());
 
-        for (ValueNode item : list.getElements()) {
+        list.getElements().forEach(item -> {
             ObjectNode newNode = new ObjectNode(LIST_NODE_TYPE);
             newNode.setField("item", item);
             newNode.setField("next", NullNode.getInstance());
@@ -63,14 +63,19 @@ public class LinkedListPacker implements Packer {
                 newNode.setField("prev", last);
                 result.setField("last", newNode);
             }
-        }
+        });
 
         return result;
     }
 
     public static class LinkedListNode extends ValueNode {
+        private static final Mapping mapping = mapping(LinkedListNode.class)
+                .property("modCount", int.class, LinkedListNode::getModCount)
+                .edges("HAS_ELEMENT", "index", Integer.class, ValueNode.class, node -> node.elements)
+                .constructor(LinkedListNode::new);
+
         private final int modCount;
-        private SortedMap<Integer, ValueNode> elements = new TreeMap<>();
+        private final SortedMap<Integer, ValueNode> elements = new TreeMap<>();
 
         public LinkedListNode(int modCount) {
             this.modCount = modCount;
@@ -80,21 +85,8 @@ public class LinkedListPacker implements Packer {
             return modCount;
         }
 
-        @Override
-        public SortedMap<Integer, ValueNode> outEdges() {
-            return elements;
-        }
-
-        public ValueNode getElement(int index) {
-            return elements.get(index);
-        }
-
-        public Collection<ValueNode> getElements() {
-            return elements.values();
-        }
-
-        public void setElement(int index, ValueNode element) {
-            elements.put(index, element);
+        public Stream<ValueNode> getElements() {
+            return elements.values().stream();
         }
 
         public void addElement(ValueNode element) {
@@ -106,8 +98,8 @@ public class LinkedListPacker implements Packer {
         }
 
         @Override
-        public void freeze() {
-            elements = Collections.unmodifiableSortedMap(elements);
+        public Mapping getMapping() {
+            return mapping;
         }
     }
 }

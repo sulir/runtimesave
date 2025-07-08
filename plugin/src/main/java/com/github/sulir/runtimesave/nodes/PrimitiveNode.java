@@ -1,6 +1,14 @@
 package com.github.sulir.runtimesave.nodes;
 
+import com.github.sulir.runtimesave.graph.Mapping;
+import com.github.sulir.runtimesave.graph.ValueNode;
+
 public class PrimitiveNode extends ValueNode {
+    private static final Mapping mapping = mapping(PrimitiveNode.class)
+            .property("value", Object.class, PrimitiveNode::getValue)
+            .property("type", String.class, PrimitiveNode::getType)
+            .argsConstructor(props -> new PrimitiveNode(props[0], (String) props[1]));
+
     private final Object value;
     private final String type;
 
@@ -25,5 +33,10 @@ public class PrimitiveNode extends ValueNode {
 
     public String getType() {
         return type;
+    }
+
+    @Override
+    public Mapping getMapping() {
+        return mapping;
     }
 }

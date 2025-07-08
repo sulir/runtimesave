@@ -1,0 +1,72 @@
+package com.github.sulir.runtimesave.graph;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+public record Mapping(String label,
+                      PropertySpec[] properties,
+                      RelationSpec relation,
+                      Function<GraphNode, SortedMap<?, ? extends GraphNode>> edgeMap,
+                      Function<Object[], ? extends GraphNode> constructor) {
+    private static final Map<Class<? extends GraphNode>, Mapping> mappings = new HashMap<>();
+
+    public static Mapping forClass(Class<? extends GraphNode> clazz) {
+        return mappings.get(clazz);
+    }
+
+    public record PropertySpec(String key,
+                               Class<?> type,
+                               Function<GraphNode, ?> getter) {
+    }
+
+    public record RelationSpec(String type,
+                               String propertyName,
+                               Class<?> propertyType,
+                               Class<? extends GraphNode> targetType) {
+    }
+
+    @SuppressWarnings("unchecked")
+    public static class Builder<T extends GraphNode> {
+        private final Class<? extends GraphNode> clazz;
+        private final String label;
+        private final List<PropertySpec> properties = new LinkedList<>();
+        private RelationSpec relations = new RelationSpec("", "", Void.class, GraphNode.class);
+        private Function<GraphNode, SortedMap<?, ? extends GraphNode>> edgeMap = n -> Collections.emptySortedMap();
+
+        public Builder(Class<T> clazz) {
+            this.clazz = clazz;
+            label = clazz.getSimpleName().substring(0, clazz.getSimpleName().lastIndexOf("Node"));
+        }
+
+        public <U> Builder<T> property(String key, Class<U> type, Function<T, U> getter) {
+            properties.add(new PropertySpec(key, type, (Function<GraphNode, ?>) getter));
+            return this;
+        }
+
+        public <U, V extends GraphNode> Builder<T> edges(String relationType,
+                                                         String relationPropertyName,
+                                                         Class<U> relationPropertyType,
+                                                         Class<V> targetType,
+                                                         Function<T, SortedMap<U, V>> edgeMap) {
+            relations = new RelationSpec(relationType, relationPropertyName, relationPropertyType, targetType);
+            this.edgeMap = (Function<GraphNode, SortedMap<?, ? extends GraphNode>>) (Function<?, ?>) edgeMap;
+            return this;
+        }
+
+        public Mapping constructor(Supplier<T> noArgConstructor) {
+            return argsConstructor(props -> noArgConstructor.get());
+        }
+
+        public <U> Mapping constructor(Function<U, T> oneArgConstructor) {
+            return argsConstructor(props -> oneArgConstructor.apply((U) props[0]));
+        }
+
+        public Mapping argsConstructor(Function<Object[], T> anyConstructor) {
+            PropertySpec[] propertiesArray = properties.toArray(PropertySpec[]::new);
+            Mapping mapping = new Mapping(label, propertiesArray, relations, edgeMap, anyConstructor);
+            mappings.put(clazz, mapping);
+            return mapping;
+        }
+    }
+}

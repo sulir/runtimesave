@@ -2,7 +2,7 @@ package com.github.sulir.runtimesave.hash;
 
 import com.github.sulir.runtimesave.nodes.ArrayNode;
 import com.github.sulir.runtimesave.nodes.FrameNode;
-import com.github.sulir.runtimesave.nodes.ValueNode;
+import com.github.sulir.runtimesave.graph.ValueNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

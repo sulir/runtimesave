@@ -2,7 +2,7 @@ package com.github.sulir.runtimesave.packers;
 
 import com.github.sulir.runtimesave.hash.GraphHasher;
 import com.github.sulir.runtimesave.hash.NodeHash;
-import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.graph.GraphNode;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;

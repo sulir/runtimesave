@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.graph.GraphNode;
 
 import java.util.*;
 
@@ -26,8 +26,7 @@ public class AcyclicGraph {
 
         for (StrongComponent component : components)
             for (GraphNode source : component.nodes())
-                for (GraphNode target : source.targets())
-                    nodeToComponent.get(source).addTarget(nodeToComponent.get(target));
+                source.forEachTarget(t -> nodeToComponent.get(source).addTarget(nodeToComponent.get(t)));
 
         return new AcyclicGraph(components, cyclicGraph);
     }
@@ -37,7 +36,7 @@ public class AcyclicGraph {
     }
 
     public StrongComponent getRootComponent() {
-        return topoComponents.get(0);
+        return topoComponents.getFirst();
     }
 
     public int getComponentCount() {

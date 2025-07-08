@@ -1,5 +1,6 @@
 package com.github.sulir.runtimesave.packers;
 
+import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.*;
 import sun.misc.Unsafe;
 
@@ -61,6 +62,7 @@ public class ReflectionReader {
             if (Modifier.isStatic(field.getModifiers()))
                 continue;
 
+            @SuppressWarnings("deprecation")
             long offset = unsafe.objectFieldOffset(field);
             Object fieldValue = getFieldValue(value, offset, field.getType());
             ValueNode fieldNode = read(fieldValue, field.getType());

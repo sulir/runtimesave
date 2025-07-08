@@ -1,5 +1,7 @@
 package com.github.sulir.runtimesave.packers;
 
+import com.github.sulir.runtimesave.graph.GraphNode;
+import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -93,7 +95,8 @@ class ValuePackerTest {
         public ValueNode pack(ValueNode node) {
             ObjectNode object = (ObjectNode) node;
             ObjectNode replacement = new ObjectNode("Replacement");
-            object.outEdges().forEach(replacement::setField);
+            for (String field : object.getFieldNames())
+                replacement.setField(field, object.getField(field));
             return replacement;
         }
 
@@ -106,7 +109,8 @@ class ValuePackerTest {
         public ValueNode unpack(ValueNode node) {
             ObjectNode object = (ObjectNode) node;
             ObjectNode packable = new ObjectNode("Packable");
-            object.outEdges().forEach(packable::setField);
+            for (String field : object.getFieldNames())
+                packable.setField(field, object.getField(field));
             return packable;
         }
     }

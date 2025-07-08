@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.graph.GraphNode;
 import com.github.sulir.runtimesave.nodes.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,12 +46,12 @@ class AcyclicGraphTest {
     @Test
     void topoOrderStartsWithReferringNode() {
         AcyclicGraph dag = AcyclicGraph.multiCondensationOf(referring);
-        assertEquals(referring, dag.topoOrder().get(0).getSoleNode());
+        assertEquals(referring, dag.topoOrder().getFirst().getSoleNode());
     }
 
     @Test
     void reverseTopoOrderStartsWithReferredNode() {
         AcyclicGraph dag = AcyclicGraph.multiCondensationOf(referring);
-        assertEquals(referred, dag.reverseTopoOrder().get(0).getSoleNode());
+        assertEquals(referred, dag.reverseTopoOrder().getFirst().getSoleNode());
     }
 }

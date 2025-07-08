@@ -1,15 +1,15 @@
 package com.github.sulir.runtimesave.db;
 
-import com.github.sulir.runtimesave.ObjectMapper;
+import com.github.sulir.runtimesave.graph.GraphNode;
+import com.github.sulir.runtimesave.graph.NodeFactory;
+import com.github.sulir.runtimesave.graph.NodeProperty;
 import com.github.sulir.runtimesave.hash.AcyclicGraph;
 import com.github.sulir.runtimesave.hash.NodeHash;
 import com.github.sulir.runtimesave.hash.StrongComponent;
-import com.github.sulir.runtimesave.nodes.GraphNode;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
-import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
 import java.util.*;
@@ -17,9 +17,11 @@ import java.util.stream.Stream;
 
 public class NodeDatabase {
     private final DbConnection db;
+    private final NodeFactory factory;
 
-    public NodeDatabase(DbConnection db) {
+    public NodeDatabase(DbConnection db, NodeFactory factory) {
         this.db = db;
+        this.factory = factory;
     }
 
     public <T extends GraphNode> T read(NodeHash hash, Class<T> type) {
@@ -30,26 +32,35 @@ public class NodeDatabase {
                     + " RETURN elementId(root) as rootId, nodes, relationships";
             Record record = session.run(query, Map.of("hash", hash.toString())).single();
             String rootId = record.get("rootId").asString();
-            List<Node> nodes = record.get("nodes").asList(Value::asNode);
+            List<org.neo4j.driver.types.Node> nodes = record.get("nodes").asList(Value::asNode);
             List<Relationship> edges = record.get("relationships").asList(Value::asRelationship);
 
-            Map<String, GraphNode> idToNode = new HashMap<>();
-            for (Node dbNode : nodes) {
-                String label = dbNode.labels().iterator().next();
-                Map<String, Value> properties = dbNode.asMap(Values.ofValue());
-                GraphNode graphNode = ObjectMapper.forLabel(label).createNodeObject(properties);
-                graphNode.setHash(NodeHash.fromString(properties.get("hash").asString()));
-                idToNode.put(dbNode.elementId(), graphNode);
-            }
-
-            for (Relationship edge : edges) {
-                GraphNode from = idToNode.get(edge.startNodeElementId());
-                GraphNode to = idToNode.get(edge.endNodeElementId());
-                Map<String, Value> properties = edge.asMap(Values.ofValue());
-                ObjectMapper.forClass(from.getClass()).connectNodeObjects(from, to, properties);
-            }
-
+            Map<String, GraphNode> idToNode = createNodeObjects(nodes);
+            connectNodes(edges, idToNode);
             return type.cast(idToNode.get(rootId));
+        }
+    }
+
+    private Map<String, GraphNode> createNodeObjects(List<org.neo4j.driver.types.Node> nodes) {
+        Map<String, GraphNode> idToNode = new HashMap<>();
+        for (org.neo4j.driver.types.Node dbNode : nodes) {
+            String label = dbNode.labels().iterator().next();
+            Map<String, Value> properties = dbNode.asMap(Values.ofValue());
+            GraphNode graphNode = factory.createNode(label, properties);
+            idToNode.put(dbNode.elementId(), graphNode);
+        }
+        return idToNode;
+    }
+
+    private void connectNodes(List<Relationship> edges, Map<String, GraphNode> idToNode) {
+        for (Relationship edge : edges) {
+            GraphNode from = idToNode.get(edge.startNodeElementId());
+            if (!edge.hasType(from.getMapping().relation().type()))
+                continue;
+            GraphNode to = idToNode.get(edge.endNodeElementId());
+            Map<String, Value> properties = edge.asMap(Values.ofValue());
+            Value key = properties.get(from.getMapping().relation().propertyName());
+            from.setTarget(key.as(from.getMapping().relation().propertyType()), to);
         }
     }
 
@@ -99,18 +110,15 @@ public class NodeDatabase {
     }
 
     private Map<String, Object> nodeToMap(GraphNode node) {
-        ObjectMapper mapper = ObjectMapper.forClass(node.getClass());
-        Map<String, Object> properties = mapper.getProperties(node);
+        Map<String, Object> properties = new HashMap<>();
+        for (NodeProperty property : node.properties())
+            properties.put(property.key(), property.value());
         properties.put("hash", node.hash().toString());
-        return Map.of("label", mapper.getLabel(), "idHash", node.idHash().toString(), "props", properties);
+        return Map.of("label", node.label(), "idHash", node.idHash().toString(), "props", properties);
     }
 
     private void writeOutEdges(Stream<GraphNode> nodes) {
-        List<Map<String, Object>> edges = new ArrayList<>();
-        nodes.forEach(node -> {
-            ObjectMapper mapper = ObjectMapper.forClass(node.getClass());
-            edges.addAll(mapper.getRelationships(node));
-        });
+        List<Map<String, Object>> edges = nodes.flatMap(this::getRelationships).toList();
         if (edges.isEmpty())
             return;
 
@@ -123,5 +131,13 @@ public class NodeDatabase {
         try (Session session = db.createSession()) {
             session.run(query, Map.of("edges", edges));
         }
+    }
+
+    private Stream<Map<String, Object>> getRelationships(GraphNode from) {
+        return from.edges().map(edge ->Map.of(
+                "from", from.idHash().toString(),
+                "to", edge.target().idHash().toString(),
+                "type", from.getMapping().relation().type(),
+                "props", Map.of(from.getMapping().relation().propertyName(), edge.label())));
     }
 }

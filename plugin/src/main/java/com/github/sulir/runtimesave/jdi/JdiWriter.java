@@ -1,6 +1,7 @@
 package com.github.sulir.runtimesave.jdi;
 
 import com.github.sulir.runtimesave.MismatchException;
+import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.*;
 import com.sun.jdi.*;
 
@@ -139,7 +140,7 @@ public class JdiWriter {
     }
 
     private Value invokeHelperMethod(String methodName, String signature, List<Value> args) {
-        ClassType helper = (ClassType) vm.classesByName(UNSAFE_HELPER).get(0);
+        ClassType helper = (ClassType) vm.classesByName(UNSAFE_HELPER).getFirst();
         Method method = helper.concreteMethodByName(methodName, signature);
         ThreadReference thread = frame.thread();
         Value result = uncheck(() -> helper.invokeMethod(thread, method, args, ClassType.INVOKE_SINGLE_THREADED));

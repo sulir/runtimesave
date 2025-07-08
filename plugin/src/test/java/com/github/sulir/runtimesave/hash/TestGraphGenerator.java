@@ -1,5 +1,7 @@
 package com.github.sulir.runtimesave.hash;
 
+import com.github.sulir.runtimesave.graph.GraphNode;
+import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.*;
 import org.junit.jupiter.params.provider.Arguments;
 
@@ -179,7 +181,7 @@ class TestGraphGenerator {
         graph.traverse(node -> nodeNumbers.put(node, nodeNumbers.size()));
 
         Traversal traversal = new Traversal();
-        graph.traverse(node -> traversal.add(node.targets().stream().map(nodeNumbers::get).toList()));
+        graph.traverse(node -> traversal.add(node.targets().map(nodeNumbers::get).toList()));
         traversal.trimToSize();
         return traversal;
     }

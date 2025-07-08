@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.graph.NodeProperty;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +22,7 @@ public class ObjectHasher {
             case Integer integer -> addInt(integer);
             case String string -> addString(string);
             case Enum<?> enumeration -> addEnum(enumeration);
-            case GraphNode.Property[] properties -> addProperties(properties);
+            case NodeProperty[] properties -> addProperties(properties);
             case NodeHash hash -> addHash(hash);
             case Character character -> addFixed(Type.CHAR, character, Character.BYTES, ByteBuffer::putChar);
             case Byte aByte -> addFixed(Type.BYTE, aByte, Byte.BYTES, ByteBuffer::put);
@@ -50,9 +50,9 @@ public class ObjectHasher {
         return addTypeAndIntBytes(Type.ENUM, enumeration.ordinal());
     }
 
-    public ObjectHasher addProperties(GraphNode.Property[] properties) {
+    public ObjectHasher addProperties(NodeProperty[] properties) {
         addTypeAndIntBytes(Type.PROPERTIES, properties.length);
-        for (GraphNode.Property property : properties) {
+        for (NodeProperty property : properties) {
             addString(property.key());
             add(property.value());
         }

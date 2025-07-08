@@ -1,12 +1,19 @@
 package com.github.sulir.runtimesave.nodes;
 
-import java.util.Collections;
+import com.github.sulir.runtimesave.graph.Mapping;
+import com.github.sulir.runtimesave.graph.ValueNode;
+
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 public class ArrayNode extends ValueNode {
+    private static final Mapping mapping = mapping(ArrayNode.class)
+            .property("type", String.class, ArrayNode::getType)
+            .edges("HAS_ELEMENT", "index", Integer.class, ValueNode.class, node -> node.elements)
+            .constructor(ArrayNode::new);
+
     private final String type;
-    private SortedMap<Integer, ValueNode> elements = new TreeMap<>();
+    private final SortedMap<Integer, ValueNode> elements = new TreeMap<>();
 
     public ArrayNode(String type) {
         this.type = type;
@@ -16,29 +23,24 @@ public class ArrayNode extends ValueNode {
         return type;
     }
 
-    @Override
-    public SortedMap<Integer, ValueNode> outEdges() {
-        return elements;
-    }
-
     public ValueNode getElement(int index) {
         return elements.get(index);
     }
 
     public void setElement(int index, ValueNode element) {
+        checkModification();
         elements.put(index, element);
     }
 
     public void addElement(ValueNode element) {
-        elements.put(elements.size(), element);
+        setElement(elements.size(), element);
     }
 
     public int length() {
         return elements.isEmpty() ? 0 : elements.lastKey() + 1;
     }
 
-    @Override
-    public void freeze() {
-        elements = Collections.unmodifiableSortedMap(elements);
+    public Mapping getMapping() {
+        return mapping;
     }
 }

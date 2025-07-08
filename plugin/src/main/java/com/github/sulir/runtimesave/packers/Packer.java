@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.packers;
 
-import com.github.sulir.runtimesave.nodes.ValueNode;
+import com.github.sulir.runtimesave.graph.ValueNode;
 
 public interface Packer {
     boolean canPack(ValueNode node);

@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.graph.NodeProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -57,14 +57,14 @@ class ObjectHasherTest {
 
     @Test
     void samePropertiesHaveSameHashes() {
-        GraphNode.Property[] properties = {new GraphNode.Property("k", "v"), new GraphNode.Property("k2", "v")};
+        NodeProperty[] properties = {new NodeProperty("k", "v"), new NodeProperty("k2", "v")};
         assertArrayEquals(hasher.hash(properties), hasher.hash(properties));
     }
 
     @Test
     void differentPropertiesHaveDifferentHashes() {
-        GraphNode.Property[] first = {new GraphNode.Property("key", "value")};
-        GraphNode.Property[] second = {new GraphNode.Property("key", "different")};
+        NodeProperty[] first = {new NodeProperty("key", "value")};
+        NodeProperty[] second = {new NodeProperty("key", "different")};
         assertFalse(Arrays.equals(hasher.hash(first), hasher.hash(second)));
     }
 

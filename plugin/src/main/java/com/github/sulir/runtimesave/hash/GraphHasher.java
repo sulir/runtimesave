@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.graph.GraphNode;
 
 import java.util.*;
 
@@ -32,9 +32,9 @@ public class GraphHasher {
         orders.put(node, orders.size());
         hasher.add(node.label()).add(node.properties());
 
-        if (!node.outEdges().isEmpty()) {
+        if (node.edgeCount() != 0) {
             hasher.add(Marker.TARGETS_START);
-            node.outEdges().forEach((property, target) -> {
+            node.forEachEdge((property, target) -> {
                 hasher.add(property);
                 Integer targetOrder = orders.get(target);
                 if (targetOrder == null)

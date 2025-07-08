@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.graph.GraphNode;
 
 import java.util.*;
 
@@ -25,7 +25,7 @@ public class TarjanScc {
         stack.push(node);
         data.onStack = true;
 
-        for (GraphNode targetNode : node.targets()) {
+        node.forEachTarget(targetNode -> {
             NodeData target = getData(targetNode);
             if (target.index == NodeData.UNVISITED) {
                 strongConnect(targetNode);
@@ -33,7 +33,7 @@ public class TarjanScc {
             } else if (target.onStack) {
                 data.lowLink = Math.min(data.lowLink, target.index);
             }
-        }
+        });
 
         if (data.lowLink == data.index) {
             StrongComponent component = new StrongComponent();

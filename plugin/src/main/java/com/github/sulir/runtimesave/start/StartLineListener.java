@@ -66,7 +66,7 @@ public class StartLineListener implements DebuggerManagerListener {
                     return;
                 }
 
-                BreakpointRequest breakpoint = vm.eventRequestManager().createBreakpointRequest(locations.get(0));
+                BreakpointRequest breakpoint = vm.eventRequestManager().createBreakpointRequest(locations.getFirst());
                 DebugProcessEvents.enableRequestWithHandler(breakpoint, this::handleBreakpoint);
             } catch (AbsentInformationException e) {
                 stopProgram(vm, "Line number information absent for class " + className);

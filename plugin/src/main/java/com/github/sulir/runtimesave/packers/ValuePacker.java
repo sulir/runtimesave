@@ -1,7 +1,8 @@
 package com.github.sulir.runtimesave.packers;
 
-import com.github.sulir.runtimesave.nodes.GraphNode;
-import com.github.sulir.runtimesave.nodes.ValueNode;
+import com.github.sulir.runtimesave.graph.Edge;
+import com.github.sulir.runtimesave.graph.GraphNode;
+import com.github.sulir.runtimesave.graph.ValueNode;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -12,9 +13,17 @@ public class ValuePacker {
     private Map<GraphNode, NodeData> packableNodes;
 
     public static ValuePacker fromServiceLoader() {
-        ServiceLoader<Packer> loader = ServiceLoader.load(Packer.class);
-        Packer[] packers = loader.stream().map(ServiceLoader.Provider::get).toArray(Packer[]::new);
-        return new ValuePacker(packers);
+        Thread thread = Thread.currentThread();
+        ClassLoader originalClassLoader = thread.getContextClassLoader();
+        ClassLoader pluginClassLoader = ValuePacker.class.getClassLoader();
+        try {
+            thread.setContextClassLoader(pluginClassLoader);
+            ServiceLoader<Packer> loader = ServiceLoader.load(Packer.class);
+            Packer[] packers = loader.stream().map(ServiceLoader.Provider::get).toArray(Packer[]::new);
+            return new ValuePacker(packers);
+        } finally {
+            thread.setContextClassLoader(originalClassLoader);
+        }
     }
 
     public ValuePacker(Packer[] packers) {
@@ -54,13 +63,12 @@ public class ValuePacker {
             }
         }
 
-        for (Map.Entry<?, ? extends GraphNode> entry : node.outEdges().entrySet()) {
-            GraphNode target = entry.getValue();
-            collectNodeData(target, transformation, visited);
-            NodeData packableNode = packableNodes.get(target);
+        node.edges().forEach(edge -> {
+            collectNodeData(edge.target(), transformation, visited);
+            NodeData packableNode = packableNodes.get(edge.target());
             if (packableNode != null)
-                packableNode.sources().add(new Edge(entry));
-        }
+                packableNode.sources().add(edge);
+        });
     }
 
     private GraphNode applyTransformations(GraphNode node, Transformation transformation, Set<GraphNode> visited) {
@@ -69,14 +77,15 @@ public class ValuePacker {
         NodeData packableNode = packableNodes.get(node);
         if (packableNode != null) {
             ValueNode transformed = transformation.transformer().apply(packableNode.packer(), (ValueNode) node);
-            for (Edge source : packableNode.sources())
-                source.setTarget(transformed);
+            for (Edge sourceEdge : packableNode.sources())
+                sourceEdge.source().setTarget(sourceEdge.label(), transformed);
             return transformed;
         }
 
-        for (GraphNode target : node.targets())
+        node.forEachTarget(target -> {
             if (!visited.contains(target))
                 applyTransformations(target, transformation, visited);
+        });
 
         return node;
     }
@@ -85,11 +94,4 @@ public class ValuePacker {
                                   BiFunction<Packer, ValueNode, ValueNode> transformer) { }
 
     private record NodeData(Packer packer, List<Edge> sources) { }
-
-    private record Edge(Map.Entry<?, ? extends GraphNode> sourceEntry) {
-        @SuppressWarnings("unchecked")
-        void setTarget(GraphNode value) {
-            ((Map.Entry<?, GraphNode>) sourceEntry).setValue(value);
-        }
-    }
 }

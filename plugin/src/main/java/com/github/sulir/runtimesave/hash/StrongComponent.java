@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.graph.GraphNode;
 
 import java.util.*;
 
@@ -34,7 +34,7 @@ public class StrongComponent {
     }
 
     public boolean isTrivial() {
-        return nodes.size() == 1 && !getSoleNode().targets().contains(getSoleNode());
+        return nodes.size() == 1 && getSoleNode().targets().noneMatch(node -> node == getSoleNode());
     }
 
     public GraphNode getSoleNode() {

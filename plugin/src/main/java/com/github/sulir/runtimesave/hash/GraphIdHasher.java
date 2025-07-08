@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.GraphNode;
+import com.github.sulir.runtimesave.graph.GraphNode;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,9 +30,9 @@ public class GraphIdHasher {
         visited.add(node);
         hasher.add(node.hash()).add(nodeCopies.get(node));
 
-        if (!node.outEdges().isEmpty()) {
+        if (node.edgeCount() != 0) {
             hasher.add(Marker.TARGETS_START);
-            node.outEdges().forEach((property, target) -> {
+            node.forEachEdge((property, target) -> {
                 if (!visited.contains(target)) {
                     hasher.add(property);
                     computeIdHash(target);

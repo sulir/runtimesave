@@ -1,5 +1,6 @@
 package com.github.sulir.runtimesave.jdi;
 
+import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.*;
 import com.sun.jdi.*;
 
@@ -35,32 +36,31 @@ public class JdiReader {
     }
 
     private ValueNode createNode(Value value) {
-        if (value instanceof PrimitiveValue primitive) {
-            return new PrimitiveNode(toBoxed(primitive), primitive.type().name());
-        } else if (value == null) {
-            return NullNode.getInstance();
-        } else if (value instanceof ObjectReference object) {
-            ValueNode existing = created.get(object.uniqueID());
-            if (existing != null)
-                return existing;
+        return switch (value) {
+            case PrimitiveValue primitive -> new PrimitiveNode(toBoxed(primitive), primitive.type().name());
+            case null -> NullNode.getInstance();
+            case ObjectReference object -> {
+                ValueNode existing = created.get(object.uniqueID());
+                if (existing != null)
+                    yield existing;
 
-            ValueNode node;
-            if (object instanceof StringReference string) {
-                node = new StringNode(string.value());
-                created.put(object.uniqueID(), node);
-            } else if (object instanceof ArrayReference array) {
-                node = new ArrayNode(object.referenceType().name());
-                created.put(object.uniqueID(), node);
-                addElements((ArrayNode) node, array);
-            } else {
-                node = new ObjectNode(object.referenceType().name());
-                created.put(object.uniqueID(), node);
-                saveFields((ObjectNode) node, object);
+                ValueNode node;
+                if (object instanceof StringReference string) {
+                    node = new StringNode(string.value());
+                    created.put(object.uniqueID(), node);
+                } else if (object instanceof ArrayReference array) {
+                    node = new ArrayNode(object.referenceType().name());
+                    created.put(object.uniqueID(), node);
+                    addElements((ArrayNode) node, array);
+                } else {
+                    node = new ObjectNode(object.referenceType().name());
+                    created.put(object.uniqueID(), node);
+                    saveFields((ObjectNode) node, object);
+                }
+                yield node;
             }
-            return node;
-        } else {
-            throw new IllegalArgumentException("Unknown value type: " + value.type().name());
-        }
+            default -> throw new IllegalArgumentException("Unknown value type: " + value.type().name());
+        };
     }
 
     private void addElements(ArrayNode arrayNode, ArrayReference array) {
