@@ -1,5 +1,6 @@
 package com.github.sulir.runtimesave.hash;
 
+import com.github.sulir.runtimesave.graph.TestGraphGenerator;
 import com.github.sulir.runtimesave.nodes.ArrayNode;
 import com.github.sulir.runtimesave.nodes.FrameNode;
 import com.github.sulir.runtimesave.graph.ValueNode;

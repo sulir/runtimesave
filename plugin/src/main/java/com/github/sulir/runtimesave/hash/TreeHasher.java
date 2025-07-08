@@ -38,7 +38,7 @@ public class TreeHasher {
             if (getData(scc).tree) {
                 GraphNode node = scc.getSoleNode();
                 hasher.reset().add(node.label()).add(node.properties());
-                node.forEachEdge((property, target) -> hasher.add(property).add(target.hash()));
+                node.forEachEdge((label, target) -> hasher.add(label).add(target.hash()));
                 node.setHash(new NodeHash(hasher.finish()));
             }
         }

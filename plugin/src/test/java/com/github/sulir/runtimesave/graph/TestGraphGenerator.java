@@ -1,7 +1,5 @@
-package com.github.sulir.runtimesave.hash;
+package com.github.sulir.runtimesave.graph;
 
-import com.github.sulir.runtimesave.graph.GraphNode;
-import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.*;
 import org.junit.jupiter.params.provider.Arguments;
 
@@ -10,7 +8,7 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-class TestGraphGenerator {
+public class TestGraphGenerator {
     private static final int RANDOM_COUNT = 1000;
     private static final int RANDOM_MIN_SIZE = 5;
     private static final int RANDOM_MAX_SIZE = 15;
@@ -19,14 +17,14 @@ class TestGraphGenerator {
     private static final int SMALL_MAX_SIZE = 4;
     private Random random;
 
-    Stream<Arguments> samePairs(Supplier<Stream<ValueNode>> graphProvider) {
+    public Stream<Arguments> samePairs(Supplier<Stream<ValueNode>> graphProvider) {
         List<ValueNode> graphs = graphProvider.get().toList();
         List<ValueNode> same = graphProvider.get().toList();
 
         return IntStream.range(0, graphs.size()).mapToObj(i -> Arguments.of(graphs.get(i), same.get(i)));
     }
 
-    Stream<Arguments> differentPairs(Supplier<Stream<ValueNode>> graphProvider) {
+    public Stream<Arguments> differentPairs(Supplier<Stream<ValueNode>> graphProvider) {
         List<ValueNode> graphs = graphProvider.get().toList();
         List<ValueNode> shifted = new ArrayList<>(graphs);
         Collections.rotate(shifted, 1);
@@ -34,11 +32,11 @@ class TestGraphGenerator {
         return IntStream.range(0, graphs.size()).mapToObj(i -> Arguments.of(graphs.get(i), shifted.get(i)));
     }
 
-    Stream<ValueNode> examples() {
+    public Stream<ValueNode> examples() {
         return Stream.of(trees(), dags(), cyclicGraphs()).flatMap(s -> s);
     }
 
-    Stream<ValueNode> trees() {
+    public Stream<ValueNode> trees() {
         PrimitiveNode singleNode = new PrimitiveNode(1, "int");
         NullNode otherSingleNode = new NullNode();
 
@@ -52,7 +50,7 @@ class TestGraphGenerator {
         return Stream.of(singleNode, otherSingleNode, oneChild, tree);
     }
 
-    Stream<ValueNode> dags() {
+    public Stream<ValueNode> dags() {
         ObjectNode parallelEdges = new ObjectNode("Top");
         NullNode child = new NullNode();
         parallelEdges.setField("left", child);
@@ -68,7 +66,7 @@ class TestGraphGenerator {
         return Stream.of(parallelEdges, triangle);
     }
 
-    Stream<ValueNode> cyclicGraphs() {
+    public Stream<ValueNode> cyclicGraphs() {
         ArrayNode oneCycle = circularNodes(1)[0];
         ArrayNode twoCycle = circularNodes(2)[0];
         ArrayNode threeCycle = circularNodes(3)[0];
@@ -84,17 +82,17 @@ class TestGraphGenerator {
         return Stream.of(oneCycle, twoCycle, threeCycle, fourCycle[0], fiveCycle[0]);
     }
 
-    Stream<GraphNode> randomGraphs() {
+    public Stream<GraphNode> randomGraphs() {
         random = new Random(0);
-        Set<Traversal> uniqueTraversals = new HashSet<>(RANDOM_COUNT);
+        Set<List<?>> uniqueTraversals = new HashSet<>(RANDOM_COUNT);
 
         return IntStream.range(0, RANDOM_COUNT)
                 .mapToObj(i -> randomGraph())
-                .filter(graph -> uniqueTraversals.add(getTraversal(graph)));
+                .filter(graph -> uniqueTraversals.add(GraphTestUtils.getBfsTraversal(graph)));
     }
 
-    Stream<GraphNode> allSmallGraphs() {
-        Set<Traversal> uniqueTraversals = new HashSet<>();
+    public Stream<GraphNode> allSmallGraphs() {
+        Set<List<?>> uniqueTraversals = new HashSet<>();
 
         return IntStream.range(SMALL_MIN_SIZE, SMALL_MAX_SIZE + 1).boxed().flatMap(nodeCount -> {
             List<int[]> possibleEdges = allNumbers(2, nodeCount).toList();
@@ -108,12 +106,12 @@ class TestGraphGenerator {
                         edgeSets.add(new EdgeSet(edge[0], edge[1], edgeCounts[i]));
                     }
                     return createGraph(spanningSources, edgeSets);
-                }).filter(graph -> uniqueTraversals.add(getTraversal(graph)));
+                }).filter(graph -> uniqueTraversals.add(GraphTestUtils.getBfsTraversal(graph)));
             });
         });
     }
 
-    ArrayNode[] circularNodes(int length) {
+    public ArrayNode[] circularNodes(int length) {
         ArrayNode[] nodes = new ArrayNode[length];
         for (int i = 0; i < length; i++)
             nodes[i] = new ArrayNode("Cls[]");
@@ -176,17 +174,5 @@ class TestGraphGenerator {
         return nodes[0];
     }
 
-    private Traversal getTraversal(GraphNode graph) {
-        Map<GraphNode, Integer> nodeNumbers = new HashMap<>();
-        graph.traverse(node -> nodeNumbers.put(node, nodeNumbers.size()));
-
-        Traversal traversal = new Traversal();
-        graph.traverse(node -> traversal.add(node.targets().map(nodeNumbers::get).toList()));
-        traversal.trimToSize();
-        return traversal;
-    }
-
     private record EdgeSet(int from, int to, int count) { }
-
-    private static class Traversal extends ArrayList<List<Integer>> { }
 }

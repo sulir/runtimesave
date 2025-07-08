@@ -1,6 +1,7 @@
 package com.github.sulir.runtimesave.hash;
 
 import com.github.sulir.runtimesave.graph.GraphNode;
+import com.github.sulir.runtimesave.graph.TestGraphGenerator;
 import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.*;
 import org.junit.jupiter.api.BeforeEach;

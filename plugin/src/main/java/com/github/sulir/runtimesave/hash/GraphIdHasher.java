@@ -32,9 +32,9 @@ public class GraphIdHasher {
 
         if (node.edgeCount() != 0) {
             hasher.add(Marker.TARGETS_START);
-            node.forEachEdge((property, target) -> {
+            node.forEachEdge((label, target) -> {
                 if (!visited.contains(target)) {
-                    hasher.add(property);
+                    hasher.add(label);
                     computeIdHash(target);
                 }
             });

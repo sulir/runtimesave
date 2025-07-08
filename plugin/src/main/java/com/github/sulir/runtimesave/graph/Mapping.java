@@ -44,11 +44,12 @@ public record Mapping(String label,
             return this;
         }
 
-        public <U, V extends GraphNode> Builder<T> edges(String relationType,
-                                                         String relationPropertyName,
-                                                         Class<U> relationPropertyType,
-                                                         Class<V> targetType,
-                                                         Function<T, SortedMap<U, V>> edgeMap) {
+        public <K extends Comparable<K>, V extends GraphNode>
+        Builder<T> edges(String relationType,
+                         String relationPropertyName,
+                         Class<K> relationPropertyType,
+                         Class<V> targetType,
+                         Function<T, SortedMap<K, V>> edgeMap) {
             relations = new RelationSpec(relationType, relationPropertyName, relationPropertyType, targetType);
             this.edgeMap = (Function<GraphNode, SortedMap<?, ? extends GraphNode>>) (Function<?, ?>) edgeMap;
             return this;
@@ -58,8 +59,8 @@ public record Mapping(String label,
             return argsConstructor(props -> noArgConstructor.get());
         }
 
-        public <U> Mapping constructor(Function<U, T> oneArgConstructor) {
-            return argsConstructor(props -> oneArgConstructor.apply((U) props[0]));
+        public <A> Mapping constructor(Function<A, T> oneArgConstructor) {
+            return argsConstructor(props -> oneArgConstructor.apply((A) props[0]));
         }
 
         public Mapping argsConstructor(Function<Object[], T> anyConstructor) {

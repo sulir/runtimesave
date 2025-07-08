@@ -13,7 +13,7 @@ public class UnsafeHelper {
             "byte", byte.class, "short", short.class, "int", int.class, "long", long.class,
             "float", float.class, "double", double.class, "boolean", boolean.class);
     private static final Unsafe unsafe = getUnsafe();
-    private static final Cache<ClassField, Long> offsetCache = new Cache<>();
+    private static final LruCache<ClassField, Long> offsetCache = new LruCache<>();
 
     @SuppressWarnings("EmptyMethod")
     public static void ensureLoadedForJdi() { }
@@ -108,8 +108,8 @@ public class UnsafeHelper {
         }
     }
 
-    private static class Cache<K, V> extends LinkedHashMap<K, V> {
-        public Cache() {
+    private static class LruCache<K, V> extends LinkedHashMap<K, V> {
+        public LruCache() {
             super(32, 0.75f, true);
         }
 

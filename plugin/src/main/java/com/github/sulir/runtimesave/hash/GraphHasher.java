@@ -34,8 +34,8 @@ public class GraphHasher {
 
         if (node.edgeCount() != 0) {
             hasher.add(Marker.TARGETS_START);
-            node.forEachEdge((property, target) -> {
-                hasher.add(property);
+            node.forEachEdge((label, target) -> {
+                hasher.add(label);
                 Integer targetOrder = orders.get(target);
                 if (targetOrder == null)
                     computeHash(target);
