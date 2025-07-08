@@ -4,6 +4,7 @@ import sun.misc.Unsafe;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @SuppressWarnings("unused")
@@ -12,6 +13,7 @@ public class UnsafeHelper {
             "byte", byte.class, "short", short.class, "int", int.class, "long", long.class,
             "float", float.class, "double", double.class, "boolean", boolean.class);
     private static final Unsafe unsafe = getUnsafe();
+    private static final Cache<ClassField, Long> offsetCache = new Cache<>();
 
     @SuppressWarnings("EmptyMethod")
     public static void ensureLoadedForJdi() { }
@@ -40,12 +42,6 @@ public class UnsafeHelper {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @SuppressWarnings({"deprecation", "RedundantSuppression"})
-    public static long getOffset(Object object, String fieldName) {
-        Field field = findField(object.getClass(), fieldName);
-        return unsafe.objectFieldOffset(field);
     }
 
     public static void putValue(Object object, String fieldName, char value) {
@@ -94,6 +90,14 @@ public class UnsafeHelper {
         }
     }
 
+    private static long getOffset(Object object, String fieldName) {
+        ClassField classField = new ClassField(object.getClass(), fieldName);
+        return offsetCache.computeIfAbsent(classField, cf -> {
+            Field field = findField(cf.clazz(), cf.field());
+            return unsafe.objectFieldOffset(field);
+        });
+    }
+
     private static Field findField(Class<?> clazz, String name) {
         try {
             return clazz.getDeclaredField(name);
@@ -103,4 +107,17 @@ public class UnsafeHelper {
             return findField(clazz.getSuperclass(), name);
         }
     }
+
+    private static class Cache<K, V> extends LinkedHashMap<K, V> {
+        public Cache() {
+            super(32, 0.75f, true);
+        }
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+            return size() > 1000;
+        }
+    }
+
+    private record ClassField(Class<?> clazz, String field) { }
 }
