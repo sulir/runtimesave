@@ -1,10 +1,8 @@
-package com.github.sulir.runtimesave.packers;
+package com.github.sulir.runtimesave.packing;
 
 import com.github.sulir.runtimesave.graph.GraphNode;
 import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.*;
-import com.github.sulir.runtimesave.packing.Packer;
-import com.github.sulir.runtimesave.packing.ValuePacker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -75,8 +73,8 @@ class ValuePackerTest {
     }
 
     @Test
-    void loadingPackersFromServiceLoaderDoesNotCrash() {
-        assertDoesNotThrow(ValuePacker::fromServiceLoader);
+    void serviceLoaderProvidesAtLeastOnePacker() {
+        assertTrue(ValuePacker.fromServiceLoader().getPackers().length > 0);
     }
 
     private void assertOnlyTypeChanged(GraphNode node, String type) {

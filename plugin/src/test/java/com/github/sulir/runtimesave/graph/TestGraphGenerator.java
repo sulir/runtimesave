@@ -38,7 +38,7 @@ public class TestGraphGenerator {
 
     public Stream<ValueNode> trees() {
         PrimitiveNode singleNode = new PrimitiveNode(1, "int");
-        NullNode otherSingleNode = new NullNode();
+        StringNode otherSingleNode = new StringNode("");
 
         ObjectNode oneChild = new ObjectNode("Type");
         oneChild.setField("field", singleNode);
@@ -52,7 +52,7 @@ public class TestGraphGenerator {
 
     public Stream<ValueNode> dags() {
         ObjectNode parallelEdges = new ObjectNode("Top");
-        NullNode child = new NullNode();
+        StringNode child = new StringNode("");
         parallelEdges.setField("left", child);
         parallelEdges.setField("right", child);
 
@@ -72,7 +72,7 @@ public class TestGraphGenerator {
         ArrayNode threeCycle = circularNodes(3)[0];
 
         ArrayNode[] fourCycle = circularNodes(4);
-        fourCycle[2].setElement(0, new NullNode());
+        fourCycle[2].setElement(0, new StringNode(""));
 
         ArrayNode[] fiveCycle = circularNodes(5);
         fiveCycle[1].setElement(0, new StringNode("a"));

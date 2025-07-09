@@ -1,7 +1,7 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.nodes.NullNode;
 import com.github.sulir.runtimesave.nodes.ObjectNode;
+import com.github.sulir.runtimesave.nodes.StringNode;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class StrongComponentTest {
     private final ObjectNode node = new ObjectNode("Test");
-    private final NullNode otherNode = new NullNode();
+    private final StringNode otherNode = new StringNode("");
 
     @Test
     void sizeOfEmptyComponentIsZero() {

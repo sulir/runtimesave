@@ -5,6 +5,7 @@ import com.github.sulir.runtimesave.packing.ValuePacker;
 
 import java.util.*;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestUtils {
@@ -35,12 +36,22 @@ public class TestUtils {
         return traversal;
     }
 
+    public static void assertPackingNoop(Object object, Packer packer) {
+        GraphNode original = new ReflectionReader().read(object);
+        GraphNode unpackable = new ReflectionReader().read(object);
+        ValuePacker valuePacker = new ValuePacker(new Packer[]{packer});
+
+        assertTrue(deepEqual(original, valuePacker.pack(unpackable)), "Packed graph is changed");
+    }
+
     public static void assertPackingReversible(Object object, Packer packer) {
         GraphNode original = new ReflectionReader().read(object);
         GraphNode packable = new ReflectionReader().read(object);
         ValuePacker valuePacker = new ValuePacker(new Packer[]{packer});
-        GraphNode transformed = valuePacker.unpack(valuePacker.pack(packable));
 
-        assertTrue(deepEqual(original, transformed));
+        GraphNode packed = valuePacker.pack(packable);
+        assertFalse(deepEqual(original, packed), "Packed graph is unchanged");
+        GraphNode unpacked = valuePacker.unpack(packed);
+        assertTrue(deepEqual(original, unpacked), "Unpacked graph differs from original");
     }
 }

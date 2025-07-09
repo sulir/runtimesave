@@ -72,7 +72,9 @@ public class ValuePacker {
     }
 
     private GraphNode applyTransformations(GraphNode node, Transformation transformation, Set<GraphNode> visited) {
-        visited.add(node);
+        if (!visited.add(node))
+            return node;
+        node.forEachTarget(target -> applyTransformations(target, transformation, visited));
 
         NodeData packableNode = packableNodes.get(node);
         if (packableNode != null) {
@@ -81,12 +83,6 @@ public class ValuePacker {
                 sourceEdge.source().setTarget(sourceEdge.label(), transformed);
             return transformed;
         }
-
-        node.forEachTarget(target -> {
-            if (!visited.contains(target))
-                applyTransformations(target, transformation, visited);
-        });
-
         return node;
     }
 

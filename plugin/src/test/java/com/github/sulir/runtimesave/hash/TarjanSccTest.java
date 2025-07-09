@@ -1,8 +1,10 @@
 package com.github.sulir.runtimesave.hash;
 
-import com.github.sulir.runtimesave.graph.GraphNode;
 import com.github.sulir.runtimesave.graph.TestGraphGenerator;
-import com.github.sulir.runtimesave.nodes.*;
+import com.github.sulir.runtimesave.nodes.ArrayNode;
+import com.github.sulir.runtimesave.nodes.ObjectNode;
+import com.github.sulir.runtimesave.nodes.PrimitiveNode;
+import com.github.sulir.runtimesave.nodes.StringNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,7 +27,7 @@ class TarjanSccTest {
 
     @Test
     void sccOfOneNodeIsItself() {
-        GraphNode node = new NullNode();
+        StringNode node = new StringNode("");
         List<StrongComponent> components = tarjanScc.computeComponents(node);
         assertEquals(List.of(new StrongComponent(node)), components);
     }
@@ -42,7 +44,7 @@ class TarjanSccTest {
     @Test
     void cycleAndSinkHaveTwoSCCs() {
         ArrayNode[] cycle = generator.circularNodes(3);
-        NullNode sink = new NullNode();
+        StringNode sink = new StringNode("");
         cycle[1].setElement(1, sink);
 
         List<StrongComponent> components = tarjanScc.computeComponents(cycle[0]);
