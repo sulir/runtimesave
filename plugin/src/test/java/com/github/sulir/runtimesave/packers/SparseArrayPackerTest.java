@@ -40,8 +40,7 @@ class SparseArrayPackerTest {
 
     @Test
     void packingObjectArrayIsReversible() {
-        Object object = new Object();
-        TestUtils.assertPackingReversible(new Object[]{null, object, object, null}, packer);
+        TestUtils.assertPackingReversible(new Object[]{null, 1, 2, null}, packer);
     }
 
     @Test

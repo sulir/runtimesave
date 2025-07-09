@@ -29,6 +29,11 @@ class ValuePackerTest {
     }
 
     @Test
+    void serviceLoaderProvidesAtLeastOnePacker() {
+        assertTrue(ValuePacker.fromServiceLoader().getPackers().length > 0);
+    }
+
+    @Test
     void packingNodesWithCyclesReplacesSourceEdges() {
         frame.setVariable("var", packable);
         packable.setField("ref1", subPackable);
@@ -70,11 +75,6 @@ class ValuePackerTest {
 
         ValuePacker packer = new ValuePacker(new Packer[]{new TestPacker()});
         assertOnlyTypeChanged(packer.unpack(replacement), "Packable");
-    }
-
-    @Test
-    void serviceLoaderProvidesAtLeastOnePacker() {
-        assertTrue(ValuePacker.fromServiceLoader().getPackers().length > 0);
     }
 
     private void assertOnlyTypeChanged(GraphNode node, String type) {

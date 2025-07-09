@@ -41,23 +41,32 @@ public class ReflectionReader {
             return stringNode;
         }
 
-        if (type.isArray()) {
-            ArrayNode arrayNode = new ArrayNode(type.getName());
-            created.put(value, arrayNode);
-            int length = Array.getLength(value);
-            Class<?> componentType = type.getComponentType();
+        if (type.isArray())
+            return readArray(value, type);
 
-            for (int i = 0; i < length; i++) {
-                Object elem = Array.get(value, i);
-                arrayNode.addElement(read(elem, componentType));
-            }
-            return arrayNode;
+        return readObject(value, type);
+    }
+
+    private ArrayNode readArray(Object value, Class<?> type) {
+        ArrayNode arrayNode = new ArrayNode(type.getName());
+        created.put(value, arrayNode);
+        int length = Array.getLength(value);
+        Class<?> componentType = type.getComponentType();
+
+        for (int i = 0; i < length; i++) {
+            Object element = Array.get(value, i);
+            Class<?> elementClass = element == null ? null : element.getClass();
+            Class<?> elementType = componentType.isPrimitive() ? componentType : elementClass;
+            arrayNode.addElement(read(element, elementType));
         }
+        return arrayNode;
+    }
 
+    private ObjectNode readObject(Object value, Class<?> type) {
         ObjectNode objectNode = new ObjectNode(type.getName());
         created.put(value, objectNode);
 
-        for (Field field : findFields(type, new LinkedList<>())) {
+        for (Field field : findFields(type, new ArrayList<>())) {
             if (Modifier.isStatic(field.getModifiers()))
                 continue;
 
@@ -67,7 +76,6 @@ public class ReflectionReader {
             ValueNode fieldNode = read(fieldValue, field.getType());
             objectNode.setField(field.getName(), fieldNode);
         }
-
         return objectNode;
     }
 
@@ -88,12 +96,5 @@ public class ReflectionReader {
         if (type == double.class) return unsafe.getDouble(object, offset);
         if (type == boolean.class) return unsafe.getBoolean(object, offset);
         return unsafe.getObject(object, offset);
-    }
-
-    public static void main(String[] args) {
-        ReflectionReader reader = new ReflectionReader();
-        List<String> list = new LinkedList<>(List.of("Hello", "World"));
-        ValueNode node = reader.read(list);
-        System.out.println(node);
     }
 }

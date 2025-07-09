@@ -14,7 +14,7 @@ public class TestUtils {
     }
 
     public static List<?> getBfsTraversal(GraphNode root) {
-        List<Object> traversal = new LinkedList<>();
+        List<Object> traversal = new ArrayList<>();
         Queue<GraphNode> toVisit = new ArrayDeque<>();
         toVisit.add(root);
         Map<GraphNode, Integer> orders = new HashMap<>();

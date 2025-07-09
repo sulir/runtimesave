@@ -1,2 +1,3 @@
 com.github.sulir.runtimesave.packers.LinkedListPacker
 com.github.sulir.runtimesave.packers.SparseArrayPacker
+com.github.sulir.runtimesave.packers.SamePrimitivesPacker

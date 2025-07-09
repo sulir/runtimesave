@@ -22,11 +22,10 @@ public class SparseArrayPacker implements Packer {
         Object defaultValue = getDefaultValue(array.getComponentType());
 
         array.forEachElement((index, value) -> {
-            if (value instanceof NullNode)
-                return;
-            if (value instanceof PrimitiveNode primitive && primitive.getValue().equals(defaultValue))
-                return;
-            sparseArray.setElement(index, value);
+            boolean isDefaultPrimitive = value instanceof PrimitiveNode primitive
+                    && primitive.getValue().equals(defaultValue);
+            if (!(value instanceof NullNode || isDefaultPrimitive))
+                sparseArray.setElement(index, value);
         });
         int removedCount = array.edgeCount() - sparseArray.edgeCount();
         return removedCount >= MIN_PACKED_ELEMENTS ? sparseArray : array;
@@ -46,14 +45,12 @@ public class SparseArrayPacker implements Packer {
 
         for (int i = 0; i < sparseArray.getLength(); i++) {
             ValueNode value = sparseArray.getElement(i);
-            if (value == null) {
-                if (defaultValue == null)
-                    array.setElement(i, NullNode.getInstance());
-                else
-                    array.setElement(i, new PrimitiveNode(defaultValue, componentType));
-            } else {
+            if (value != null)
                 array.setElement(i, value);
-            }
+            else if (defaultValue == null)
+                array.setElement(i, NullNode.getInstance());
+            else
+                array.setElement(i, new PrimitiveNode(defaultValue, componentType));
         }
         return array;
     }

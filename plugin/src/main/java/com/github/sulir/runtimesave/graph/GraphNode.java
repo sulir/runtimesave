@@ -7,7 +7,6 @@ import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@SuppressWarnings("SameParameterValue")
 public abstract class GraphNode {
     private NodeHash hash;
     private NodeHash idHash;

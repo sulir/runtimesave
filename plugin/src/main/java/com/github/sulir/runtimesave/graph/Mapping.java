@@ -30,7 +30,7 @@ public record Mapping(String label,
     public static class Builder<T extends GraphNode> {
         private final Class<? extends GraphNode> clazz;
         private final String label;
-        private final List<PropertySpec> properties = new LinkedList<>();
+        private final List<PropertySpec> properties = new ArrayList<>();
         private RelationSpec relations = new RelationSpec("", "", Void.class, GraphNode.class);
         private Function<GraphNode, SortedMap<?, ? extends GraphNode>> edgeMap = n -> Collections.emptySortedMap();
 
