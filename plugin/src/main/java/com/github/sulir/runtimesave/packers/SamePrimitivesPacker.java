@@ -5,12 +5,24 @@ import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.PrimitiveNode;
 import com.github.sulir.runtimesave.packing.Packer;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class SamePrimitivesPacker implements Packer {
-    private final Map<PrimitiveValue, PrimitiveNode> valueToNode = new HashMap<>();
+    private final Map<Object, KeyedWeakRef> valueToNodeRef;
+    private final ReferenceQueue<PrimitiveNode> queue;
+
+    public SamePrimitivesPacker() {
+        this(new HashMap<>(), new ReferenceQueue<>());
+    }
+
+    SamePrimitivesPacker(Map<Object, KeyedWeakRef> valueToNodeRef, ReferenceQueue<PrimitiveNode> queue) {
+        this.valueToNodeRef = valueToNodeRef;
+        this.queue = queue;
+    }
 
     @Override
     public boolean canPack(ValueNode node) {
@@ -20,8 +32,18 @@ public class SamePrimitivesPacker implements Packer {
     @Override
     public ValueNode pack(ValueNode node) {
         PrimitiveNode primitive = (PrimitiveNode) node;
-        PrimitiveValue value = new PrimitiveValue(primitive.getValue(), primitive.getType());
-        return valueToNode.computeIfAbsent(value, v -> primitive);
+        removeUnreachable();
+
+        KeyedWeakRef reference = valueToNodeRef.get(primitive.getValue());
+        if (reference != null) {
+            PrimitiveNode existing = reference.get();
+            if (existing != null)
+                return existing;
+        }
+
+        KeyedWeakRef ref = new KeyedWeakRef(primitive, queue, primitive.getValue());
+        valueToNodeRef.put(primitive.getValue(), ref);
+        return node;
     }
 
     @Override
@@ -39,5 +61,18 @@ public class SamePrimitivesPacker implements Packer {
         return node;
     }
 
-    private record PrimitiveValue(Object value, String type) { }
+    static class KeyedWeakRef extends WeakReference<PrimitiveNode> {
+        final Object key;
+
+        public KeyedWeakRef(PrimitiveNode node, ReferenceQueue<PrimitiveNode> queue, Object key) {
+            super(node, queue);
+            this.key = key;
+        }
+    }
+
+    private void removeUnreachable() {
+        KeyedWeakRef reference;
+        while ((reference = (KeyedWeakRef) queue.poll()) != null)
+            valueToNodeRef.remove(reference.key);
+    }
 }
