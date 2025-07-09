@@ -88,7 +88,7 @@ public class TestGraphGenerator {
 
         return IntStream.range(0, RANDOM_COUNT)
                 .mapToObj(i -> randomGraph())
-                .filter(graph -> uniqueTraversals.add(GraphTestUtils.getBfsTraversal(graph)));
+                .filter(graph -> uniqueTraversals.add(TestUtils.getBfsTraversal(graph)));
     }
 
     public Stream<GraphNode> allSmallGraphs() {
@@ -106,7 +106,7 @@ public class TestGraphGenerator {
                         edgeSets.add(new EdgeSet(edge[0], edge[1], edgeCounts[i]));
                     }
                     return createGraph(spanningSources, edgeSets);
-                }).filter(graph -> uniqueTraversals.add(GraphTestUtils.getBfsTraversal(graph)));
+                }).filter(graph -> uniqueTraversals.add(TestUtils.getBfsTraversal(graph)));
             });
         });
     }

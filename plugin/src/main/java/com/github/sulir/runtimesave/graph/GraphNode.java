@@ -3,9 +3,7 @@ package com.github.sulir.runtimesave.graph;
 import com.github.sulir.runtimesave.hash.NodeHash;
 
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -102,10 +100,12 @@ public abstract class GraphNode {
                 .map(property -> property.value().toString())
                 .collect(Collectors.joining(", "));
         int edgeLimit = 8;
-        int[] edgeCount = {0};
+        var data = new Object() {
+            int edgeCount = 0;
+        };
         String edges = edges()
                 .map(edge -> edge.label() + "->" + shortId.apply(edge.target()))
-                .map(string -> (++edgeCount[0] > edgeLimit) ? "..." : string)
+                .map(string -> (++data.edgeCount > edgeLimit) ? "..." : string)
                 .limit(edgeLimit + 1)
                 .collect(Collectors.joining(", "));
         String details = Stream.of(properties, edges)

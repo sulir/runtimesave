@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave.packers;
+package com.github.sulir.runtimesave.packing;
 
 import com.github.sulir.runtimesave.graph.ValueNode;
 

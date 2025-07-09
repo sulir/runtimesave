@@ -1,8 +1,8 @@
 package com.github.sulir.runtimesave.graph;
 
 import com.github.sulir.runtimesave.nodes.FrameNode;
-import com.github.sulir.runtimesave.packers.Packer;
-import com.github.sulir.runtimesave.packers.ValuePacker;
+import com.github.sulir.runtimesave.packing.Packer;
+import com.github.sulir.runtimesave.packing.ValuePacker;
 import org.neo4j.driver.Value;
 
 import java.util.HashMap;

@@ -1,32 +1,28 @@
 package com.github.sulir.runtimesave.packers;
 
-import com.github.sulir.runtimesave.graph.GraphNode;
-import com.github.sulir.runtimesave.graph.GraphTestUtils;
+import com.github.sulir.runtimesave.graph.TestUtils;
+import com.github.sulir.runtimesave.packing.Packer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 class LinkedListPackerTest {
-    @Test
-    void packingEmptyListIsInverseToUnpacking() {
-        assertPackingReversible(new LinkedList<>(List.of()));
+    private Packer packer;
+
+    @BeforeEach
+    void setUp() {
+        packer = new LinkedListPacker();
     }
 
     @Test
-    void packingTwoItemListIsInverseToUnpacking() {
-        assertPackingReversible(new LinkedList<>(List.of("a", "b")));
+    void packingEmptyListIsReversible() {
+        TestUtils.assertPackingReversible(new LinkedList<>(List.of()), packer);
     }
 
-    private void assertPackingReversible(Object object) {
-        GraphNode original = new ReflectionReader().read(object);
-
-        GraphNode packable = new ReflectionReader().read(object);
-        ValuePacker packer = new ValuePacker(new Packer[]{new LinkedListPacker()});
-        GraphNode transformed = packer.unpack(packer.pack(packable));
-
-        assertTrue(GraphTestUtils.deepEqual(original, transformed));
+    @Test
+    void packingTwoItemListIsReversible() {
+        TestUtils.assertPackingReversible(new LinkedList<>(List.of("a", "b")), packer);
     }
 }

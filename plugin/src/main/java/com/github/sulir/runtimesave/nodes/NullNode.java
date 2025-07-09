@@ -6,9 +6,16 @@ import com.github.sulir.runtimesave.graph.ValueNode;
 public class NullNode extends ValueNode {
     private static final Mapping mapping = mapping(NullNode.class)
             .constructor(NullNode::new);
-    private static final NullNode instance = new NullNode();
+    private static NullNode instance;
+
+    public NullNode() {
+        if (instance != null)
+            throw new IllegalStateException("Multiple null nodes not allowed");
+    }
 
     public static NullNode getInstance() {
+        if (instance == null)
+            instance = new NullNode();
         return instance;
     }
 

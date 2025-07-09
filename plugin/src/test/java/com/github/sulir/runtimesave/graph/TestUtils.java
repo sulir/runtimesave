@@ -1,8 +1,13 @@
 package com.github.sulir.runtimesave.graph;
 
+import com.github.sulir.runtimesave.packing.Packer;
+import com.github.sulir.runtimesave.packing.ValuePacker;
+
 import java.util.*;
 
-public class GraphTestUtils {
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class TestUtils {
     public static boolean deepEqual(GraphNode graph, GraphNode other) {
         return getBfsTraversal(graph).equals(getBfsTraversal(other));
     }
@@ -28,5 +33,14 @@ public class GraphTestUtils {
             });
         }
         return traversal;
+    }
+
+    public static void assertPackingReversible(Object object, Packer packer) {
+        GraphNode original = new ReflectionReader().read(object);
+        GraphNode packable = new ReflectionReader().read(object);
+        ValuePacker valuePacker = new ValuePacker(new Packer[]{packer});
+        GraphNode transformed = valuePacker.unpack(valuePacker.pack(packable));
+
+        assertTrue(deepEqual(original, transformed));
     }
 }
