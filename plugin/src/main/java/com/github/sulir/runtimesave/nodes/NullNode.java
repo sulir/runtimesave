@@ -4,18 +4,13 @@ import com.github.sulir.runtimesave.graph.Mapping;
 import com.github.sulir.runtimesave.graph.ValueNode;
 
 public class NullNode extends ValueNode {
-    private static final Mapping mapping = mapping(NullNode.class)
-            .constructor(NullNode::new);
-    private static NullNode instance;
+    public static final Mapping mapping = mapping(NullNode.class)
+            .constructor(NullNode::getInstance);
+    private static final NullNode instance = new NullNode();
 
-    public NullNode() {
-        if (instance != null)
-            throw new IllegalStateException("Multiple null nodes not allowed");
-    }
+    private NullNode() { }
 
     public static NullNode getInstance() {
-        if (instance == null)
-            instance = new NullNode();
         return instance;
     }
 

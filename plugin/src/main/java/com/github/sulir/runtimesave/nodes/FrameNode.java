@@ -8,7 +8,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 public class FrameNode extends GraphNode {
-    private static final Mapping mapping = mapping(FrameNode.class)
+    public static final Mapping mapping = mapping(FrameNode.class)
             .edges("HAS_VARIABLE", "name", String.class, ValueNode.class, node -> node.variables)
             .constructor(FrameNode::new);
 

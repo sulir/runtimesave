@@ -70,7 +70,7 @@ public class LinkedListPacker implements Packer {
     }
 
     public static class LinkedListNode extends ValueNode {
-        private static final Mapping mapping = mapping(LinkedListNode.class)
+        public static final Mapping mapping = mapping(LinkedListNode.class)
                 .property("modCount", int.class, LinkedListNode::getModCount)
                 .edges("HAS_ELEMENT", "index", Integer.class, ValueNode.class, node -> node.elements)
                 .constructor(LinkedListNode::new);

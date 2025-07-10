@@ -8,7 +8,7 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
 public class ArrayNode extends ValueNode {
-    private static final Mapping mapping = mapping(ArrayNode.class)
+    public static final Mapping mapping = mapping(ArrayNode.class)
             .property("type", String.class, ArrayNode::getType)
             .edges("HAS_ELEMENT", "index", Integer.class, ValueNode.class, node -> node.elements)
             .constructor(ArrayNode::new);

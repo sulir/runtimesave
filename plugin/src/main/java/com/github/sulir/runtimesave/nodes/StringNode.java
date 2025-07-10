@@ -4,7 +4,7 @@ import com.github.sulir.runtimesave.graph.Mapping;
 import com.github.sulir.runtimesave.graph.ValueNode;
 
 public class StringNode extends ValueNode {
-    private static final Mapping mapping = mapping(StringNode.class)
+    public static final Mapping mapping = mapping(StringNode.class)
             .property("value", String.class, StringNode::getValue)
             .constructor(StringNode::new);
 

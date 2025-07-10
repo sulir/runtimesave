@@ -4,7 +4,7 @@ import com.github.sulir.runtimesave.graph.Mapping;
 import com.github.sulir.runtimesave.graph.ValueNode;
 
 public class PrimitiveNode extends ValueNode {
-    private static final Mapping mapping = mapping(PrimitiveNode.class)
+    public static final Mapping mapping = mapping(PrimitiveNode.class)
             .property("value", Object.class, PrimitiveNode::getValue)
             .property("type", String.class, PrimitiveNode::getType)
             .argsConstructor(props -> new PrimitiveNode(props[0], (String) props[1]));

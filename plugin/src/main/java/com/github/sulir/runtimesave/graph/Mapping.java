@@ -9,12 +9,6 @@ public record Mapping(String label,
                       RelationSpec relation,
                       Function<GraphNode, SortedMap<?, ? extends GraphNode>> edgeMap,
                       Function<Object[], ? extends GraphNode> constructor) {
-    private static final Map<Class<? extends GraphNode>, Mapping> mappings = new HashMap<>();
-
-    public static Mapping forClass(Class<? extends GraphNode> clazz) {
-        return mappings.get(clazz);
-    }
-
     public record PropertySpec(String key,
                                Class<?> type,
                                Function<GraphNode, ?> getter) {
@@ -28,15 +22,13 @@ public record Mapping(String label,
 
     @SuppressWarnings("unchecked")
     public static class Builder<T extends GraphNode> {
-        private final Class<? extends GraphNode> clazz;
         private final String label;
         private final List<PropertySpec> properties = new ArrayList<>();
         private RelationSpec relations = new RelationSpec("", "", Void.class, GraphNode.class);
         private Function<GraphNode, SortedMap<?, ? extends GraphNode>> edgeMap = n -> Collections.emptySortedMap();
 
-        public Builder(Class<T> clazz) {
-            this.clazz = clazz;
-            label = clazz.getSimpleName().substring(0, clazz.getSimpleName().lastIndexOf("Node"));
+        public Builder(Class<T> nodeClass) {
+            label = nodeClass.getSimpleName().substring(0, nodeClass.getSimpleName().lastIndexOf("Node"));
         }
 
         public <U> Builder<T> property(String key, Class<U> type, Function<T, U> getter) {
@@ -65,9 +57,7 @@ public record Mapping(String label,
 
         public Mapping argsConstructor(Function<Object[], T> anyConstructor) {
             PropertySpec[] propertiesArray = properties.toArray(PropertySpec[]::new);
-            Mapping mapping = new Mapping(label, propertiesArray, relations, edgeMap, anyConstructor);
-            mappings.put(clazz, mapping);
-            return mapping;
+            return new Mapping(label, propertiesArray, relations, edgeMap, anyConstructor);
         }
     }
 }

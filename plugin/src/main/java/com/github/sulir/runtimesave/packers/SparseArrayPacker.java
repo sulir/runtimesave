@@ -56,7 +56,7 @@ public class SparseArrayPacker implements Packer {
     }
 
     public static class SparseArrayNode extends ArrayNode {
-        private static final Mapping mapping = mapping(SparseArrayNode.class)
+        public static final Mapping mapping = mapping(SparseArrayNode.class)
                 .property("type", String.class, SparseArrayNode::getType)
                 .property("length", Integer.class, ArrayNode::getLength)
                 .edges("HAS_ELEMENT", "index", Integer.class, ValueNode.class, node -> node.elements)

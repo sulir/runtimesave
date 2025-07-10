@@ -6,7 +6,7 @@ import com.github.sulir.runtimesave.graph.ValueNode;
 import java.util.*;
 
 public class ObjectNode extends ValueNode {
-    private static final Mapping mapping = mapping(ObjectNode.class)
+    public static final Mapping mapping = mapping(ObjectNode.class)
             .property("type", String.class, ObjectNode::getType)
             .edges("HAS_FIELD", "name", String.class, ValueNode.class, node -> node.fields)
             .constructor(ObjectNode::new);

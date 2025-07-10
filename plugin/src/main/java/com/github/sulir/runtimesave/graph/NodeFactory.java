@@ -1,28 +1,44 @@
 package com.github.sulir.runtimesave.graph;
 
-import com.github.sulir.runtimesave.nodes.FrameNode;
+import com.github.sulir.runtimesave.nodes.*;
 import com.github.sulir.runtimesave.packing.Packer;
 import com.github.sulir.runtimesave.packing.ValuePacker;
 import org.neo4j.driver.Value;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+
+import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
 
 public class NodeFactory {
-    private final ValuePacker valuePacker;
+    private static final List<Class<? extends GraphNode>> nodeClasses = List.of(
+            ArrayNode.class,
+            FrameNode.class,
+            NullNode.class,
+            ObjectNode.class,
+            PrimitiveNode.class,
+            StringNode.class
+    );
+
     private final Map<String, Mapping> labelToMapping = new HashMap<>();
 
     public NodeFactory(ValuePacker valuePacker) {
-        this.valuePacker = valuePacker;
+        nodeClasses.forEach(this::registerMapping);
+
+        for (Packer packer : valuePacker.getPackers())
+            for (Class<?> nested : packer.getClass().getClasses())
+                if (GraphNode.class.isAssignableFrom(nested))
+                    registerMapping(nested.asSubclass(GraphNode.class));
     }
 
     public GraphNode createNode(String label, Map<String, Value> nodeProperties) {
         Mapping mapping = labelToMapping.get(label);
-        if (mapping == null) {
-            Class<? extends GraphNode> nodeClass = findClass(label);
-            mapping = Mapping.forClass(nodeClass);
-            labelToMapping.put(label, mapping);
-        }
+        if (mapping == null)
+            throw new IllegalArgumentException("Unknown node label: " + label);
 
         Mapping.PropertySpec[] propertySpecs = mapping.properties();
         Object[] params = new Object[propertySpecs.length];
@@ -31,18 +47,15 @@ public class NodeFactory {
         return mapping.constructor().apply(params);
     }
 
-    private Class<? extends GraphNode> findClass(String label) {
-        String className = label + "Node";
-        try {
-            return Class.forName(FrameNode.class.getPackageName() + "." + className).asSubclass(GraphNode.class);
-        } catch (ClassNotFoundException e) {
-            Packer[] packers = valuePacker.getPackers();
-            for (Packer packer : packers) {
-                for (Class<?> nested : packer.getClass().getClasses())
-                    if (nested.getSimpleName().equals(className) && GraphNode.class.isAssignableFrom(nested))
-                        return nested.asSubclass(GraphNode.class);
+    private void registerMapping(Class<?> nodeClass) {
+        for (Field field : nodeClass.getFields()) {
+            if (Modifier.isStatic(field.getModifiers()) && field.getType().equals(Mapping.class)) {
+                Mapping mapping = (Mapping) uncheck(() -> field.get(null));
+                String label = mapping.label();
+                labelToMapping.put(label, mapping);
+                return;
             }
-            throw new RuntimeException(new ClassNotFoundException("Node class not found: " + className));
         }
+        throw new NoSuchElementException("No Mapping field in node class " + nodeClass.getName());
     }
 }
