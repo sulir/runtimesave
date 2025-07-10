@@ -48,7 +48,7 @@ public class ReflectionReader {
     }
 
     private ArrayNode readArray(Object value, Class<?> type) {
-        ArrayNode arrayNode = new ArrayNode(type.getName());
+        ArrayNode arrayNode = new ArrayNode(type.getTypeName());
         created.put(value, arrayNode);
         int length = Array.getLength(value);
         Class<?> componentType = type.getComponentType();

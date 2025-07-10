@@ -17,6 +17,8 @@ public class ArrayNode extends ValueNode {
     protected final SortedMap<Integer, ValueNode> elements = new TreeMap<>();
 
     public ArrayNode(String type) {
+        if (!type.endsWith("[]"))
+            throw new IllegalArgumentException("Invalid array type: " + type);
         this.type = type;
     }
 
@@ -25,24 +27,7 @@ public class ArrayNode extends ValueNode {
     }
 
     public String getComponentType() {
-        String component = type.substring(1);
-        if (component.startsWith("["))
-            return component;
-
-        if (component.startsWith("L") && component.endsWith(";"))
-            return component.substring(1, component.length() - 1);
-
-        return switch (component) {
-            case "C" -> "char";
-            case "B" -> "byte";
-            case "S" -> "short";
-            case "I" -> "int";
-            case "J" -> "long";
-            case "F" -> "float";
-            case "D" -> "double";
-            case "Z" -> "boolean";
-            default -> throw new IllegalArgumentException("Unknown array component: " + component);
-        };
+        return type.substring(0, type.length() - 2);
     }
 
     public ValueNode getElement(int index) {
