@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.savepoint;
 
-import com.github.sulir.runtimesave.RuntimePersistenceService;
+import com.github.sulir.runtimesave.RuntimeStorageService;
 import com.intellij.debugger.engine.jdi.StackFrameProxy;
 import com.intellij.debugger.impl.DebuggerManagerListener;
 import com.intellij.debugger.impl.DebuggerSession;
@@ -32,7 +32,7 @@ public class SavepointListener implements DebuggerManagerListener {
                         return;
 
                     StackFrame frame = uncheck(proxy::getStackFrame);
-                    RuntimePersistenceService.getInstance().saveFrame(frame);
+                    RuntimeStorageService.getInstance().saveFrame(frame);
 
                     ApplicationManager.getApplication().invokeLater(session::resume);
                 }

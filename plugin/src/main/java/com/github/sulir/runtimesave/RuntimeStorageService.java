@@ -1,6 +1,7 @@
 package com.github.sulir.runtimesave;
 
 import com.github.sulir.runtimesave.db.DbConnection;
+import com.github.sulir.runtimesave.db.DbIndex;
 import com.github.sulir.runtimesave.db.Metadata;
 import com.github.sulir.runtimesave.db.NodeDatabase;
 import com.github.sulir.runtimesave.graph.NodeFactory;
@@ -16,17 +17,21 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.sun.jdi.StackFrame;
 
+import java.util.function.BooleanSupplier;
+
 @Service
-public final class RuntimePersistenceService {
+public final class RuntimeStorageService {
     private final ValuePacker packer = ValuePacker.fromServiceLoader();
     private final NodeFactory factory = new NodeFactory(packer);
     private final GraphHasher hasher = new GraphHasher();
     private final GraphIdHasher idHasher = new GraphIdHasher();
     private final NodeDatabase database  = new NodeDatabase(DbConnection.getInstance(), factory);
+    private final DbIndex dbIndex = new DbIndex(DbConnection.getInstance());
+    private boolean dbIndexed = false;
     private final Metadata metadata = new Metadata(DbConnection.getInstance());
 
-    public static RuntimePersistenceService getInstance() {
-       return ApplicationManager.getApplication().getService(RuntimePersistenceService.class);
+    public static RuntimeStorageService getInstance() {
+       return ApplicationManager.getApplication().getService(RuntimeStorageService.class);
     }
 
     public void loadFrame(StackFrame frame) throws MismatchException {
@@ -44,5 +49,13 @@ public final class RuntimePersistenceService {
         idHasher.assignIdHashes(frameNode);
         database.write(dag);
         metadata.addLocation(frameNode.hash(), SourceLocation.fromJDI(frame.location()));
+    }
+
+    public void createIndexes(BooleanSupplier cancellationListener) {
+        if (!dbIndexed) {
+            dbIndex.setCancellationListener(cancellationListener);
+            if (dbIndex.createIndexes())
+                dbIndexed = true;
+        }
     }
 }

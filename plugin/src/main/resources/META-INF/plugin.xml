@@ -10,6 +10,7 @@
   <depends>com.intellij.java</depends>
 
   <extensions defaultExtensionNs="com.intellij">
+    <postStartupActivity implementation="com.github.sulir.runtimesave.StartupActivity"/>
     <executor implementation="com.github.sulir.runtimesave.everyline.EveryLineExecutor"/>
     <programRunner implementation="com.github.sulir.runtimesave.everyline.EveryLineRunner"/>
     <xdebugger.breakpointType implementation="com.github.sulir.runtimesave.savepoint.SavepointType"/>

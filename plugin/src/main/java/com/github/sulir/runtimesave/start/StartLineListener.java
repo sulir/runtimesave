@@ -1,7 +1,7 @@
 package com.github.sulir.runtimesave.start;
 
 import com.github.sulir.runtimesave.MismatchException;
-import com.github.sulir.runtimesave.RuntimePersistenceService;
+import com.github.sulir.runtimesave.RuntimeStorageService;
 import com.intellij.debugger.engine.DebugProcess;
 import com.intellij.debugger.engine.DebugProcessEvents;
 import com.intellij.debugger.engine.DebugProcessListener;
@@ -80,7 +80,7 @@ public class StartLineListener implements DebuggerManagerListener {
 
         try {
             StackFrame frame = breakpointEvent.thread().frame(0);
-            RuntimePersistenceService.getInstance().loadFrame(frame);
+            RuntimeStorageService.getInstance().loadFrame(frame);
         } catch (IncompatibleThreadStateException | MismatchException e) {
             stopProgram(event.virtualMachine(), e.getMessage());
         }

@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.everyline;
 
-import com.github.sulir.runtimesave.RuntimePersistenceService;
+import com.github.sulir.runtimesave.RuntimeStorageService;
 import com.github.sulir.runtimesave.SourceLocation;
 import com.intellij.debugger.engine.DebugProcessEvents;
 import com.sun.jdi.AbsentInformationException;
@@ -53,6 +53,6 @@ public class EveryLineManager {
 
         System.out.println(uncheck(event.location()::sourcePath) + ":" + event.location().lineNumber());
         StackFrame frame = uncheck(() -> event.thread().frame(0));
-        RuntimePersistenceService.getInstance().saveFrame(frame);
+        RuntimeStorageService.getInstance().saveFrame(frame);
     }
 }
