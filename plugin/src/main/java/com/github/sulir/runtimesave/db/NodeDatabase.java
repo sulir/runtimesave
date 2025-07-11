@@ -26,7 +26,7 @@ public class NodeDatabase {
 
     public <T extends GraphNode> T read(NodeHash hash, Class<T> type) {
         try (Session session = db.createSession()) {
-            String query = "MATCH (root {hash: $hash})"
+            String query = "MATCH (root:Hashed {hash: $hash})"
                     + " LIMIT 1"
                     + " CALL apoc.path.subgraphAll(root, {relationshipFilter: '>'}) YIELD nodes, relationships"
                     + " RETURN elementId(root) as rootId, nodes, relationships";
@@ -84,28 +84,25 @@ public class NodeDatabase {
     }
 
     private boolean writeNode(GraphNode node) {
-        Map<String, Object> nodeMap = nodeToMap(node);
-
-        String query = "CALL apoc.merge.nodeWithStats([$node.label], {idHash: $node.idHash}, $node.props)"
-                + " YIELD stats, node"
-                + " RETURN stats.nodesCreated > 0 AS created";
+        String query = "MERGE (n:$($label):Hashed {idHash: $idHash})" +
+                " ON CREATE SET n += $props";
 
         try (Session session = db.createSession()) {
-            return session.run(query, Map.of("node", nodeMap)).single().get("created").asBoolean();
+            return session.run(query, nodeToMap(node)).consume().counters().nodesCreated() > 0;
         }
     }
 
     private void writeNodes(Set<GraphNode> nodes) {
-        List<Map<String, Object>> nodesMap = nodes.stream().map(this::nodeToMap).toList();
-        if (nodesMap.isEmpty())
+        List<Map<String, Object>> nodesList = nodes.stream().map(this::nodeToMap).toList();
+        if (nodesList.isEmpty())
             return;
 
         String query = "UNWIND $nodes AS node"
-                + " CALL apoc.merge.node([node.label], {idHash: node.idHash}, node.props) YIELD node AS merged"
-                + " RETURN 0";
+                + " MERGE (n:$(node.label):Hashed {idHash: node.idHash})"
+                + " ON CREATE SET n += node.props";
 
         try (Session session = db.createSession()) {
-            session.run(query, Map.of("nodes", nodesMap));
+            session.run(query, Map.of("nodes", nodesList));
         }
     }
 
@@ -114,6 +111,7 @@ public class NodeDatabase {
         for (NodeProperty property : node.properties())
             properties.put(property.key(), property.value());
         properties.put("hash", node.hash().toString());
+
         return Map.of("label", node.label(), "idHash", node.idHash().toString(), "props", properties);
     }
 
@@ -123,10 +121,10 @@ public class NodeDatabase {
             return;
 
         String query = "UNWIND $edges AS edge"
-                + " MATCH (from {idHash: edge.from})"
-                + " MATCH (to {idHash: edge.to})"
-                + " CALL apoc.create.relationship(from, edge.type, edge.props, to) YIELD rel"
-                + " RETURN 0";
+                + " MATCH (from:Hashed {idHash: edge.from})"
+                + " MATCH (to:Hashed {idHash: edge.to})"
+                + " CREATE (from)-[rel:$(edge.type)]->(to)"
+                + " SET rel = edge.props";
 
         try (Session session = db.createSession()) {
             session.run(query, Map.of("edges", edges));
