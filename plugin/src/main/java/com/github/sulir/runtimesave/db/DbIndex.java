@@ -2,9 +2,18 @@ package com.github.sulir.runtimesave.db;
 
 import org.neo4j.driver.Session;
 
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 
 public class DbIndex {
+    private static final Map<String, String> indexes = Map.of(
+            "Hashed", "idHash",
+            "Class", "name",
+            "Method", "signature",
+            "Line", "number",
+            "Frame", "hash"
+    );
+
     private final DbConnection db;
     private BooleanSupplier shouldCancel;
 
@@ -13,12 +22,17 @@ public class DbIndex {
     }
 
     public boolean createIndexes() {
-        if (shouldCancel != null && shouldCancel.getAsBoolean())
-            return false;
+        for (Map.Entry<String, String> index : indexes.entrySet()) {
+            if (shouldCancel != null && shouldCancel.getAsBoolean())
+                return false;
 
-        String query = "CREATE INDEX hashed_id_hash IF NOT EXISTS FOR (n:Hashed) ON (n.idHash)";
-        try (Session session = db.createSession()) {
-            session.run(query);
+            String label = index.getKey();
+            String property = index.getValue();
+            String query = "CREATE INDEX %1$s_%2$s IF NOT EXISTS FOR (n:%1$s) ON (n.%2$s)"
+                    .formatted(label, property);
+            try (Session session = db.createSession()) {
+                session.run(query);
+            }
         }
 
         return true;
