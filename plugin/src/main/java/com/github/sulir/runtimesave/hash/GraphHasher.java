@@ -5,8 +5,10 @@ import com.github.sulir.runtimesave.graph.GraphNode;
 import java.util.*;
 
 public class GraphHasher {
-    private final TreeHasher treeHasher = new TreeHasher();
-    private final ObjectHasher hasher = new ObjectHasher();
+    private final ObjectHasher objectHasher = new ObjectHasher();
+    private final LocalHasher localHasher = new LocalHasher(objectHasher);
+    private final TreeHasher treeHasher = new TreeHasher(objectHasher);
+
     private Map<GraphNode, Integer> orders;
 
     public NodeHash assignHashes(GraphNode graph) {
@@ -14,37 +16,32 @@ public class GraphHasher {
     }
 
     public NodeHash assignHashes(AcyclicGraph dag) {
+        GraphNode root = dag.getRootNode();
+        localHasher.assignLocalHashes(root);
         treeHasher.assignHashes(dag);
 
-        GraphNode root = dag.getRootNode();
         root.traverse(node -> {
             if (!node.hasHash()) {
-                hasher.reset();
+                objectHasher.reset();
                 orders = new HashMap<>();
                 computeHash(node);
-                node.setHash(new NodeHash(hasher.finish()));
+                node.setHash(new NodeHash(objectHasher.finish()));
             }
         });
+        orders = null;
         return root.hash();
     }
 
     private void computeHash(GraphNode node) {
         orders.put(node, orders.size());
-        hasher.add(node.label()).add(node.properties());
+        objectHasher.addHash(node.localHash());
 
-        if (node.edgeCount() != 0) {
-            hasher.add(Marker.TARGETS_START);
-            node.forEachEdge((label, target) -> {
-                hasher.add(label);
-                Integer targetOrder = orders.get(target);
-                if (targetOrder == null)
-                    computeHash(target);
-                else
-                    hasher.add(orders.get(target));
-            });
-            hasher.add(Marker.TARGETS_END);
-        }
+        node.forEachEdge((label, target) -> {
+            Integer targetOrder = orders.get(target);
+            if (targetOrder == null)
+                computeHash(target);
+            else
+                objectHasher.addInt(orders.get(target));
+        });
     }
-
-    private enum Marker { TARGETS_START, TARGETS_END }
 }

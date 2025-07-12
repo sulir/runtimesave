@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class GraphIdHasher {
-    private final ObjectHasher hasher = new ObjectHasher();
+    private final ObjectHasher objectHasher = new ObjectHasher();
     private Map<NodeHash, Integer> copies;
     private Map<GraphNode, Integer> nodeCopies;
     private Set<GraphNode> visited;
@@ -18,28 +18,15 @@ public class GraphIdHasher {
         nodeCopies = new HashMap<>();
         graph.traverse(this::assignHashCopy);
         graph.traverse(node -> {
-            hasher.reset();
+            objectHasher.reset();
             visited = new HashSet<>();
             computeIdHash(node);
-            node.setIdHash(new NodeHash(hasher.finish()));
+            node.setIdHash(new NodeHash(objectHasher.finish()));
         });
+        copies = null;
+        nodeCopies = null;
+        visited = null;
         return graph.idHash();
-    }
-
-    private void computeIdHash(GraphNode node) {
-        visited.add(node);
-        hasher.add(node.hash()).add(nodeCopies.get(node));
-
-        if (node.edgeCount() != 0) {
-            hasher.add(Marker.TARGETS_START);
-            node.forEachEdge((label, target) -> {
-                if (!visited.contains(target)) {
-                    hasher.add(label);
-                    computeIdHash(target);
-                }
-            });
-            hasher.add(Marker.TARGETS_END);
-        }
     }
 
     private void assignHashCopy(GraphNode node) {
@@ -47,5 +34,12 @@ public class GraphIdHasher {
         nodeCopies.put(node, copy);
     }
 
-    private enum Marker { TARGETS_START, TARGETS_END }
+    private void computeIdHash(GraphNode node) {
+        if (!visited.add(node))
+            return;
+
+        objectHasher.addHash(node.hash())
+                .addInt(nodeCopies.get(node));
+        node.forEachEdge((label, target) -> computeIdHash(target));
+    }
 }

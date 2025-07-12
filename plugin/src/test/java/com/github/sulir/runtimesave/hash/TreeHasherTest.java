@@ -1,5 +1,6 @@
 package com.github.sulir.runtimesave.hash;
 
+import com.github.sulir.runtimesave.graph.GraphNode;
 import com.github.sulir.runtimesave.graph.TestGraphGenerator;
 import com.github.sulir.runtimesave.nodes.ArrayNode;
 import com.github.sulir.runtimesave.nodes.FrameNode;
@@ -15,18 +16,19 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TreeHasherTest {
-    private TreeHasher hasher;
+    private LocalHasher localHasher;
+    private TreeHasher treeHasher;
 
     @BeforeEach
     void setUp() {
-        hasher = new TreeHasher();
+        localHasher = new LocalHasher(new ObjectHasher());
+        treeHasher = new TreeHasher(new ObjectHasher());
     }
 
     @Test
     void nonTreeNodesDoNotGetHash() {
         ArrayNode[] cycle = new TestGraphGenerator().circularNodes(2);
-        AcyclicGraph dag = AcyclicGraph.multiCondensationOf(cycle[0]);
-        hasher.assignHashes(dag);
+        assignLocalAndTreeHashes(cycle[0]);
         assertAll(() -> assertFalse(cycle[0].hasHash()),
                   () -> assertFalse(cycle[1].hasHash()));
     }
@@ -34,8 +36,8 @@ class TreeHasherTest {
     @ParameterizedTest
     @MethodSource("sameTreePairs")
     void sameTreesHaveSameHashes(ValueNode tree, ValueNode same) {
-        hasher.assignHashes(AcyclicGraph.multiCondensationOf(tree));
-        hasher.assignHashes(AcyclicGraph.multiCondensationOf(same));
+        assignLocalAndTreeHashes(tree);
+        assignLocalAndTreeHashes(same);
         assertEquals(tree.hash(), same.hash());
 
     }
@@ -43,8 +45,8 @@ class TreeHasherTest {
     @ParameterizedTest
     @MethodSource("differentTreePairs")
     void differentTreesHaveDifferentHashes(ValueNode tree, ValueNode different) {
-        hasher.assignHashes(AcyclicGraph.multiCondensationOf(tree));
-        hasher.assignHashes(AcyclicGraph.multiCondensationOf(different));
+        assignLocalAndTreeHashes(tree);
+        assignLocalAndTreeHashes(different);
         assertNotEquals(tree.hash(), different.hash());
     }
 
@@ -53,9 +55,9 @@ class TreeHasherTest {
     void sameSubTreesHaveSameHashes(ValueNode tree, ValueNode same) {
         FrameNode parent = new FrameNode();
         parent.setVariable("subtree", tree);
-        hasher.assignHashes(AcyclicGraph.multiCondensationOf(parent));
+        assignLocalAndTreeHashes(parent);
 
-        hasher.assignHashes(AcyclicGraph.multiCondensationOf(same));
+        assignLocalAndTreeHashes(same);
         assertEquals(tree.hash(), same.hash());
     }
 
@@ -67,5 +69,11 @@ class TreeHasherTest {
     static Stream<Arguments> differentTreePairs() {
         TestGraphGenerator generator = new TestGraphGenerator();
         return generator.differentPairs(generator::trees);
+    }
+
+    private void assignLocalAndTreeHashes(GraphNode graph) {
+        localHasher.assignLocalHashes(graph);
+        AcyclicGraph dag = AcyclicGraph.multiCondensationOf(graph);
+        treeHasher.assignHashes(dag);
     }
 }

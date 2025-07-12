@@ -11,6 +11,7 @@ import com.github.sulir.runtimesave.nodes.FrameNode;
 import com.github.sulir.runtimesave.packing.ValuePacker;
 
 import javax.swing.*;
+import java.util.function.Supplier;
 
 public class DbExample {
     public static void main(String[] args) {
@@ -26,16 +27,28 @@ public class DbExample {
         ValueNode value = new ReflectionReader().read(object);
         FrameNode frame = new FrameNode();
         frame.setVariable("variable", value);
-        packer.pack(frame);
-        AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
-        hasher.assignHashes(dag);
-        idHasher.assignIdHashes(frame);
-        dbIndex.createIndexes();
 
-        long time = System.currentTimeMillis();
-        database.write(dag);
-        metadata.addLocation(frame.hash(), new SourceLocation("Class", "method", 1));
-        System.out.println("Written in " + (System.currentTimeMillis() - time) + " ms");
+        time(() -> packer.pack(frame), "pack");
+        AcyclicGraph dag = time(() -> AcyclicGraph.multiCondensationOf(frame), "dag");
+        time(() -> hasher.assignHashes(dag), "hash");
+        time(() -> idHasher.assignIdHashes(frame), "id-hash");
+
+        dbIndex.createIndexes();
+        time(() -> database.write(dag), "write");
+        time(() -> metadata.addLocation(frame.hash(), new SourceLocation("Class", "method", 1)), "meta");
         database.read(frame.hash(), FrameNode.class);
+    }
+
+    private static void time(Runnable measured, String name) {
+        long time = System.currentTimeMillis();
+        measured.run();
+        System.out.println(name + ": " + (System.currentTimeMillis() - time) + " ms");
+    }
+
+    private static <T> T time(Supplier<T> measured, String name) {
+        long time = System.currentTimeMillis();
+        T result = measured.get();
+        System.out.println(name + ": " + (System.currentTimeMillis() - time) + " ms");
+        return result;
     }
 }

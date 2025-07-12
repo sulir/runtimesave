@@ -2,12 +2,18 @@ package com.github.sulir.runtimesave.graph;
 
 import com.github.sulir.runtimesave.hash.NodeHash;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class GraphNode {
+    private NodeHash localHash;
     private NodeHash hash;
     private NodeHash idHash;
 
@@ -68,6 +74,16 @@ public abstract class GraphNode {
         traverse(function, new HashSet<>());
     }
 
+    public NodeHash localHash() {
+        if (localHash == null)
+            throw new IllegalStateException("Local hash not yet computed");
+        return localHash;
+    }
+
+    public void setLocalHash(NodeHash localHash) {
+        this.localHash = localHash;
+    }
+
     public NodeHash hash() {
         if (hash == null)
             throw new IllegalStateException("Hash not yet computed");
@@ -114,8 +130,8 @@ public abstract class GraphNode {
     }
 
     protected void checkModification() {
-        if (hash != null || idHash != null)
-            throw new IllegalStateException("Cannot modify node after hash or ID-hash has been set");
+        if (localHash != null || hash != null || idHash != null)
+            throw new IllegalStateException("Cannot modify node after hash has been set");
     }
 
     private void traverse(Consumer<GraphNode> function, Set<GraphNode> visited) {
