@@ -44,9 +44,8 @@ public class NodeDatabase {
     private Map<String, GraphNode> createNodeObjects(List<org.neo4j.driver.types.Node> nodes) {
         Map<String, GraphNode> idToNode = new HashMap<>();
         for (org.neo4j.driver.types.Node dbNode : nodes) {
-            String label = dbNode.labels().iterator().next();
             Map<String, Value> properties = dbNode.asMap(Values.ofValue());
-            GraphNode graphNode = factory.createNode(label, properties);
+            GraphNode graphNode = factory.createNode(dbNode.labels(), properties);
             idToNode.put(dbNode.elementId(), graphNode);
         }
         return idToNode;

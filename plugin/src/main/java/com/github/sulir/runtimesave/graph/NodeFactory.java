@@ -35,10 +35,8 @@ public class NodeFactory {
                     registerMapping(nested.asSubclass(GraphNode.class));
     }
 
-    public GraphNode createNode(String label, Map<String, Value> nodeProperties) {
-        Mapping mapping = labelToMapping.get(label);
-        if (mapping == null)
-            throw new IllegalArgumentException("Unknown node label: " + label);
+    public GraphNode createNode(Iterable<String> labels, Map<String, Value> nodeProperties) {
+        Mapping mapping = findMapping(labels);
 
         Mapping.PropertySpec[] propertySpecs = mapping.properties();
         Object[] params = new Object[propertySpecs.length];
@@ -57,5 +55,14 @@ public class NodeFactory {
             }
         }
         throw new NoSuchElementException("No Mapping field in node class " + nodeClass.getName());
+    }
+
+    private Mapping findMapping(Iterable<String> labels) {
+        for (String label : labels) {
+            Mapping mapping = labelToMapping.get(label);
+            if (mapping != null)
+                return  mapping;
+        }
+        throw new IllegalArgumentException("Unknown node labels: " + String.join(", ", labels));
     }
 }
