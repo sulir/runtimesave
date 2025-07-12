@@ -2,6 +2,8 @@ package com.github.sulir.runtimesave.db;
 
 import org.neo4j.driver.*;
 
+import java.util.function.Consumer;
+
 public class DbConnection {
     private static final String URI = "bolt://localhost:7687";
     private static final String USER = "neo4j";
@@ -25,5 +27,11 @@ public class DbConnection {
 
     public Session createSession() {
         return driver.session(SessionConfig.forDatabase(dbName));
+    }
+
+    public void writeTransaction(Consumer<TransactionContext> action) {
+        try (Session session = createSession()) {
+            session.executeWriteWithoutResult(action);
+        }
     }
 }

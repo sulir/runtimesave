@@ -6,10 +6,9 @@ import com.github.sulir.runtimesave.graph.NodeProperty;
 import com.github.sulir.runtimesave.hash.AcyclicGraph;
 import com.github.sulir.runtimesave.hash.NodeHash;
 import com.github.sulir.runtimesave.hash.StrongComponent;
+import org.neo4j.driver.*;
 import org.neo4j.driver.Record;
-import org.neo4j.driver.Session;
-import org.neo4j.driver.Value;
-import org.neo4j.driver.Values;
+import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 
 import java.util.*;
@@ -18,6 +17,7 @@ import java.util.stream.Stream;
 public class NodeDatabase {
     private final DbConnection db;
     private final NodeFactory factory;
+    private TransactionContext transaction;
 
     public NodeDatabase(DbConnection db, NodeFactory factory) {
         this.db = db;
@@ -32,7 +32,7 @@ public class NodeDatabase {
                     + " RETURN elementId(root) as rootId, nodes, relationships";
             Record record = session.run(query, Map.of("hash", hash.toString())).single();
             String rootId = record.get("rootId").asString();
-            List<org.neo4j.driver.types.Node> nodes = record.get("nodes").asList(Value::asNode);
+            List<Node> nodes = record.get("nodes").asList(Value::asNode);
             List<Relationship> edges = record.get("relationships").asList(Value::asRelationship);
 
             Map<String, GraphNode> idToNode = createNodeObjects(nodes);
@@ -41,9 +41,9 @@ public class NodeDatabase {
         }
     }
 
-    private Map<String, GraphNode> createNodeObjects(List<org.neo4j.driver.types.Node> nodes) {
+    private Map<String, GraphNode> createNodeObjects(List<Node> nodes) {
         Map<String, GraphNode> idToNode = new HashMap<>();
-        for (org.neo4j.driver.types.Node dbNode : nodes) {
+        for (Node dbNode : nodes) {
             Map<String, Value> properties = dbNode.asMap(Values.ofValue());
             GraphNode graphNode = factory.createNode(dbNode.labels(), properties);
             idToNode.put(dbNode.elementId(), graphNode);
@@ -66,8 +66,13 @@ public class NodeDatabase {
     public void write(AcyclicGraph dag) {
         Set<StrongComponent> visited = new HashSet<>();
         List<StrongComponent> created = new ArrayList<>();
-        writeComponent(dag.getRootComponent(), visited, created);
-        writeOutEdges(created.stream().flatMap(scc -> scc.nodes().stream()));
+
+        db.writeTransaction(transaction -> {
+            this.transaction = transaction;
+            writeComponent(dag.getRootComponent(), visited, created);
+            writeOutEdges(created.stream().flatMap(scc -> scc.nodes().stream()));
+        });
+        transaction = null;
     }
 
     private void writeComponent(StrongComponent scc, Set<StrongComponent> visited, List<StrongComponent> created) {
@@ -86,9 +91,7 @@ public class NodeDatabase {
         String query = "MERGE (n:$($label):Hashed {idHash: $idHash})" +
                 " ON CREATE SET n += $props";
 
-        try (Session session = db.createSession()) {
-            return session.run(query, nodeToMap(node)).consume().counters().nodesCreated() > 0;
-        }
+        return transaction.run(query, nodeToMap(node)).consume().counters().nodesCreated() > 0;
     }
 
     private void writeNodes(Set<GraphNode> nodes) {
@@ -100,9 +103,7 @@ public class NodeDatabase {
                 + " MERGE (n:$(node.label):Hashed {idHash: node.idHash})"
                 + " ON CREATE SET n += node.props";
 
-        try (Session session = db.createSession()) {
-            session.run(query, Map.of("nodes", nodesList));
-        }
+        transaction.run(query, Map.of("nodes", nodesList));
     }
 
     private Map<String, Object> nodeToMap(GraphNode node) {
@@ -125,13 +126,11 @@ public class NodeDatabase {
                 + " CREATE (from)-[rel:$(edge.type)]->(to)"
                 + " SET rel = edge.props";
 
-        try (Session session = db.createSession()) {
-            session.run(query, Map.of("edges", edges));
-        }
+        transaction.run(query, Map.of("edges", edges));
     }
 
     private Stream<Map<String, Object>> getRelationships(GraphNode from) {
-        return from.edges().map(edge ->Map.of(
+        return from.edges().map(edge -> Map.of(
                 "from", from.idHash().toString(),
                 "to", edge.target().idHash().toString(),
                 "type", from.getMapping().relation().type(),
