@@ -64,7 +64,7 @@ public class NodeDatabase {
     }
 
     public void write(AcyclicGraph dag) {
-        Set<StrongComponent> visited = new HashSet<>();
+        Set<StrongComponent> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         List<StrongComponent> created = new ArrayList<>();
 
         db.writeTransaction(transaction -> {
@@ -76,21 +76,21 @@ public class NodeDatabase {
     }
 
     private void writeComponent(StrongComponent scc, Set<StrongComponent> visited, List<StrongComponent> created) {
-        visited.add(scc);
+        if (!visited.add(scc))
+            return;
+
         if (writeNode(scc.getFirstNode())) {
             created.add(scc);
             writeNodes(scc.getRestOfNodes());
 
             for (StrongComponent target : scc.targets())
-                if (!visited.contains(target))
-                    writeComponent(target, visited, created);
+                writeComponent(target, visited, created);
         }
     }
 
     private boolean writeNode(GraphNode node) {
-        String query = "MERGE (n:$($label):Hashed {idHash: $idHash})" +
-                " ON CREATE SET n += $props";
-
+        String query = "MERGE (n:$($label):Hashed {idHash: $idHash})"
+                + " ON CREATE SET n += $props";
         return transaction.run(query, nodeToMap(node)).consume().counters().nodesCreated() > 0;
     }
 
@@ -133,8 +133,8 @@ public class NodeDatabase {
         String query = "UNWIND $edges AS edge"
                 + " MATCH (from:Hashed {idHash: edge.from})"
                 + " MATCH (to:Hashed {idHash: edge.to})"
-                + " CREATE (from)-[rel:$(edge.type)]->(to)"
-                + " SET rel = edge.props";
+                + " CALL apoc.create.relationship(from, edge.type, edge.props, to) YIELD rel"
+                + " RETURN 0";
 
         transaction.run(query, Map.of("edges", edges));
     }
