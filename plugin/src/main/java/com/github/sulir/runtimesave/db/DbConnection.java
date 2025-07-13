@@ -21,7 +21,8 @@ public class DbConnection {
     }
 
     public DbConnection(String uri, String user, String password, String dbName) {
-        driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
+        Config config = Config.builder().withNotificationConfig(NotificationConfig.disableAllConfig()).build();
+        driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password), config);
         this.dbName = dbName;
     }
 
