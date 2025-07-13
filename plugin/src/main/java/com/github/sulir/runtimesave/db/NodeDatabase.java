@@ -95,24 +95,34 @@ public class NodeDatabase {
     }
 
     private void writeNodes(Set<GraphNode> nodes) {
-        List<Map<String, Object>> nodesList = nodes.stream().map(this::nodeToMap).toList();
-        if (nodesList.isEmpty())
+        if (nodes.isEmpty())
             return;
+        List<Map<String, Object>> nodesList = nodes.stream().map(this::nodeToMapWithIdHash).toList();
 
-        String query = "UNWIND $nodes AS node"
-                + " MERGE (n:$(node.label):Hashed {idHash: node.idHash})"
-                + " ON CREATE SET n += node.props";
-
+        String query = "FOREACH (node in $nodes |"
+                + " CREATE (n:$(node.label):Hashed)"
+                + " SET n = node.props"
+                + ")";
         transaction.run(query, Map.of("nodes", nodesList));
     }
 
     private Map<String, Object> nodeToMap(GraphNode node) {
+        Map<String, Object> properties = nodePropertiesAndHash(node);
+        return Map.of("label", node.label(), "idHash", node.idHash().toString(), "props", properties);
+    }
+
+    private Map<String, Object> nodeToMapWithIdHash(GraphNode node) {
+        Map<String, Object> properties = nodePropertiesAndHash(node);
+        properties.put("idHash", node.idHash().toString());
+        return Map.of("label", node.label(), "props", properties);
+    }
+
+    private Map<String, Object> nodePropertiesAndHash(GraphNode node) {
         Map<String, Object> properties = new HashMap<>();
         for (NodeProperty property : node.properties())
             properties.put(property.key(), property.value());
         properties.put("hash", node.hash().toString());
-
-        return Map.of("label", node.label(), "idHash", node.idHash().toString(), "props", properties);
+        return properties;
     }
 
     private void writeOutEdges(Stream<GraphNode> nodes) {

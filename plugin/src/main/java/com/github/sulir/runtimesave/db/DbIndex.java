@@ -7,7 +7,6 @@ import java.util.function.BooleanSupplier;
 
 public class DbIndex {
     private static final Map<String, String> indexes = Map.of(
-            "Hashed", "idHash",
             "Class", "name",
             "Method", "signature",
             "Line", "number",
@@ -22,6 +21,8 @@ public class DbIndex {
     }
 
     public boolean createIndexes() {
+        createUniqueConstraint();
+
         for (Map.Entry<String, String> index : indexes.entrySet()) {
             if (shouldCancel != null && shouldCancel.getAsBoolean())
                 return false;
@@ -40,5 +41,12 @@ public class DbIndex {
 
     public void setCancellationListener(BooleanSupplier listener) {
         shouldCancel = listener;
+    }
+
+    private void createUniqueConstraint() {
+        String query = "CREATE CONSTRAINT Hashed_idHash IF NOT EXISTS FOR (n:Hashed) REQUIRE n.idHash IS UNIQUE";
+        try (Session session = db.createSession()) {
+            session.run(query);
+        }
     }
 }
