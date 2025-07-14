@@ -64,40 +64,58 @@ public class NodeDatabase {
     }
 
     public void write(AcyclicGraph dag) {
-        Set<StrongComponent> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<StrongComponent> visited = new HashSet<>();
         List<StrongComponent> created = new ArrayList<>();
 
         db.writeTransaction(transaction -> {
             this.transaction = transaction;
-            writeComponent(dag.getRootComponent(), visited, created);
+            writeComponents(Set.of(dag.getRootComponent()), visited, created);
             writeOutEdges(created.stream().flatMap(scc -> scc.nodes().stream()));
         });
         transaction = null;
     }
 
-    private void writeComponent(StrongComponent scc, Set<StrongComponent> visited, List<StrongComponent> created) {
-        if (!visited.add(scc))
+    private void writeComponents(Set<StrongComponent> components, Set<StrongComponent> visited,
+                                 List<StrongComponent> created) {
+        List<StrongComponent> unvisitedSCCs = components.stream().filter(visited::add).toList();
+        if (unvisitedSCCs.isEmpty())
             return;
 
-        if (writeNode(scc.getFirstNode())) {
-            created.add(scc);
-            writeNodes(scc.getRestOfNodes());
+        List<Boolean> createdNodes = writeFirstNodes(unvisitedSCCs.stream().map(StrongComponent::getFirstNode));
 
-            for (StrongComponent target : scc.targets())
-                writeComponent(target, visited, created);
+        Set<GraphNode> restsToWrite = new HashSet<>();
+        Set<StrongComponent> componentsToWrite = new HashSet<>();
+
+        for (int i = 0; i < createdNodes.size(); i++) {
+            if (createdNodes.get(i)) {
+                StrongComponent scc = unvisitedSCCs.get(i);
+                created.add(scc);
+                restsToWrite.addAll(scc.getRestOfNodes());
+                componentsToWrite.addAll(scc.targets());
+            }
         }
+        writeRestsOfNodes(restsToWrite.stream());
+        writeComponents(componentsToWrite, visited, created);
     }
 
-    private boolean writeNode(GraphNode node) {
-        String query = "MERGE (n:$($label):Hashed {idHash: $idHash})"
-                + " ON CREATE SET n += $props";
-        return transaction.run(query, nodeToMap(node)).consume().counters().nodesCreated() > 0;
+    private List<Boolean> writeFirstNodes(Stream<GraphNode> nodes) {
+        List<Map<String, Object>> nodesMaps = nodes.map(this::nodeToMap).toList();
+        String query = "PROFILE UNWIND $nodes AS node"
+                + " OPTIONAL MATCH (h:Hashed {idHash: node.props.idHash})"
+                + " WITH node, h IS NULL AS toCreate"
+                + " FOREACH (_ IN CASE WHEN toCreate then [1] ELSE [] END |"
+                + "  CREATE (n:$(node.label):Hashed)"
+                + "  SET n = node.props"
+                + " )"
+                + " RETURN collect(toCreate) as created";
+        return transaction.run(query, Map.of("nodes", nodesMaps))
+                .single().get("created").asList(Value::asBoolean);
     }
 
-    private void writeNodes(Set<GraphNode> nodes) {
-        if (nodes.isEmpty())
+    private void writeRestsOfNodes(Stream<GraphNode> nodes) {
+        List<Map<String, Object>> nodesList = nodes.map(this::nodeToMap).toList();
+        if (nodesList.isEmpty())
             return;
-        List<Map<String, Object>> nodesList = nodes.stream().map(this::nodeToMapWithIdHash).toList();
 
         String query = "FOREACH (node in $nodes |"
                 + " CREATE (n:$(node.label):Hashed)"
@@ -107,22 +125,13 @@ public class NodeDatabase {
     }
 
     private Map<String, Object> nodeToMap(GraphNode node) {
-        Map<String, Object> properties = nodePropertiesAndHash(node);
-        return Map.of("label", node.label(), "idHash", node.idHash().toString(), "props", properties);
-    }
-
-    private Map<String, Object> nodeToMapWithIdHash(GraphNode node) {
-        Map<String, Object> properties = nodePropertiesAndHash(node);
-        properties.put("idHash", node.idHash().toString());
-        return Map.of("label", node.label(), "props", properties);
-    }
-
-    private Map<String, Object> nodePropertiesAndHash(GraphNode node) {
         Map<String, Object> properties = new HashMap<>();
         for (NodeProperty property : node.properties())
             properties.put(property.key(), property.value());
         properties.put("hash", node.hash().toString());
-        return properties;
+        properties.put("idHash", node.idHash().toString());
+
+        return Map.of("label", node.label(), "props", properties);
     }
 
     private void writeOutEdges(Stream<GraphNode> nodes) {
