@@ -12,7 +12,7 @@ import com.github.sulir.runtimesave.hash.NodeHash;
 import com.github.sulir.runtimesave.jdi.JdiReader;
 import com.github.sulir.runtimesave.jdi.JdiWriter;
 import com.github.sulir.runtimesave.nodes.FrameNode;
-import com.github.sulir.runtimesave.packing.ValuePacker;
+import com.github.sulir.runtimesave.pack.ValuePacker;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.sun.jdi.StackFrame;

@@ -1,8 +1,8 @@
 package com.github.sulir.runtimesave.graph;
 
 import com.github.sulir.runtimesave.nodes.*;
-import com.github.sulir.runtimesave.packing.Packer;
-import com.github.sulir.runtimesave.packing.ValuePacker;
+import com.github.sulir.runtimesave.pack.Packer;
+import com.github.sulir.runtimesave.pack.ValuePacker;
 import org.neo4j.driver.Value;
 
 import java.lang.reflect.Field;

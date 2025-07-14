@@ -1,7 +1,7 @@
 package com.github.sulir.runtimesave.graph;
 
-import com.github.sulir.runtimesave.packing.Packer;
-import com.github.sulir.runtimesave.packing.ValuePacker;
+import com.github.sulir.runtimesave.pack.Packer;
+import com.github.sulir.runtimesave.pack.ValuePacker;
 
 import java.util.*;
 

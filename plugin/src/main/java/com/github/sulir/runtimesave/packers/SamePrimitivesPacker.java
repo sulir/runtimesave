@@ -3,7 +3,7 @@ package com.github.sulir.runtimesave.packers;
 import com.github.sulir.runtimesave.graph.Edge;
 import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.PrimitiveNode;
-import com.github.sulir.runtimesave.packing.Packer;
+import com.github.sulir.runtimesave.pack.Packer;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;

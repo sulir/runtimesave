@@ -5,7 +5,7 @@ import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.ArrayNode;
 import com.github.sulir.runtimesave.nodes.NullNode;
 import com.github.sulir.runtimesave.nodes.PrimitiveNode;
-import com.github.sulir.runtimesave.packing.Packer;
+import com.github.sulir.runtimesave.pack.Packer;
 
 public class SparseArrayPacker implements Packer {
     private static final int MIN_PACKED_ELEMENTS = 1;

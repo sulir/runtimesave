@@ -1,7 +1,7 @@
 package com.github.sulir.runtimesave.packers;
 
 import com.github.sulir.runtimesave.graph.TestUtils;
-import com.github.sulir.runtimesave.packing.Packer;
+import com.github.sulir.runtimesave.pack.Packer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

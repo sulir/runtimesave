@@ -5,7 +5,7 @@ import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.NullNode;
 import com.github.sulir.runtimesave.nodes.ObjectNode;
 import com.github.sulir.runtimesave.nodes.PrimitiveNode;
-import com.github.sulir.runtimesave.packing.Packer;
+import com.github.sulir.runtimesave.pack.Packer;
 
 import java.util.SortedMap;
 import java.util.TreeMap;
