@@ -9,6 +9,8 @@
   <depends>com.intellij.modules.platform</depends>
   <depends>com.intellij.java</depends>
 
+  <resource-bundle>messages.Bundle</resource-bundle>
+
   <extensions defaultExtensionNs="com.intellij">
     <postStartupActivity implementation="com.github.sulir.runtimesave.StartupActivity"/>
     <executor implementation="com.github.sulir.runtimesave.everyline.EveryLineExecutor"/>
