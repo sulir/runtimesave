@@ -56,16 +56,6 @@ public class StrongComponent {
     }
 
     @Override
-    public final boolean equals(Object obj) {
-        return obj instanceof StrongComponent that && nodes.equals(that.nodes);
-    }
-
-    @Override
-    public int hashCode() {
-        return nodes.hashCode();
-    }
-
-    @Override
     public String toString() {
         return nodes.toString().replaceFirst("^\\[(.*)]$", "{$1}");
     }

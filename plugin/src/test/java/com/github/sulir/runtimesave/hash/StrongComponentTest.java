@@ -48,13 +48,6 @@ class StrongComponentTest {
     }
 
     @Test
-    void componentsWithSameNodesAreEqual() {
-        StrongComponent component = new StrongComponent(node, otherNode);
-        StrongComponent equal = new StrongComponent(node, otherNode);
-        assertEquals(component, equal);
-    }
-
-    @Test
     void componentWithTwoNodesIsNotTrivial() {
         StrongComponent component = new StrongComponent(node, otherNode);
         assertFalse(component.isTrivial());
@@ -83,22 +76,6 @@ class StrongComponentTest {
     void firstNodeAndRestAreDisjunct() {
         StrongComponent component = new StrongComponent(node, otherNode);
         assertFalse(component.getRestOfNodes().contains(component.getFirstNode()));
-    }
-
-    @Test
-    void componentDoesNotEqualOtherClassInstance() {
-        Object nodes = new Object();
-        assertNotEquals(new StrongComponent(), nodes);
-    }
-
-    @Test
-    void sameComponentsHaveSameHashCodes() {
-        assertEquals(new StrongComponent(node).hashCode(), new StrongComponent(node).hashCode());
-    }
-
-    @Test
-    void differentComponentsHaveDifferentHashCodes() {
-        assertNotEquals(new StrongComponent(node).hashCode(), new StrongComponent(otherNode).hashCode());
     }
 
     @Test

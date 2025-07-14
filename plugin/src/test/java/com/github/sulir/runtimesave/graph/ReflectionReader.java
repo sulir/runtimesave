@@ -19,7 +19,7 @@ public class ReflectionReader {
         unsafe = (Unsafe) uncheck(() -> unsafeField.get(null));
     }
 
-    private final Map<Object, ValueNode> created = new IdentityHashMap<>();
+    private final Map<Object, ValueNode> created = new HashMap<>();
 
     public ValueNode read(Object value) {
         return read(value, value == null ? Object.class : value.getClass());

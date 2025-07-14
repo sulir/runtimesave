@@ -29,7 +29,7 @@ class TarjanSccTest {
     void sccOfOneNodeIsItself() {
         StringNode node = new StringNode("");
         List<StrongComponent> components = tarjanScc.computeComponents(node);
-        assertEquals(List.of(new StrongComponent(node)), components);
+        assertSccListsEqual(List.of(new StrongComponent(node)), components);
     }
 
     @ParameterizedTest
@@ -38,7 +38,7 @@ class TarjanSccTest {
         ArrayNode[] cycle = generator.circularNodes(size);
         List<StrongComponent> components = tarjanScc.computeComponents(cycle[0]);
         List<StrongComponent> expected = List.of(new StrongComponent(cycle));
-        assertEquals(expected, components);
+        assertSccListsEqual(expected, components);
     }
 
     @Test
@@ -49,7 +49,7 @@ class TarjanSccTest {
 
         List<StrongComponent> components = tarjanScc.computeComponents(cycle[0]);
         List<StrongComponent> expected = List.of(new StrongComponent(sink), new StrongComponent(cycle));
-        assertEquals(expected, components);
+        assertSccListsEqual(expected, components);
     }
 
     @Test
@@ -63,7 +63,7 @@ class TarjanSccTest {
         List<StrongComponent> components = tarjanScc.computeComponents(left[3]);
         List<StrongComponent> expected = List.of(new StrongComponent(right), new StrongComponent(middle),
                 new StrongComponent(left));
-        assertEquals(expected, components);
+        assertSccListsEqual(expected, components);
     }
 
     @Test
@@ -77,7 +77,7 @@ class TarjanSccTest {
 
         List<StrongComponent> components = tarjanScc.computeComponents(top);
         List<StrongComponent> expected = Stream.of(bottom, middle, top).map(StrongComponent::new).toList();
-        assertEquals(expected, components);
+        assertSccListsEqual(expected, components);
     }
 
     @Test
@@ -92,6 +92,11 @@ class TarjanSccTest {
 
         List<StrongComponent> components = tarjanScc.computeComponents(root);
         List<StrongComponent> expected = Stream.of(childOfLeft, left, right, root).map(StrongComponent::new).toList();
-        assertEquals(expected, components);
+        assertSccListsEqual(expected, components);
+    }
+
+    private void assertSccListsEqual(List<StrongComponent> components, List<StrongComponent> other) {
+        assertEquals(components.stream().map(StrongComponent::nodes).toList(),
+                other.stream().map(StrongComponent::nodes).toList());
     }
 }

@@ -2,7 +2,10 @@ package com.github.sulir.runtimesave.hash;
 
 import com.github.sulir.runtimesave.graph.GraphNode;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 class TreeHasher {
     private final ObjectHasher objectHasher;
@@ -13,7 +16,7 @@ class TreeHasher {
     }
 
     void assignHashes(AcyclicGraph dag) {
-        sccToData = new IdentityHashMap<>(dag.getComponentCount());
+        sccToData = new HashMap<>(dag.getComponentCount());
         markTreeNodes(dag);
         assignHashesToMarked(dag);
         sccToData = null;
@@ -53,8 +56,7 @@ class TreeHasher {
         Set<StrongComponent> path;
 
         SccData(StrongComponent scc) {
-            path = Collections.newSetFromMap(new IdentityHashMap<>());
-            path.add(scc);
+            path = new HashSet<>(Set.of(scc));
         }
     }
 
