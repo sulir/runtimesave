@@ -17,10 +17,13 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.sun.jdi.StackFrame;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.BooleanSupplier;
 
 @Service
 public final class RuntimeStorageService {
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final ValuePacker packer = ValuePacker.fromServiceLoader();
     private final NodeFactory factory = new NodeFactory(packer);
     private final GraphHasher hasher = new GraphHasher();
@@ -43,12 +46,16 @@ public final class RuntimeStorageService {
 
     public void saveFrame(StackFrame frame) {
         FrameNode frameNode = new JdiReader(frame).readFrame();
-        packer.pack(frameNode);
-        AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frameNode);
-        hasher.assignHashes(dag);
-        idHasher.assignIdHashes(frameNode);
-        database.write(dag);
-        metadata.addLocation(frameNode.hash(), SourceLocation.fromJDI(frame.location()));
+        SourceLocation location = SourceLocation.fromJDI(frame.location());
+
+        executor.execute(() -> {
+            packer.pack(frameNode);
+            AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frameNode);
+            hasher.assignHashes(dag);
+            idHasher.assignIdHashes(frameNode);
+            database.write(dag);
+            metadata.addLocation(frameNode.hash(), location);
+        });
     }
 
     public void createIndexes(BooleanSupplier cancellationListener) {
