@@ -13,8 +13,8 @@
 
   <extensions defaultExtensionNs="com.intellij">
     <postStartupActivity implementation="com.github.sulir.runtimesave.StartupActivity"/>
-    <executor implementation="com.github.sulir.runtimesave.everyline.EveryLineExecutor"/>
-    <programRunner implementation="com.github.sulir.runtimesave.everyline.EveryLineRunner"/>
+    <executor implementation="com.github.sulir.runtimesave.sample.SamplingExecutor"/>
+    <programRunner implementation="com.github.sulir.runtimesave.sample.SamplingRunner"/>
     <xdebugger.breakpointType implementation="com.github.sulir.runtimesave.savepoint.SavepointType"/>
     <debugger.javaBreakpointHandlerFactory
             implementation="com.github.sulir.runtimesave.savepoint.SavepointHandlerFactory"/>
@@ -33,7 +33,7 @@
   </actions>
 
   <projectListeners>
-    <listener class="com.github.sulir.runtimesave.everyline.EveryLineListener"
+    <listener class="com.github.sulir.runtimesave.sample.SamplingListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
     <listener class="com.github.sulir.runtimesave.savepoint.SavepointListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>

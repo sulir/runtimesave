@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave.everyline;
+package com.github.sulir.runtimesave.sample;
 
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.icons.AllIcons;
@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
-public class EveryLineExecutor extends DefaultDebugExecutor {
+public class SamplingExecutor extends DefaultDebugExecutor {
     public static final String EXECUTOR_ID = "AllLines";
 
     @Override

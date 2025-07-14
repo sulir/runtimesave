@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave.everyline;
+package com.github.sulir.runtimesave.sample;
 
 import com.intellij.debugger.engine.DebugProcess;
 import com.intellij.debugger.engine.DebugProcessEvents;
@@ -19,8 +19,10 @@ import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.EventRequestManager;
 import org.jetbrains.annotations.NotNull;
 
-public class EveryLineListener implements DebuggerManagerListener {
+public class SamplingListener implements DebuggerManagerListener {
     private static final String[] EXCLUDE_PACKAGES = {"com.sun.*", "java.*", "javax.*", "jdk.*", "sun.*"};
+
+    private final SamplingManager samplingManager = new SamplingManager(1, 1);
 
     @Override
     public void sessionCreated(DebuggerSession session) {
@@ -28,7 +30,7 @@ public class EveryLineListener implements DebuggerManagerListener {
             @Override
             public void processAttached(@NotNull DebugProcess process) {
                 XDebugSession xSession = session.getXDebugSession();
-                if (xSession == null || xSession.getRunContentDescriptor().getExecutionId() != EveryLineRunner.UID)
+                if (xSession == null || xSession.getRunContentDescriptor().getExecutionId() != SamplingRunner.UID)
                     return;
 
                 VirtualMachine vm = ((VirtualMachineProxyImpl) process.getVirtualMachineProxy()).getVirtualMachine();
@@ -47,7 +49,7 @@ public class EveryLineListener implements DebuggerManagerListener {
             ClassPrepareEvent event = (ClassPrepareEvent) ev;
 
             if (isProjectClass(event.referenceType(), project))
-                new EveryLineManager(event.referenceType()).addBreakpoints();
+                samplingManager.addBreakpoints(event.referenceType());
         });
     }
 

@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave.everyline;
+package com.github.sulir.runtimesave.sample;
 
 import com.intellij.debugger.impl.GenericDebuggerRunner;
 import com.intellij.execution.ExecutionException;
@@ -7,12 +7,12 @@ import com.intellij.execution.configurations.RunProfile;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import org.jetbrains.annotations.NotNull;
 
-public class EveryLineRunner extends GenericDebuggerRunner {
+public class SamplingRunner extends GenericDebuggerRunner {
     public static final long UID = -4814295447389679366L;
 
     @Override
     public boolean canRun(@NotNull String executorId, @NotNull RunProfile profile) {
-        return executorId.equals(EveryLineExecutor.EXECUTOR_ID) && profile instanceof JavaRunConfigurationBase;
+        return executorId.equals(SamplingExecutor.EXECUTOR_ID) && profile instanceof JavaRunConfigurationBase;
     }
 
     @Override

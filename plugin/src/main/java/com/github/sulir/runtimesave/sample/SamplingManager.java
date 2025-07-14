@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave.everyline;
+package com.github.sulir.runtimesave.sample;
 
 import com.github.sulir.runtimesave.RuntimeStorageService;
 import com.github.sulir.runtimesave.SourceLocation;
@@ -16,22 +16,27 @@ import java.util.Map;
 
 import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
 
-public class EveryLineManager {
-    public static final int MAX_HITS = 1;
+public class SamplingManager {
+    private final int everyNthLine;
+    private final int nPerLine;
+    private int linesHit = 0;
+    private final Map<SourceLocation, Integer> hitsPerLine = new HashMap<>();
 
-    private final ReferenceType clazz;
-    private final Map<String, Integer> hitCounts = new HashMap<>();
-
-    public EveryLineManager(ReferenceType clazz) {
-        this.clazz = clazz;
+    public SamplingManager(int everyNthLine, int nPerLine) {
+        this.everyNthLine = everyNthLine;
+        this.nPerLine = nPerLine;
     }
 
-    public void addBreakpoints() {
+    public void addBreakpoints(ReferenceType clazz) {
         System.out.println("Adding breakpoints to " + clazz.name());
 
         try {
             for (Location location : clazz.allLineLocations()) {
-                if (hitCounts.putIfAbsent(SourceLocation.fromJDI(location).toString(), 0) != null)
+                linesHit = (linesHit + 1) % everyNthLine;
+                if (linesHit != 0)
+                    continue;
+
+                if (hitsPerLine.putIfAbsent(SourceLocation.fromJDI(location), 0) != null)
                     continue;
 
                 EventRequestManager manager = clazz.virtualMachine().eventRequestManager();
@@ -44,11 +49,11 @@ public class EveryLineManager {
     }
 
     private void handleBreakpoint(BreakpointEvent event) {
-        String classLine = SourceLocation.fromJDI(event.location()).toString();
-        int newHitCount = hitCounts.get(classLine) + 1;
-        hitCounts.put(classLine, newHitCount);
+        SourceLocation location = SourceLocation.fromJDI(event.location());
+        int newHitCount = hitsPerLine.get(location) + 1;
+        hitsPerLine.put(location, newHitCount);
 
-        if (newHitCount >= MAX_HITS)
+        if (newHitCount >= nPerLine)
             event.virtualMachine().eventRequestManager().deleteEventRequest(event.request());
 
         System.out.println(uncheck(event.location()::sourcePath) + ":" + event.location().lineNumber());
