@@ -23,11 +23,12 @@ import java.util.function.BooleanSupplier;
 
 @Service
 public final class RuntimeStorageService {
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService cpuPool = Executors.newWorkStealingPool();
+    private final ExecutorService dbPool = Executors.newSingleThreadExecutor();
     private final ValuePacker packer = ValuePacker.fromServiceLoader();
     private final NodeFactory factory = new NodeFactory(packer);
-    private final GraphHasher hasher = new GraphHasher();
-    private final GraphIdHasher idHasher = new GraphIdHasher();
+    private final ThreadLocal<GraphHasher> hasher = ThreadLocal.withInitial(GraphHasher::new);
+    private final ThreadLocal<GraphIdHasher> idHasher = ThreadLocal.withInitial(GraphIdHasher::new);
     private final NodeDatabase database  = new NodeDatabase(DbConnection.getInstance(), factory);
     private final DbIndex dbIndex = new DbIndex(DbConnection.getInstance());
     private boolean dbIndexed = false;
@@ -48,13 +49,16 @@ public final class RuntimeStorageService {
         FrameNode frameNode = new JdiReader(frame).readFrame();
         SourceLocation location = SourceLocation.fromJDI(frame.location());
 
-        executor.execute(() -> {
+        cpuPool.execute(() -> {
             packer.pack(frameNode);
             AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frameNode);
-            hasher.assignHashes(dag);
-            idHasher.assignIdHashes(frameNode);
-            database.write(dag);
-            metadata.addLocation(frameNode.hash(), location);
+            hasher.get().assignHashes(dag);
+            idHasher.get().assignIdHashes(frameNode);
+
+            dbPool.execute(() -> {
+                database.write(dag);
+                metadata.addLocation(frameNode.hash(), location);
+            });
         });
     }
 
