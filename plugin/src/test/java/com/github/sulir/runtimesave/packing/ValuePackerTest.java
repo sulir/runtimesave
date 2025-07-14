@@ -30,7 +30,7 @@ class ValuePackerTest {
 
     @Test
     void serviceLoaderProvidesAtLeastOnePacker() {
-        assertTrue(ValuePacker.fromServiceLoader().getPackers().length > 0);
+        assertTrue(ValuePacker.fromServiceLoader().getAllPackers().length > 0);
     }
 
     @Test

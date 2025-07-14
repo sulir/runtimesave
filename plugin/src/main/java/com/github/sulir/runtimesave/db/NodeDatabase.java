@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 public class NodeDatabase {
     private final DbConnection db;
     private final NodeFactory factory;
-    private TransactionContext transaction;
 
     public NodeDatabase(DbConnection db, NodeFactory factory) {
         this.db = db;
@@ -68,20 +67,19 @@ public class NodeDatabase {
         List<StrongComponent> created = new ArrayList<>();
 
         db.writeTransaction(transaction -> {
-            this.transaction = transaction;
-            writeComponents(Set.of(dag.getRootComponent()), visited, created);
-            writeOutEdges(created.stream().flatMap(scc -> scc.nodes().stream()));
+            writeComponents(Set.of(dag.getRootComponent()), visited, created, transaction);
+            writeOutEdges(created.stream().flatMap(scc -> scc.nodes().stream()), transaction);
         });
-        transaction = null;
     }
 
     private void writeComponents(Set<StrongComponent> components, Set<StrongComponent> visited,
-                                 List<StrongComponent> created) {
+                                 List<StrongComponent> created, TransactionContext transaction) {
         List<StrongComponent> unvisitedSCCs = components.stream().filter(visited::add).toList();
         if (unvisitedSCCs.isEmpty())
             return;
 
-        List<Boolean> createdNodes = writeFirstNodes(unvisitedSCCs.stream().map(StrongComponent::getFirstNode));
+        Stream<GraphNode> firstNodes = unvisitedSCCs.stream().map(StrongComponent::getFirstNode);
+        List<Boolean> createdNodes = writeFirstNodes(firstNodes, transaction);
 
         Set<GraphNode> restsToWrite = new HashSet<>();
         Set<StrongComponent> componentsToWrite = new HashSet<>();
@@ -94,11 +92,11 @@ public class NodeDatabase {
                 componentsToWrite.addAll(scc.targets());
             }
         }
-        writeRestsOfNodes(restsToWrite.stream());
-        writeComponents(componentsToWrite, visited, created);
+        writeRestsOfNodes(restsToWrite.stream(), transaction);
+        writeComponents(componentsToWrite, visited, created, transaction);
     }
 
-    private List<Boolean> writeFirstNodes(Stream<GraphNode> nodes) {
+    private List<Boolean> writeFirstNodes(Stream<GraphNode> nodes, TransactionContext transaction) {
         List<Map<String, Object>> nodesMaps = nodes.map(this::nodeToMap).toList();
         String query = "PROFILE UNWIND $nodes AS node"
                 + " OPTIONAL MATCH (h:Hashed {idHash: node.props.idHash})"
@@ -112,7 +110,7 @@ public class NodeDatabase {
                 .single().get("created").asList(Value::asBoolean);
     }
 
-    private void writeRestsOfNodes(Stream<GraphNode> nodes) {
+    private void writeRestsOfNodes(Stream<GraphNode> nodes, TransactionContext transaction) {
         List<Map<String, Object>> nodesList = nodes.map(this::nodeToMap).toList();
         if (nodesList.isEmpty())
             return;
@@ -134,7 +132,7 @@ public class NodeDatabase {
         return Map.of("label", node.label(), "props", properties);
     }
 
-    private void writeOutEdges(Stream<GraphNode> nodes) {
+    private void writeOutEdges(Stream<GraphNode> nodes, TransactionContext transaction) {
         List<Map<String, Object>> edges = nodes.flatMap(this::getRelationships).toList();
         if (edges.isEmpty())
             return;

@@ -29,7 +29,7 @@ public class NodeFactory {
     public NodeFactory(ValuePacker valuePacker) {
         nodeClasses.forEach(this::registerMapping);
 
-        for (Packer packer : valuePacker.getPackers())
+        for (Packer packer : valuePacker.getAllPackers())
             for (Class<?> nested : packer.getClass().getClasses())
                 if (GraphNode.class.isAssignableFrom(nested))
                     registerMapping(nested.asSubclass(GraphNode.class));
