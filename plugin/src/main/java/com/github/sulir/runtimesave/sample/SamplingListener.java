@@ -20,9 +20,16 @@ import com.sun.jdi.request.EventRequestManager;
 import org.jetbrains.annotations.NotNull;
 
 public class SamplingListener implements DebuggerManagerListener {
-    private static final String[] EXCLUDE_PACKAGES = {"com.sun.*", "java.*", "javax.*", "jdk.*", "sun.*"};
+    private static final String[] EXCLUDED = {"com.sun.*", "java.*", "javax.*", "jdk.*", "sun.*"};
+    private static final int EVERY_NTH_LINE = 1;
+    private static final int N_PER_LINE = 1;
 
-    private final SamplingManager samplingManager = new SamplingManager(1, 1);
+    private final String[] included;
+
+    public SamplingListener() {
+        String includedProperty = System.getenv("RS_INCLUDE");
+        included = includedProperty == null ? new String[0] : includedProperty.split(",");
+    }
 
     @Override
     public void sessionCreated(DebuggerSession session) {
@@ -42,14 +49,17 @@ public class SamplingListener implements DebuggerManagerListener {
     private void setClassPrepareRequest(VirtualMachine vm, Project project) {
         EventRequestManager manager = vm.eventRequestManager();
         ClassPrepareRequest request = manager.createClassPrepareRequest();
-        for (String pattern : EXCLUDE_PACKAGES)
+
+        for (String pattern : included)
+            request.addClassFilter(pattern);
+        for (String pattern : EXCLUDED)
             request.addClassExclusionFilter(pattern);
 
         DebugProcessEvents.enableRequestWithHandler(request, (ev) -> {
             ClassPrepareEvent event = (ClassPrepareEvent) ev;
 
-            if (isProjectClass(event.referenceType(), project))
-                samplingManager.addBreakpoints(event.referenceType());
+            if (included.length != 0 || isProjectClass(event.referenceType(), project))
+                new SamplingManager(EVERY_NTH_LINE, N_PER_LINE).addBreakpoints(event.referenceType());
         });
     }
 

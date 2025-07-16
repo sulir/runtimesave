@@ -54,6 +54,7 @@ tasks.buildPlugin {
 
 tasks.runIde {
     dependsOn(":runtimesave-starter:jar")
+    maxHeapSize = "12g"
 }
 
 tasks.test {

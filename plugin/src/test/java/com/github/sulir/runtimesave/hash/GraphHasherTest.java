@@ -58,7 +58,7 @@ class GraphHasherTest {
 
     @Test
     void uniqueGeneratedGraphsHaveUniqueHashes() {
-        if (System.getProperty("REPORT_COLLIDED_GRAPH") == null) {
+        if (System.getProperty("rs.report.collided") == null) {
             Set<NodeHash> hashes = new HashSet<>();
             generator.allSmallGraphs().forEach(graph -> checkCollision(graph, hashes));
         } else {
