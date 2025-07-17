@@ -8,25 +8,31 @@ import com.github.sulir.runtimesave.hash.AcyclicGraph;
 import com.github.sulir.runtimesave.hash.GraphHasher;
 import com.github.sulir.runtimesave.hash.GraphIdHasher;
 import com.github.sulir.runtimesave.nodes.FrameNode;
-import com.github.sulir.runtimesave.packing.ValuePacker;
+import com.github.sulir.runtimesave.pack.ValuePacker;
 
 import javax.swing.*;
+import java.util.Calendar;
 import java.util.function.Supplier;
 
 public class DbExample {
     public static void main(String[] args) {
+        writeObject(Calendar.getInstance(), "Calendar");
+        System.out.println("---");
+        writeObject(new JColorChooser(), "JColorChooser");
+    }
+
+    private static void writeObject(Object object, String name) {
         ValuePacker packer = ValuePacker.fromServiceLoader();
         NodeFactory factory = new NodeFactory(packer);
         GraphHasher hasher = new GraphHasher();
         GraphIdHasher idHasher = new GraphIdHasher();
-        NodeDatabase database  = new NodeDatabase(DbConnection.getInstance(), factory);
+        HashedDb database = new HashedDb(DbConnection.getInstance(), factory);
         DbIndex dbIndex = new DbIndex(DbConnection.getInstance());
         Metadata metadata = new Metadata(DbConnection.getInstance());
 
-        Object object = new JColorChooser();
         ValueNode value = new ReflectionReader().read(object);
         FrameNode frame = new FrameNode();
-        frame.setVariable("variable", value);
+        frame.setVariable(name, value);
 
         time(() -> packer.pack(frame), "pack");
         AcyclicGraph dag = time(() -> AcyclicGraph.multiCondensationOf(frame), "dag");
@@ -39,13 +45,13 @@ public class DbExample {
         database.read(frame.hash(), FrameNode.class);
     }
 
-    private static void time(Runnable measured, String name) {
+    public static void time(Runnable measured, String name) {
         long time = System.currentTimeMillis();
         measured.run();
         System.out.println(name + ": " + (System.currentTimeMillis() - time) + " ms");
     }
 
-    private static <T> T time(Supplier<T> measured, String name) {
+    public static <T> T time(Supplier<T> measured, String name) {
         long time = System.currentTimeMillis();
         T result = measured.get();
         System.out.println(name + ": " + (System.currentTimeMillis() - time) + " ms");

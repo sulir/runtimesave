@@ -36,6 +36,23 @@ public class TestUtils {
         return traversal;
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T extends GraphNode> T copyGraph(T root, NodeFactory factory) {
+        return (T) copyGraph(root, factory, new HashMap<>());
+    }
+
+    private static GraphNode copyGraph(GraphNode node, NodeFactory factory, Map<GraphNode, GraphNode> clones) {
+        GraphNode existing = clones.get(node);
+        if (existing != null)
+            return existing;
+
+        GraphNode clone = factory.createNode(node.label(), node.properties());
+        clones.put(node, clone);
+
+        node.forEachEdge((label, target) -> clone.setTarget(label, copyGraph(target, factory, clones)));
+        return clone;
+    }
+
     public static void assertPackingNoop(Object object, Packer packer) {
         GraphNode original = new ReflectionReader().read(object);
         GraphNode unpackable = new ReflectionReader().read(object);

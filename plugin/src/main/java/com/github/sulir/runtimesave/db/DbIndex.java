@@ -21,7 +21,7 @@ public class DbIndex {
     }
 
     public boolean createIndexes() {
-        createUniqueConstraint();
+        createConstraint("Hashed", "idHash");
 
         for (Map.Entry<String, String> index : indexes.entrySet()) {
             if (shouldCancel != null && shouldCancel.getAsBoolean())
@@ -39,14 +39,15 @@ public class DbIndex {
         return true;
     }
 
-    public void setCancellationListener(BooleanSupplier listener) {
-        shouldCancel = listener;
-    }
-
-    private void createUniqueConstraint() {
-        String query = "CREATE CONSTRAINT Hashed_idHash IF NOT EXISTS FOR (n:Hashed) REQUIRE n.idHash IS UNIQUE";
+    public void createConstraint(String label, String property) {
+        String query = "CREATE CONSTRAINT %1$s_%2$s IF NOT EXISTS FOR (n:%1$s) REQUIRE n.%2$s IS UNIQUE"
+                .formatted(label, property);
         try (Session session = db.createSession()) {
             session.run(query);
         }
+    }
+
+    public void setCancellationListener(BooleanSupplier listener) {
+        shouldCancel = listener;
     }
 }

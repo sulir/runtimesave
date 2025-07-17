@@ -14,13 +14,9 @@ import org.neo4j.driver.types.Relationship;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class NodeDatabase {
-    private final DbConnection db;
-    private final NodeFactory factory;
-
-    public NodeDatabase(DbConnection db, NodeFactory factory) {
-        this.db = db;
-        this.factory = factory;
+public class HashedDb extends Database {
+    public HashedDb(DbConnection db, NodeFactory factory) {
+        super(db, factory);
     }
 
     public <T extends GraphNode> T read(NodeHash hash, Class<T> type) {

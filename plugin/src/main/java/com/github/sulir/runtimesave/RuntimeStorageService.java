@@ -3,7 +3,7 @@ package com.github.sulir.runtimesave;
 import com.github.sulir.runtimesave.db.DbConnection;
 import com.github.sulir.runtimesave.db.DbIndex;
 import com.github.sulir.runtimesave.db.Metadata;
-import com.github.sulir.runtimesave.db.NodeDatabase;
+import com.github.sulir.runtimesave.db.HashedDb;
 import com.github.sulir.runtimesave.graph.NodeFactory;
 import com.github.sulir.runtimesave.hash.AcyclicGraph;
 import com.github.sulir.runtimesave.hash.GraphHasher;
@@ -29,7 +29,7 @@ public final class RuntimeStorageService {
     private final NodeFactory factory = new NodeFactory(packer);
     private final ThreadLocal<GraphHasher> hasher = ThreadLocal.withInitial(GraphHasher::new);
     private final ThreadLocal<GraphIdHasher> idHasher = ThreadLocal.withInitial(GraphIdHasher::new);
-    private final NodeDatabase database  = new NodeDatabase(DbConnection.getInstance(), factory);
+    private final HashedDb database  = new HashedDb(DbConnection.getInstance(), factory);
     private final DbIndex dbIndex = new DbIndex(DbConnection.getInstance());
     private boolean dbIndexed = false;
     private final Metadata metadata = new Metadata(DbConnection.getInstance());

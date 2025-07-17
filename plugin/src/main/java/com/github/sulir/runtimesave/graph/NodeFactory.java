@@ -7,10 +7,7 @@ import org.neo4j.driver.Value;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
 
@@ -35,14 +32,24 @@ public class NodeFactory {
                     registerMapping(nested.asSubclass(GraphNode.class));
     }
 
-    public GraphNode createNode(Iterable<String> labels, Map<String, Value> nodeProperties) {
+    public GraphNode createNode(Iterable<String> labels, Map<String, Value> properties) {
         Mapping mapping = findMapping(labels);
 
         Mapping.PropertySpec[] propertySpecs = mapping.properties();
         Object[] params = new Object[propertySpecs.length];
         for (int i = 0; i < params.length; i++)
-            params[i] = nodeProperties.get(propertySpecs[i].key()).as(propertySpecs[i].type());
+            params[i] = properties.get(propertySpecs[i].key()).as(propertySpecs[i].type());
         return mapping.constructor().apply(params);
+    }
+
+    public GraphNode createNode(String label, NodeProperty[] properties) {
+        Mapping mapping = findMapping(List.of(label));
+        Object[] params = Arrays.stream(properties).map(NodeProperty::value).toArray(Object[]::new);
+        return mapping.constructor().apply(params);
+    }
+
+    public Collection<String> getLabels() {
+        return labelToMapping.keySet();
     }
 
     private void registerMapping(Class<?> nodeClass) {
