@@ -109,10 +109,11 @@ public class Comparison {
     }
 
     private class Program {
-        private final ReflectionReader reader = new ReflectionReader();
         private final List<FrameNode> frames = new ArrayList<>();
 
         void addLine(Object... variables) {
+            ReflectionReader reader = new ReflectionReader();
+
             FrameNode frame = new FrameNode();
             for (int i = 0; i < variables.length; i++) {
                 ValueNode value = reader.read(variables[i]);

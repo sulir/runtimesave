@@ -23,7 +23,7 @@ public abstract class Database {
 
     public int edgeCount() {
         try (Session session = db.createSession()) {
-            return session.run("MATCH ()-[r]-() RETURN COUNT(r) AS count").single().get("count").asInt();
+            return session.run("MATCH ()-[r]->() RETURN COUNT(r) AS count").single().get("count").asInt();
         }
     }
 }
