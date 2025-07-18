@@ -15,6 +15,8 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class HashedDb extends Database {
+    private final IdHashCache idHashCache = new IdHashCache();
+
     public HashedDb(DbConnection db, NodeFactory factory) {
         super(db, factory);
     }
@@ -70,7 +72,10 @@ public class HashedDb extends Database {
 
     private void writeComponents(Set<StrongComponent> components, Set<StrongComponent> visited,
                                  List<StrongComponent> created, TransactionContext transaction) {
-        List<StrongComponent> unvisitedSCCs = components.stream().filter(visited::add).toList();
+        List<StrongComponent> unvisitedSCCs = components.stream()
+                .filter(visited::add)
+                .filter(idHashCache::add)
+                .toList();
         if (unvisitedSCCs.isEmpty())
             return;
 
@@ -148,5 +153,24 @@ public class HashedDb extends Database {
                 "to", edge.target().idHash().toString(),
                 "type", from.getMapping().relation().type(),
                 "props", Map.of(from.getMapping().relation().propertyName(), edge.label())));
+    }
+
+    private static class IdHashCache {
+        private static final int MAX_SIZE = 10_000;
+
+        private final Map<NodeHash, Boolean> map = new LinkedHashMap<>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<NodeHash, Boolean> eldest) {
+                return size() > MAX_SIZE;
+            }
+        };
+
+        public boolean add(StrongComponent scc) {
+            for (GraphNode node : scc.nodes())
+                if (map.put(node.idHash(), Boolean.TRUE) != null)
+                    return false;
+
+            return true;
+        }
     }
 }
