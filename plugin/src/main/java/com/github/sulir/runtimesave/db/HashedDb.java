@@ -15,8 +15,11 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class HashedDb extends Database {
+    private final NodeFactory factory;
+
     public HashedDb(DbConnection db, NodeFactory factory) {
-        super(db, factory);
+        super(db);
+        this.factory = factory;
     }
 
     public <T extends GraphNode> T read(NodeHash hash, Class<T> type) {

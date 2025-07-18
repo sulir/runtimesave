@@ -1,21 +1,17 @@
 package com.github.sulir.runtimesave.db;
 
-import com.github.sulir.runtimesave.graph.NodeFactory;
 import org.neo4j.driver.Session;
 
 public abstract class Database {
     protected final DbConnection db;
-    protected final NodeFactory factory;
 
-    public Database(DbConnection db, NodeFactory factory) {
+    public Database(DbConnection db) {
         this.db = db;
-        this.factory = factory;
     }
 
     public void deleteAll() {
-        String labelPattern = String.join("|", factory.getLabels());
         try (Session session = db.createSession()) {
-            session.run("MATCH (n:" + labelPattern + ") DETACH DELETE n");
+            session.run("MATCH (n:Hashed|Meta|Node) DETACH DELETE n");
         }
     }
 

@@ -3,8 +3,8 @@ package com.github.sulir.runtimesave.comparison;
 import com.github.sulir.runtimesave.db.Database;
 import com.github.sulir.runtimesave.db.DbConnection;
 import com.github.sulir.runtimesave.graph.GraphNode;
-import com.github.sulir.runtimesave.graph.NodeFactory;
 import com.github.sulir.runtimesave.graph.NodeProperty;
+import org.neo4j.driver.Session;
 import org.neo4j.driver.TransactionContext;
 
 import java.util.*;
@@ -13,11 +13,11 @@ public class PlainDb extends Database {
     public static final String INDEX_LABEL = "Node";
     public static final String INDEX_PROPERTY = "id";
 
-    public PlainDb(DbConnection db, NodeFactory factory) {
-        super(db, factory);
+    public PlainDb(DbConnection db) {
+        super(db);
     }
 
-    public void write(GraphNode root) {
+    public String write(GraphNode root) {
         List<Map<String, Object>> nodes = new ArrayList<>();
         Map<GraphNode, String> nodeToId = new java.util.HashMap<>();
         List<Map<String, Object>> edges = new ArrayList<>();
@@ -28,6 +28,16 @@ public class PlainDb extends Database {
             writeNodes(nodes, transaction);
             writeEdges(edges, transaction);
         });
+
+        return nodeToId.get(root);
+    }
+
+    public void addNote(String nodeId, String text) {
+        String query = "MATCH (v:" + INDEX_LABEL + " {" + INDEX_PROPERTY + ": $id})"
+                + " CREATE (n:Note:Meta {text: $text})-[:DESCRIBES]->(v)";
+        try (Session session = db.createSession()) {
+            session.run(query, Map.of("id", nodeId, "text", text));
+        }
     }
 
     private void traverse(GraphNode node, List<Map<String, Object>> nodes, Map<GraphNode, String> nodeToId,

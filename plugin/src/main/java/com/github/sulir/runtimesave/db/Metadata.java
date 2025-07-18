@@ -35,12 +35,20 @@ public class Metadata {
     public void addLocation(NodeHash frameHash, SourceLocation location) {
         try (Session session = db.createSession()) {
             String query = "MATCH (f:Frame {hash: $hash})"
-                    + " MERGE (c:Class {name: $class})"
-                    + " MERGE (c)-[:DEFINES]->(m:Method {signature: $method})"
-                    + " MERGE (m)-[:CONTAINS]->(l:Line {number: $line})"
+                    + " MERGE (c:Class:Meta {name: $class})"
+                    + " MERGE (c)-[:DEFINES]->(m:Method:Meta {signature: $method})"
+                    + " MERGE (m)-[:CONTAINS]->(l:Line:Meta {number: $line})"
                     + " MERGE (l)-[:HAS_FRAME]->(f)";
             session.run(query, Map.of("hash", frameHash.toString(), "class", location.className(),
                 "method", location.method(), "line", location.line()));
+        }
+    }
+
+    public void addNote(NodeHash idHash, String text) {
+        String query = "MATCH (h:Hashed {idHash: $idHash})"
+                + " CREATE (n:Note:Meta {text: $text})-[:DESCRIBES]->(h)";
+        try (Session session = db.createSession()) {
+            session.run(query, Map.of("idHash", idHash.toString(), "text", text));
         }
     }
 }
