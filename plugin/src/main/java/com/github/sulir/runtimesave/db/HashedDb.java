@@ -96,8 +96,8 @@ public class HashedDb extends Database {
     }
 
     private List<Boolean> writeFirstNodes(Stream<GraphNode> nodes, TransactionContext transaction) {
-        List<Map<String, Object>> nodesMaps = nodes.map(this::nodeToMap).toList();
-        String query = "PROFILE UNWIND $nodes AS node"
+        List<Map<String, Object>> nodesList = nodes.map(this::nodeToMap).toList();
+        String query = "UNWIND $nodes AS node"
                 + " OPTIONAL MATCH (h:Hashed {idHash: node.props.idHash})"
                 + " WITH node, h IS NULL AS toCreate"
                 + " FOREACH (_ IN CASE WHEN toCreate then [1] ELSE [] END |"
@@ -105,7 +105,7 @@ public class HashedDb extends Database {
                 + "  SET n = node.props"
                 + " )"
                 + " RETURN collect(toCreate) as created";
-        return transaction.run(query, Map.of("nodes", nodesMaps))
+        return transaction.run(query, Map.of("nodes", nodesList))
                 .single().get("created").asList(Value::asBoolean);
     }
 

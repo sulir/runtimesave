@@ -36,9 +36,9 @@ public class Metadata {
         try (Session session = db.createSession()) {
             String query = "MATCH (f:Frame {hash: $hash})"
                     + " MERGE (c:Class:Meta {name: $class})"
-                    + " MERGE (c)-[:DEFINES]->(m:Method:Meta {signature: $method})"
+                    + " MERGE (c)-[:DECLARES]->(m:Method:Meta {signature: $method})"
                     + " MERGE (m)-[:CONTAINS]->(l:Line:Meta {number: $line})"
-                    + " MERGE (l)-[:HAS_FRAME]->(f)";
+                    + " MERGE (l)-[:MAPS_TO]->(f)";
             session.run(query, Map.of("hash", frameHash.toString(), "class", location.className(),
                 "method", location.method(), "line", location.line()));
         }
