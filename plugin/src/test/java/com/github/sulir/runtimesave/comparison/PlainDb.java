@@ -8,10 +8,12 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.TransactionContext;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 
 public class PlainDb extends Database {
     public static final String INDEX_LABEL = "Node";
     public static final String INDEX_PROPERTY = "id";
+    private static final int BATCH_SIZE = 10_000;
 
     public PlainDb(DbConnection db) {
         super(db);
@@ -23,11 +25,8 @@ public class PlainDb extends Database {
         List<Map<String, Object>> edges = new ArrayList<>();
 
         traverse(root, nodes, nodeToId, edges);
-
-        db.writeTransaction(transaction -> {
-            writeNodes(nodes, transaction);
-            writeEdges(edges, transaction);
-        });
+        batchWrite(nodes, this::writeNodes);
+        batchWrite(edges, this::writeEdges);
 
         return nodeToId.get(root);
     }
@@ -37,6 +36,15 @@ public class PlainDb extends Database {
                 + " CREATE (n:Note:Meta {text: $text})-[:DESCRIBES]->(v)";
         try (Session session = db.createSession()) {
             session.run(query, Map.of("id", nodeId, "text", text));
+        }
+    }
+
+    private void batchWrite(List<Map<String, Object>> items,
+                            BiConsumer<List<Map<String, Object>>, TransactionContext> writer) {
+        for (int start = 0; start < items.size(); start += BATCH_SIZE) {
+            int end = Math.min(start + BATCH_SIZE, items.size());
+            List<Map<String, Object>> batch = items.subList(start, end);
+            db.writeTransaction(transaction -> writer.accept(batch, transaction));
         }
     }
 
