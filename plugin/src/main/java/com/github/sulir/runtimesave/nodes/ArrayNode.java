@@ -38,9 +38,9 @@ public class ArrayNode extends ValueNode {
         elements.forEach(action);
     }
 
-    public void setElement(int index, ValueNode element) {
+    public void setElement(int index, ValueNode value) {
         checkModification();
-        elements.put(index, element);
+        elements.put(index, value);
     }
 
     public void addElement(ValueNode element) {

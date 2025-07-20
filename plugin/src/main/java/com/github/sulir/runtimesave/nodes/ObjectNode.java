@@ -3,7 +3,10 @@ package com.github.sulir.runtimesave.nodes;
 import com.github.sulir.runtimesave.graph.Mapping;
 import com.github.sulir.runtimesave.graph.ValueNode;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class ObjectNode extends ValueNode {
     public static final Mapping mapping = mapping(ObjectNode.class)

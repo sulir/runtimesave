@@ -5,12 +5,15 @@ import com.github.sulir.runtimesave.pack.ValuePacker;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestUtils {
-    public static boolean deepEqual(GraphNode graph, GraphNode other) {
-        return getBfsTraversal(graph).equals(getBfsTraversal(other));
+    public static void assertGraphsEqual(GraphNode graph, GraphNode other) {
+        assertEquals(getBfsTraversal(graph), getBfsTraversal(other));
+    }
+
+    public static void assertGraphsNotEqual(GraphNode graph, GraphNode other) {
+        assertNotEquals(getBfsTraversal(graph), getBfsTraversal(other));
     }
 
     public static List<?> getBfsTraversal(GraphNode root) {
@@ -53,22 +56,14 @@ public class TestUtils {
         return clone;
     }
 
-    public static void assertPackingNoop(Object object, Packer packer) {
-        GraphNode original = new ReflectionReader().read(object);
-        GraphNode unpackable = new ReflectionReader().read(object);
-        ValuePacker valuePacker = new ValuePacker(new Packer[]{packer});
-
-        assertTrue(deepEqual(original, valuePacker.pack(unpackable)), "Packed graph is changed");
-    }
-
     public static void assertPackingReversible(Object object, Packer packer) {
         GraphNode original = new ReflectionReader().read(object);
         GraphNode packable = new ReflectionReader().read(object);
         ValuePacker valuePacker = new ValuePacker(new Packer[]{packer});
 
         GraphNode packed = valuePacker.pack(packable);
-        assertFalse(deepEqual(original, packed), "Packed graph is unchanged");
+        assertGraphsNotEqual(original, packed);
         GraphNode unpacked = valuePacker.unpack(packed);
-        assertTrue(deepEqual(original, unpacked), "Unpacked graph differs from original");
+        assertGraphsEqual(original, unpacked);
     }
 }

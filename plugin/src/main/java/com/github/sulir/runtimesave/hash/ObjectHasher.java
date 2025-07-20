@@ -5,12 +5,17 @@ import com.github.sulir.runtimesave.graph.NodeProperty;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.List;
 import java.util.function.BiFunction;
 
 import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
 
 public class ObjectHasher {
     private final MessageDigest sha = uncheck(() -> MessageDigest.getInstance("SHA-224"));
+
+    private enum Type {
+        INT, STRING, PROPERTIES, HASH, LIST, BOOLEAN, BYTE, CHAR, DOUBLE, FLOAT, LONG, SHORT
+    }
 
     public ObjectHasher reset() {
         sha.reset();
@@ -21,16 +26,16 @@ public class ObjectHasher {
         return switch (object) {
             case Integer integer -> addInt(integer);
             case String string -> addString(string);
-            case Enum<?> enumeration -> addEnum(enumeration);
             case NodeProperty[] properties -> addProperties(properties);
             case NodeHash hash -> addHash(hash);
-            case Character character -> addFixed(Type.CHAR, character, Character.BYTES, ByteBuffer::putChar);
-            case Byte aByte -> addFixed(Type.BYTE, aByte, Byte.BYTES, ByteBuffer::put);
-            case Short aShort -> addFixed(Type.SHORT, aShort, Short.BYTES, ByteBuffer::putShort);
-            case Long aLong -> addFixed(Type.LONG, aLong, Long.BYTES, ByteBuffer::putLong);
-            case Float aFloat -> addFixed(Type.FLOAT, aFloat, Float.BYTES, ByteBuffer::putFloat);
-            case Double aDouble -> addFixed(Type.DOUBLE, aDouble, Double.BYTES, ByteBuffer::putDouble);
+            case List<?> list -> addList(list);
             case Boolean aBoolean -> addFixed(Type.BOOLEAN, aBoolean, 1, (buf, o) -> buf.put((byte) (o ? 1 : 0)));
+            case Byte aByte -> addFixed(Type.BYTE, aByte, Byte.BYTES, ByteBuffer::put);
+            case Character character -> addFixed(Type.CHAR, character, Character.BYTES, ByteBuffer::putChar);
+            case Double aDouble -> addFixed(Type.DOUBLE, aDouble, Double.BYTES, ByteBuffer::putDouble);
+            case Float aFloat -> addFixed(Type.FLOAT, aFloat, Float.BYTES, ByteBuffer::putFloat);
+            case Long aLong -> addFixed(Type.LONG, aLong, Long.BYTES, ByteBuffer::putLong);
+            case Short aShort -> addFixed(Type.SHORT, aShort, Short.BYTES, ByteBuffer::putShort);
             default -> throw new IllegalArgumentException("Unsupported type: " + object.getClass().getName());
         };
     }
@@ -46,10 +51,6 @@ public class ObjectHasher {
         return this;
     }
 
-    public ObjectHasher addEnum(Enum<?> enumeration) {
-        return addTypeAndIntBytes(Type.ENUM, enumeration.ordinal());
-    }
-
     public ObjectHasher addProperties(NodeProperty[] properties) {
         addTypeAndIntBytes(Type.PROPERTIES, properties.length);
         for (NodeProperty property : properties) {
@@ -62,6 +63,12 @@ public class ObjectHasher {
     public ObjectHasher addHash(NodeHash hash) {
         byte[] bytes = hash.getBytes();
         return addFixed(Type.HASH, bytes, bytes.length, ByteBuffer::put);
+    }
+
+    public ObjectHasher addList(List<?> list) {
+        addTypeAndIntBytes(Type.LIST, list.size());
+        list.forEach(this::add);
+        return this;
     }
 
     public byte[] finish() {
@@ -86,9 +93,5 @@ public class ObjectHasher {
         byte[] bytes = {(byte) type.ordinal(), (byte) (i >>> 24), (byte) (i >>> 16), (byte) (i >>> 8), (byte) i};
         sha.update(bytes);
         return this;
-    }
-
-    private enum Type {
-        INT, STRING, ENUM, PROPERTIES, HASH, CHAR, BYTE, SHORT, LONG, FLOAT, DOUBLE, BOOLEAN
     }
 }

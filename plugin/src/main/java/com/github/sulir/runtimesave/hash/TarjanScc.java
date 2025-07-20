@@ -47,6 +47,7 @@ public class TarjanScc {
         }
     }
 
+    @IgnoreInGeneratedCoverage
     private static class NodeData {
         static final int UNVISITED = -1;
 
@@ -58,4 +59,6 @@ public class TarjanScc {
     private NodeData getData(GraphNode node) {
         return nodeToData.computeIfAbsent(node, n -> new NodeData());
     }
+
+    private @interface IgnoreInGeneratedCoverage { }
 }

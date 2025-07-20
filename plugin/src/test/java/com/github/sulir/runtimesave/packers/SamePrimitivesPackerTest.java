@@ -1,8 +1,10 @@
 package com.github.sulir.runtimesave.packers;
 
 import com.github.sulir.runtimesave.graph.TestUtils;
+import com.github.sulir.runtimesave.graph.ValueNode;
 import com.github.sulir.runtimesave.nodes.PrimitiveNode;
 import com.github.sulir.runtimesave.pack.Packer;
+import com.github.sulir.runtimesave.packers.SamePrimitivesPacker.KeyedWeakRef;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +13,7 @@ import java.lang.ref.ReferenceQueue;
 import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SamePrimitivesPackerTest {
     private Packer packer;
@@ -22,7 +25,9 @@ class SamePrimitivesPackerTest {
 
     @Test
     void packingDistinctPrimitivesIsNoop() {
-        TestUtils.assertPackingNoop(new int[]{0, 1, 2}, packer);
+        ValueNode[] nodes = {new PrimitiveNode(0, "int"), new PrimitiveNode(1, "int"), new PrimitiveNode(2, "int")};
+        for (ValueNode node : nodes)
+            assertEquals(node, packer.pack(node));
     }
 
     @Test
@@ -47,21 +52,21 @@ class SamePrimitivesPackerTest {
     }
 
     private static class TestReferenceQueue extends ReferenceQueue<PrimitiveNode> {
-        private SamePrimitivesPacker.KeyedWeakRef ref = new SamePrimitivesPacker.KeyedWeakRef(null, null, null);
+        private KeyedWeakRef ref = new KeyedWeakRef(null, null, null);
 
         @Override
         public Reference<? extends PrimitiveNode> poll() {
-            SamePrimitivesPacker.KeyedWeakRef oneTimeReference = ref;
+            KeyedWeakRef oneTimeReference = ref;
             if (ref != null)
                 ref = null;
             return oneTimeReference;
         }
     }
 
-    private static class TestHashMap extends HashMap<Object, SamePrimitivesPacker.KeyedWeakRef> {
+    private static class TestHashMap extends HashMap<Object, KeyedWeakRef> {
         @Override
-        public SamePrimitivesPacker.KeyedWeakRef get(Object key) {
-            return new SamePrimitivesPacker.KeyedWeakRef(null, null, null);
+        public KeyedWeakRef get(Object key) {
+            return new KeyedWeakRef(null, null, null);
         }
     }
 }

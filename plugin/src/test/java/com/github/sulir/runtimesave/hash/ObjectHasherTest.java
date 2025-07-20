@@ -31,8 +31,8 @@ class ObjectHasherTest {
 
     @ParameterizedTest
     @FieldSource("primitives")
-    void differentPrimitivesHaveDifferentHashes(Object primitive, Object differentPrimitive) {
-        assertFalse(Arrays.equals(hasher.hash(primitive), hasher.hash(differentPrimitive)));
+    void differentPrimitivesHaveDifferentHashes(Object primitive, Object different) {
+        assertFalse(Arrays.equals(hasher.hash(primitive), hasher.hash(different)));
     }
 
     @Test
@@ -46,16 +46,6 @@ class ObjectHasherTest {
     }
 
     @Test
-    void sameEnumValuesHaveSameHashes() {
-        assertArrayEquals(hasher.hash(SampleEnum.ONE), hasher.hash(SampleEnum.ONE));
-    }
-
-    @Test
-    void differentEnumValuesHaveDifferentHashes() {
-        assertFalse(Arrays.equals(hasher.hash(SampleEnum.ONE), hasher.hash(SampleEnum.TWO)));
-    }
-
-    @Test
     void samePropertiesHaveSameHashes() {
         NodeProperty[] properties = {new NodeProperty("k", "v"), new NodeProperty("k2", "v")};
         assertArrayEquals(hasher.hash(properties), hasher.hash(properties));
@@ -63,28 +53,42 @@ class ObjectHasherTest {
 
     @Test
     void differentPropertiesHaveDifferentHashes() {
-        NodeProperty[] first = {new NodeProperty("key", "value")};
-        NodeProperty[] second = {new NodeProperty("key", "different")};
-        assertFalse(Arrays.equals(hasher.hash(first), hasher.hash(second)));
+        NodeProperty[] properties = {new NodeProperty("key", "value")};
+        NodeProperty[] different = {new NodeProperty("key", "different")};
+        assertFalse(Arrays.equals(hasher.hash(properties), hasher.hash(different)));
     }
 
     @Test
     void sameHashesHaveSameHashes() {
         NodeHash hash = new NodeHash(hasher.hash("test"));
-        NodeHash sameHash = new NodeHash(hasher.hash("test"));
-        assertArrayEquals(hasher.hash(hash), hasher.hash(sameHash));
+        NodeHash same = new NodeHash(hasher.hash("test"));
+        assertArrayEquals(hasher.hash(hash), hasher.hash(same));
     }
 
     @Test
     void differentHashesHaveDifferentHashes() {
-        NodeHash firstHash = new NodeHash(hasher.hash("test"));
-        NodeHash otherHash = new NodeHash(hasher.hash("different"));
-        assertFalse(Arrays.equals(hasher.hash(firstHash), hasher.hash(otherHash)));
+        NodeHash hash = new NodeHash(hasher.hash("test"));
+        NodeHash different = new NodeHash(hasher.hash("different"));
+        assertFalse(Arrays.equals(hasher.hash(hash), hasher.hash(different)));
+    }
+
+    @Test
+    void sameListsHaveSameHashes() {
+        List<?> list = List.of("a", List.of());
+        List<?> same = List.of("a", List.of());
+        assertArrayEquals(hasher.hash(list), hasher.hash(same));
+    }
+
+    @Test
+    void differentListsHaveDifferentHashes() {
+        List<?> list = List.of(1, 2);
+        List<?> different = List.of(1.0, 2L);
+        assertFalse(Arrays.equals(hasher.hash(list), hasher.hash(different)));
     }
 
     @Test
     void unsupportedTypeThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> hasher.hash(List.of(new Object())));
+        assertThrows(IllegalArgumentException.class, () -> hasher.hash(new Object()));
     }
 
     @Test
@@ -114,6 +118,4 @@ class ObjectHasherTest {
     void gettingHashResetsState() {
         assertFalse(Arrays.equals(hasher.addString("").finish(), hasher.finish()));
     }
-
-    private enum SampleEnum { ONE, TWO }
 }

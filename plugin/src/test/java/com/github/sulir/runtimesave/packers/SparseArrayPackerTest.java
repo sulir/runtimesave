@@ -1,15 +1,20 @@
 package com.github.sulir.runtimesave.packers;
 
 import com.github.sulir.runtimesave.graph.TestUtils;
+import com.github.sulir.runtimesave.nodes.ArrayNode;
 import com.github.sulir.runtimesave.pack.Packer;
+import com.github.sulir.runtimesave.packers.SparseArrayPacker.SparseArrayNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.FieldSource;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 class SparseArrayPackerTest {
     @SuppressWarnings("unused")
-    private static final Object[] primitives = {
+    static final Object[] primitives = {
             new char[]{0},
             new byte[]{0, 0},
             new short[]{0, 1},
@@ -28,8 +33,8 @@ class SparseArrayPackerTest {
     }
 
     @Test
-    void packingEmptyArrayIsNoop() {
-        TestUtils.assertPackingNoop(new Object[]{}, packer);
+    void emptyArrayIsNotPacked() {
+        assertFalse(packer.canPack(new ArrayNode("Object[]")));
     }
 
     @ParameterizedTest
@@ -52,5 +57,10 @@ class SparseArrayPackerTest {
     void packing3DArrayIsReversible() {
         int[][][] array = {{{0, 1}, null}, {null, null, {1, 0}}, null};
         TestUtils.assertPackingReversible(array, packer);
+    }
+
+    @Test
+    void nodeWithNonArrayTypeCannotBeConstructed() {
+        assertThrows(IllegalArgumentException.class, () -> new SparseArrayNode("int", 0));
     }
 }

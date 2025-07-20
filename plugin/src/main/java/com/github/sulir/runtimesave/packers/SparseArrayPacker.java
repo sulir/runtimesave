@@ -7,12 +7,13 @@ import com.github.sulir.runtimesave.nodes.NullNode;
 import com.github.sulir.runtimesave.nodes.PrimitiveNode;
 import com.github.sulir.runtimesave.pack.Packer;
 
-public class SparseArrayPacker implements Packer {
-    private static final int MIN_PACKED_ELEMENTS = 1;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
+public class SparseArrayPacker implements Packer {
     @Override
     public boolean canPack(ValueNode node) {
-        return node instanceof ArrayNode;
+        return node instanceof ArrayNode array && array.getLength() != 0;
     }
 
     @Override
@@ -27,8 +28,7 @@ public class SparseArrayPacker implements Packer {
             if (!(value instanceof NullNode || isDefaultPrimitive))
                 sparseArray.setElement(index, value);
         });
-        int removedCount = array.edgeCount() - sparseArray.edgeCount();
-        return removedCount >= MIN_PACKED_ELEMENTS ? sparseArray : array;
+        return sparseArray;
     }
 
     @Override
@@ -39,39 +39,60 @@ public class SparseArrayPacker implements Packer {
     @Override
     public ValueNode unpack(ValueNode node) {
         SparseArrayNode sparseArray = (SparseArrayNode) node;
-        String componentType = sparseArray.getComponentType();
-        Object defaultValue = getDefaultValue(componentType);
         ArrayNode array = new ArrayNode(sparseArray.getType());
 
-        for (int i = 0; i < sparseArray.getLength(); i++) {
-            ValueNode value = sparseArray.getElement(i);
-            if (value != null)
-                array.setElement(i, value);
-            else if (defaultValue == null)
-                array.setElement(i, NullNode.getInstance());
-            else
-                array.setElement(i, new PrimitiveNode(defaultValue, componentType));
-        }
+        for (int i = 0; i < sparseArray.getLength(); i++)
+            array.setElement(i, sparseArray.getElement(i));
+
         return array;
     }
 
-    public static class SparseArrayNode extends ArrayNode {
+    public static class SparseArrayNode extends ValueNode {
         public static final Mapping mapping = mapping(SparseArrayNode.class)
                 .property("type", String.class, SparseArrayNode::getType)
-                .property("length", Integer.class, ArrayNode::getLength)
+                .property("length", Integer.class, SparseArrayNode::getLength)
                 .edges("HAS_ELEMENT", "index", Integer.class, ValueNode.class, node -> node.elements)
                 .argsConstructor(props -> new SparseArrayNode((String) props[0], (int) props[1]));
 
+        private final String type;
         private final int length;
+        protected final SortedMap<Integer, ValueNode> elements = new TreeMap<>();
 
         public SparseArrayNode(String type, int length) {
-            super(type);
+            if (!type.endsWith("[]"))
+                throw new IllegalArgumentException("Invalid sparse array type: " + type);
+            this.type = type;
             this.length = length;
         }
 
-        @Override
+        public String getType() {
+            return type;
+        }
+
+        public String getComponentType() {
+            return type.substring(0, type.length() - 2);
+        }
+
         public int getLength() {
             return length;
+        }
+
+        public ValueNode getElement(int index) {
+            ValueNode value = elements.get(index);
+            if (value != null)
+                return value;
+
+            String componentType = getComponentType();
+            Object defaultValue = getDefaultValue(componentType);
+            if (defaultValue == null)
+                return NullNode.getInstance();
+            else
+                return new PrimitiveNode(defaultValue, componentType);
+        }
+
+        public void setElement(int index, ValueNode value) {
+            checkModification();
+            elements.put(index, value);
         }
 
         @Override
@@ -80,7 +101,7 @@ public class SparseArrayPacker implements Packer {
         }
     }
 
-    private Object getDefaultValue(String type) {
+    private static Object getDefaultValue(String type) {
         return switch (type) {
             case "char" -> '\u0000';
             case "byte" -> (byte) 0;
