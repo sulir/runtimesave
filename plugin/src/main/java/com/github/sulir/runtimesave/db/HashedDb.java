@@ -14,11 +14,12 @@ import org.neo4j.driver.types.Relationship;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class HashedDb extends Database {
+public class HashedDb {
+    private final DbConnection db;
     private final NodeFactory factory;
 
     public HashedDb(DbConnection db, NodeFactory factory) {
-        super(db);
+        this.db = db;
         this.factory = factory;
     }
 

@@ -1,6 +1,5 @@
 package com.github.sulir.runtimesave.comparison;
 
-import com.github.sulir.runtimesave.db.Database;
 import com.github.sulir.runtimesave.db.DbConnection;
 import com.github.sulir.runtimesave.graph.GraphNode;
 import com.github.sulir.runtimesave.graph.NodeProperty;
@@ -10,13 +9,15 @@ import org.neo4j.driver.TransactionContext;
 import java.util.*;
 import java.util.function.BiConsumer;
 
-public class PlainDb extends Database {
+public class PlainDb {
     public static final String INDEX_LABEL = "Node";
     public static final String INDEX_PROPERTY = "id";
     private static final int BATCH_SIZE = 10_000;
 
+    private final DbConnection db;
+
     public PlainDb(DbConnection db) {
-        super(db);
+        this.db = db;
     }
 
     public String write(GraphNode root) {
@@ -36,6 +37,24 @@ public class PlainDb extends Database {
                 + " CREATE (n:Note:Meta {text: $text})-[:DESCRIBES]->(v)";
         try (Session session = db.createSession()) {
             session.run(query, Map.of("id", nodeId, "text", text));
+        }
+    }
+
+    public void deleteAll() {
+        try (Session session = db.createSession()) {
+            session.run("MATCH (n:Hashed|Meta|Node) DETACH DELETE n");
+        }
+    }
+
+    public int nodeCount() {
+        try (Session session = db.createSession()) {
+            return session.run("MATCH (n) RETURN COUNT(n) AS count").single().get("count").asInt();
+        }
+    }
+
+    public int edgeCount() {
+        try (Session session = db.createSession()) {
+            return session.run("MATCH ()-[r]->() RETURN COUNT(r) AS count").single().get("count").asInt();
         }
     }
 
