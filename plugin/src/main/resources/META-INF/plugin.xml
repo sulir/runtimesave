@@ -6,9 +6,7 @@
     Saves the runtime values of variables in a graph database and loads them for various purposes
   </description>
 
-  <depends>com.intellij.modules.platform</depends>
   <depends>com.intellij.java</depends>
-
   <resource-bundle>messages.Bundle</resource-bundle>
 
   <extensions defaultExtensionNs="com.intellij">
