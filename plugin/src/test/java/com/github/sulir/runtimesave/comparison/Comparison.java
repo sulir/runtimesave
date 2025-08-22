@@ -48,37 +48,85 @@ public class Comparison {
     private final Metadata metadata = new Metadata(DbConnection.getInstance());
     private final PlainDb plainDb = new PlainDb(DbConnection.getInstance());
     private final HashedDb hashedDb = new HashedDb(DbConnection.getInstance(), nodeFactory);
+    private boolean single;
+    private int warmupRounds;
+    private int measurementRounds;
     private Program program;
     private List<FrameNode> frames;
 
     public static void main(String[] args) {
-        new Comparison().perform();
+        Comparison comparison = new Comparison();
+        comparison.initialize();
+
+        if (args.length == 1)
+            comparison.performSingle(args[0]);
+        else
+            comparison.performAll();
+
+        comparison.shutdown();
     }
 
-    public void perform() {
+    public void initialize() {
         dbIndex.createIndexes();
         dbIndex.createConstraint(PlainDb.INDEX_LABEL, PlainDb.INDEX_PROPERTY);
 
         program = uncheck(this::collectProgramData);
+    }
 
-        measure(() -> write(false, false), "plain");
-        measure(() -> write(true, false), "packed");
-        measure(() -> write(false, true), "hashed");
-        measure(() -> write(true, true), "packed and hashed");
-
+    public void shutdown() {
         executor.shutdown();
     }
 
-    public void measure(Runnable action, String message) {
+    public void performSingle(String approachName) {
+        single = true;
+        warmupRounds = 0;
+        measurementRounds = 1;
+        perform(approachName);
+    }
+
+    public void performAll() {
+        single = false;
+        warmupRounds = WARMUP_ROUNDS;
+        measurementRounds = MEASUREMENT_ROUNDS;
+        perform("plain");
+        perform("packed");
+        perform("hashed");
+        perform("pack&hash");
+    }
+
+    private void setUp() {
+        plainDb.deleteAll();
+        frames = program.frames();
+    }
+
+    private void tearDown() {
+        System.out.printf("%d nodes, %d edges\n", plainDb.nodeCount(), plainDb.edgeCount());
+        if (!single)
+            plainDb.deleteAll();
+        frames = null;
+    }
+
+    private void perform(String approachName) {
+        Runnable writer = switch (approachName) {
+            case "plain" -> () -> write(false, false);
+            case "packed" -> () -> write(true, false);
+            case "hashed" -> () -> write(false, true);
+            case "pack&hash" -> () -> write(true, true);
+            default -> () -> {};
+        };
+        measure(writer, approachName);
+    }
+
+    private void measure(Runnable action, String message) {
         System.out.println("--- " + message + " ---");
-        for (int i = 0; i < WARMUP_ROUNDS; i++) {
+        for (int i = 0; i < warmupRounds; i++) {
             setUp();
             action.run();
             tearDown();
         }
 
-        long[] times = new long[MEASUREMENT_ROUNDS];
-        for (int i = 0; i < MEASUREMENT_ROUNDS; i++) {
+        long[] times = new long[measurementRounds];
+        for (int i = 0; i < measurementRounds; i++) {
             setUp();
             long start = System.nanoTime();
             action.run();
@@ -91,17 +139,6 @@ public class Comparison {
                 .mapToObj(time -> String.valueOf(TimeUnit.NANOSECONDS.toMillis(time)))
                 .collect(Collectors.joining(" ")) + " ms");
         System.out.printf("Median: %.0f ms\n", median(times) / 1_000_000d);
-    }
-
-    private void setUp() {
-        plainDb.deleteAll();
-        frames = program.frames();
-    }
-
-    private void tearDown() {
-        System.out.printf("%d nodes, %d edges\n", plainDb.nodeCount(), plainDb.edgeCount());
-        plainDb.deleteAll();
-        frames = null;
     }
 
     private Program collectProgramData() throws Exception {

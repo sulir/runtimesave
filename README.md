@@ -28,4 +28,4 @@ To start a program from any line, place the caret on the given line and select R
 
 Unit tests, including the tests of the hashing algorithms, are located in the `plugin/src/test/java` directory. They can be run using: `./gradlew test`.
 
-The comparison of approaches (plain, packed, hashed, and pack+hash) is implemented in `Comparison.java` inside the `plugin/src/test/java/com/github/sulir/runtimesave/comparison` directory. It can be executed using its `main` method (the `NEO4J_PASSWORD` environment variable has to be set).
+The comparison of approaches (plain, packed, hashed, and pack+hash) is implemented in `Comparison.java` inside the `plugin/src/test/java/com/github/sulir/runtimesave/comparison` directory. It can be executed using its `main` method (the `NEO4J_PASSWORD` environment variable has to be set). Since the comparison of database sizes in bytes requires direct access to Neo4j data files, it is started separately from `scripts/compare-db-size.sh`.
