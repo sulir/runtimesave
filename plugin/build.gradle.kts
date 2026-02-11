@@ -55,7 +55,7 @@ tasks.buildPlugin {
 tasks.runIde {
     dependsOn(":runtimesave-starter:jar")
     maxHeapSize = "12g"
-    jvmArgs("-Didea.load.plugins.id=!org.jetbrains.plugins.kubernetes")
+    jvmArgs("-Didea.load.plugins.id=com.github.sulir.runtimesave")
 }
 
 tasks.test {
