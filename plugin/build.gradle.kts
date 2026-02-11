@@ -18,7 +18,7 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity("_")
+        intellijIdea("2025.3.2")
         bundledPlugin("com.intellij.java")
     }
 
