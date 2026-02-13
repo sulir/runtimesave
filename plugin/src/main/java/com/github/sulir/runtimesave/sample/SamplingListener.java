@@ -6,6 +6,7 @@ import com.intellij.debugger.engine.DebugProcessListener;
 import com.intellij.debugger.impl.DebuggerManagerListener;
 import com.intellij.debugger.impl.DebuggerSession;
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl;
+import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
@@ -36,8 +37,11 @@ public class SamplingListener implements DebuggerManagerListener {
         session.getProcess().addDebugProcessListener(new DebugProcessListener() {
             @Override
             public void processAttached(@NotNull DebugProcess process) {
-                XDebugSession xSession = session.getXDebugSession();
-                if (xSession == null || xSession.getRunContentDescriptor().getExecutionId() != SamplingRunner.UID)
+                XDebugSession xSession;
+                ExecutionEnvironment environment;
+                if ((xSession = session.getXDebugSession()) == null
+                        || (environment = xSession.getExecutionEnvironment()) == null
+                        || environment.getExecutionId() != SamplingRunner.UID)
                     return;
 
                 VirtualMachine vm = ((VirtualMachineProxyImpl) process.getVirtualMachineProxy()).getVirtualMachine();
