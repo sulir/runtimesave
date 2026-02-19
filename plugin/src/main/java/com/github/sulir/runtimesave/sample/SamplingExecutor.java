@@ -9,21 +9,21 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 
 public class SamplingExecutor extends DefaultDebugExecutor {
-    public static final String EXECUTOR_ID = "AllLines";
+    public static final String EXECUTOR_ID = "SampleValues";
 
     @Override
     public @NotNull String getActionName() {
-        return "Collect All Lines";
+        return "Sample Values";
     }
 
     @Override
     public @NotNull String getStartActionText() {
-        return "Collect &All Lines";
+        return "&Sample Values";
     }
 
     @Override
     public @NotNull String getStartActionText(@NotNull String configurationName) {
-        return TextWithMnemonic.parse("Collect &All Lines in '%s'")
+        return TextWithMnemonic.parse("&Sample Values from '%s'")
                 .replaceFirst("%s", shortenNameIfNeeded(configurationName)).toString();
     }
 

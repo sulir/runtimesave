@@ -1,11 +1,13 @@
 package com.github.sulir.runtimesave.sample;
 
+import com.github.sulir.runtimesave.config.SamplingSettings;
 import com.intellij.debugger.engine.DebugProcess;
 import com.intellij.debugger.engine.DebugProcessEvents;
 import com.intellij.debugger.engine.DebugProcessListener;
 import com.intellij.debugger.impl.DebuggerManagerListener;
 import com.intellij.debugger.impl.DebuggerSession;
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl;
+import com.intellij.execution.configurations.RunConfigurationBase;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -22,8 +24,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class SamplingListener implements DebuggerManagerListener {
     private static final String[] EXCLUDED = {"com.sun.*", "java.*", "javax.*", "jdk.*", "sun.*"};
-    private static final int EVERY_NTH_LINE = 1;
-    private static final int N_PER_LINE = 1;
 
     private final String[] included;
 
@@ -45,12 +45,14 @@ public class SamplingListener implements DebuggerManagerListener {
                     return;
 
                 VirtualMachine vm = ((VirtualMachineProxyImpl) process.getVirtualMachineProxy()).getVirtualMachine();
-                setClassPrepareRequest(vm, session.getProject());
+                RunConfigurationBase<?> profile = (RunConfigurationBase<?>) environment.getRunProfile();
+                SamplingSettings settings = profile.getUserData(SamplingSettings.key);
+                setClassPrepareRequest(vm, session.getProject(), settings);
             }
         });
     }
 
-    private void setClassPrepareRequest(VirtualMachine vm, Project project) {
+    private void setClassPrepareRequest(VirtualMachine vm, Project project, SamplingSettings settings) {
         EventRequestManager manager = vm.eventRequestManager();
         ClassPrepareRequest request = manager.createClassPrepareRequest();
 
@@ -58,12 +60,14 @@ public class SamplingListener implements DebuggerManagerListener {
             request.addClassFilter(pattern);
         for (String pattern : EXCLUDED)
             request.addClassExclusionFilter(pattern);
+        int everyNthLine = settings.getEveryNthLine();
+        int firstTExecutions = settings.getFirstTExecutions();
 
         DebugProcessEvents.enableRequestWithHandler(request, (ev) -> {
             ClassPrepareEvent event = (ClassPrepareEvent) ev;
 
             if (included.length != 0 || isProjectClass(event.referenceType(), project))
-                new SamplingManager(EVERY_NTH_LINE, N_PER_LINE).addBreakpoints(event.referenceType());
+                new SamplingManager(everyNthLine, firstTExecutions).addBreakpoints(event.referenceType());
         });
     }
 

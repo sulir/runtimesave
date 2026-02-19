@@ -18,17 +18,19 @@ import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
 
 public class SamplingManager {
     private final int everyNthLine;
-    private final int nPerLine;
+    private final int firstTExecutions;
     private int linesHit = 0;
     private final Map<SourceLocation, Integer> hitsPerLine = new HashMap<>();
 
-    public SamplingManager(int everyNthLine, int nPerLine) {
+    public SamplingManager(int everyNthLine, int firstTExecutions) {
         this.everyNthLine = everyNthLine;
-        this.nPerLine = nPerLine;
+        this.firstTExecutions = firstTExecutions;
     }
 
     public void addBreakpoints(ReferenceType clazz) {
         System.out.println("Adding breakpoints to " + clazz.name());
+        if (firstTExecutions == 0)
+            return;
 
         try {
             for (Location location : clazz.allLineLocations()) {
@@ -53,7 +55,7 @@ public class SamplingManager {
         int newHitCount = hitsPerLine.get(location) + 1;
         hitsPerLine.put(location, newHitCount);
 
-        if (newHitCount >= nPerLine)
+        if (newHitCount >= firstTExecutions && firstTExecutions != -1)
             event.virtualMachine().eventRequestManager().deleteEventRequest(event.request());
 
         System.out.println(uncheck(event.location()::sourcePath) + ":" + event.location().lineNumber());

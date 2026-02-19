@@ -18,7 +18,7 @@ In IntelliJ IDEA with the plugin installed (e.g., via `runIde` Gradle task), you
 
 To add a savepoint, right-click on the given line number in the left gutter and select Add Savepoint. Then you can run code (e.g., a test) that includes the execution of the given line, to save sample values of variables.
 
-For saving sample values from all executed lines, choose the menu Run / Collect All Lines in '(configuration name)'.
+For saving sample values from all executed lines, choose the menu Run / Sample Values from '(configuration name)'. You can adjust sampling options in the given Run/Debug Configuration dialog under RuntimeSave Sampling Settings.
 
 To view the saved objects in the graph database, open http://localhost:7474/.
 
