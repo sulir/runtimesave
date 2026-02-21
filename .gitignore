@@ -1,6 +1,7 @@
-/.gradle
-/.idea
-/.intellijPlatform
+.gradle
+.idea
+.intellijPlatform
+.kotlin
 build
 dist
 out

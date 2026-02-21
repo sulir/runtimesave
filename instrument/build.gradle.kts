@@ -5,7 +5,7 @@ plugins {
 tasks.shadowJar {
     manifest {
         attributes(mapOf(
-            "Premain-Class" to "com.github.sulir.runtimesave.starter.StarterAgent"
+            "Premain-Class" to "com.github.sulir.runtimesave.instrument.InstrumentAgent"
         ))
     }
 }

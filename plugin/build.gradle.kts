@@ -27,9 +27,8 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:_")
     testRuntimeOnly("junit:junit:_")
 
-    runtimeOnly(project(":runtimesave-starter")) {
-        isTransitive = false
-    }
+    runtimeOnly(project(":runtimesave-instrument")) { isTransitive = false }
+    runtimeOnly(project(":runtimesave-starter")) { isTransitive = false }
 }
 
 tasks.withType<JavaCompile> {
@@ -48,11 +47,13 @@ tasks.jar {
 }
 
 tasks.buildPlugin {
+    dependsOn(":runtimesave-instrument:jar")
     dependsOn(":runtimesave-starter:jar")
     destinationDirectory = project.rootProject.file("dist")
 }
 
 tasks.runIde {
+    dependsOn(":runtimesave-instrument:jar")
     dependsOn(":runtimesave-starter:jar")
     maxHeapSize = "12g"
     jvmArgs("-Didea.load.plugins.id=com.github.sulir.runtimesave")
