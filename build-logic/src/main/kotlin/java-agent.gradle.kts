@@ -29,6 +29,8 @@ tasks.shadowJar {
 }
 
 tasks.jar {
+    destinationDirectory = distDir
+    archiveFileName = agentArchive
     enabled = false
     dependsOn(tasks.shadowJar)
 }
