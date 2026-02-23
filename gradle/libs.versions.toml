@@ -1,0 +1,24 @@
+[versions]
+asm = "9.9.1"
+intellij-idea = "2025.3.2"
+intellij-platform = "2.11.0"
+java = "21"
+junit = "6.0.3"
+junit4 = "4.13.2"
+neo4j = "6.0.3"
+shadow = "9.3.1"
+version-catalog-update = "1.1.0"
+
+[libraries]
+asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
+asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
+asm-util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
+junit4 = { module = "junit:junit", version.ref = "junit4" }
+neo4j-driver = { module = "org.neo4j.driver:neo4j-java-driver", version.ref = "neo4j" }
+shadow-gradle-plugin = { module = "com.gradleup.shadow:shadow-gradle-plugin", version.ref = "shadow" }
+
+[plugins]
+intellij-platform = { id = "org.jetbrains.intellij.platform", version.ref = "intellij-platform" }
+version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "version-catalog-update" }

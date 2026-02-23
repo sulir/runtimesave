@@ -1,9 +1,9 @@
 plugins {
     java
-    id("org.jetbrains.intellij.platform")
+    alias(libs.plugins.intellij.platform)
 }
 
-java.sourceCompatibility = JavaVersion.VERSION_21
+java.sourceCompatibility = JavaVersion.toVersion(libs.versions.java.get())
 
 repositories {
     mavenCentral()
@@ -14,14 +14,14 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        intellijIdea("2025.3.2")
+        intellijIdea(libs.versions.intellij.idea)
         bundledPlugin("com.intellij.java")
     }
 
-    implementation("org.neo4j.driver:neo4j-java-driver:_")
-    testImplementation("org.junit.jupiter:junit-jupiter:_")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:_")
-    testRuntimeOnly("junit:junit:_")
+    implementation(libs.neo4j.driver)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testRuntimeOnly(libs.junit4)
 
     runtimeOnly(project(":runtimesave-instrument")) { isTransitive = false }
     runtimeOnly(project(":runtimesave-starter")) { isTransitive = false }

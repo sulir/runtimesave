@@ -1,11 +1,8 @@
-plugins {
-    id("de.fayard.refreshVersions") version "0.60.6"
-}
-
-refreshVersions {
-    rejectVersionIf {
-        @Suppress("UnstableApiUsage")
-        candidate.stabilityLevel != de.fayard.refreshVersions.core.StabilityLevel.Stable
+dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
     }
 }
 

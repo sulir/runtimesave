@@ -1,20 +1,18 @@
+val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
+
 plugins {
     java
     id("com.gradleup.shadow")
 }
 
-java.sourceCompatibility = JavaVersion.VERSION_21
-
-repositories {
-    mavenCentral()
-}
+java.sourceCompatibility = JavaVersion.toVersion(libs.versions.java.get())
 
 dependencies {
-    implementation("org.ow2.asm:asm:_")
-    implementation("org.ow2.asm:asm-tree:_")
-    implementation("org.ow2.asm:asm-util:_")
-    testImplementation("org.junit.jupiter:junit-jupiter:_")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:_")
+    implementation(libs.asm)
+    implementation(libs.asm.tree)
+    implementation(libs.asm.util)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 val distDir = project.rootProject.file("dist")
