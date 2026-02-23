@@ -1,12 +1,8 @@
-group = project.property("project.group") as String
-version = project.property("project.version") as String
-
 plugins {
     java
     id("org.jetbrains.intellij.platform")
 }
 
-apply(plugin = "java")
 java.sourceCompatibility = JavaVersion.VERSION_21
 
 repositories {
@@ -55,7 +51,6 @@ tasks.buildPlugin {
 tasks.runIde {
     dependsOn(":runtimesave-instrument:jar")
     dependsOn(":runtimesave-starter:jar")
-    maxHeapSize = "12g"
     jvmArgs("-Didea.load.plugins.id=com.github.sulir.runtimesave")
 }
 

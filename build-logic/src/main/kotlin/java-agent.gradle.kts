@@ -1,6 +1,3 @@
-group = project.property("project.group") as String
-version = project.property("project.version") as String
-
 plugins {
     java
     id("com.gradleup.shadow")
@@ -34,8 +31,6 @@ tasks.shadowJar {
 }
 
 tasks.jar {
-    destinationDirectory = distDir
-    archiveFileName = agentArchive
     enabled = false
     dependsOn(tasks.shadowJar)
 }
