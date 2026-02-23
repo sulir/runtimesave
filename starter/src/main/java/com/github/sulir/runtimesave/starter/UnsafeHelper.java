@@ -90,6 +90,7 @@ public class UnsafeHelper {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static long getOffset(Object object, String fieldName) {
         ClassField classField = new ClassField(object.getClass(), fieldName);
         return offsetCache.computeIfAbsent(classField, cf -> {

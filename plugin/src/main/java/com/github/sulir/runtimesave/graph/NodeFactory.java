@@ -48,10 +48,6 @@ public class NodeFactory {
         return mapping.constructor().apply(params);
     }
 
-    public Collection<String> getLabels() {
-        return labelToMapping.keySet();
-    }
-
     private void registerMapping(Class<?> nodeClass) {
         for (Field field : nodeClass.getFields()) {
             if (Modifier.isStatic(field.getModifiers()) && field.getType().equals(Mapping.class)) {

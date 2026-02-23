@@ -15,7 +15,7 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
-val distDir = project.rootProject.file("dist")
+val distDir = project.rootProject.file("dist")!!
 val agentArchive = project.name + ".jar"
 
 tasks.shadowJar {
