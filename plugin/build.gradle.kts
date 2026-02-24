@@ -51,7 +51,8 @@ tasks.buildPlugin {
 tasks.runIde {
     dependsOn(":runtimesave-instrument:jar")
     dependsOn(":runtimesave-starter:jar")
-    jvmArgs("-Didea.load.plugins.id=com.github.sulir.runtimesave")
+    jvmArgs("-Didea.load.plugins.id=com.github.sulir.runtimesave," +
+            "org.jetbrains.idea.maven,com.intellij.gradle,JUnit,ByteCodeViewer,com.intellij.properties")
 }
 
 tasks.test {
