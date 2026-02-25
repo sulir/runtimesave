@@ -41,7 +41,7 @@ public class SamplingListener implements DebuggerManagerListener {
                 ExecutionEnvironment environment;
                 if ((xSession = session.getXDebugSession()) == null
                         || (environment = xSession.getExecutionEnvironment()) == null
-                        || environment.getExecutionId() != SamplingRunner.UID)
+                        || System.getenv("RS_INSTRUMENT") != null)
                     return;
 
                 VirtualMachine vm = ((VirtualMachineProxyImpl) process.getVirtualMachineProxy()).getVirtualMachine();

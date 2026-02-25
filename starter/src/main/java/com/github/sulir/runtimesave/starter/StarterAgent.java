@@ -25,7 +25,7 @@ public class StarterAgent {
         String descriptor = commandLine[3];
         int line = Integer.parseInt(commandLine[4]);
 
-        new StarterAgent(targetClass, methodName, descriptor, line).setUp(inst);
+        new StarterAgent(targetClass, methodName, descriptor, line).setup(inst);
     }
 
     public StarterAgent(String targetClass, String methodName, String descriptor, int line) {
@@ -35,20 +35,20 @@ public class StarterAgent {
         this.line = line;
     }
 
-    private void setUp(Instrumentation inst) {
+    public void setup(Instrumentation inst) {
         inst.addTransformer(new ClassFileTransformer() {
             @Override
             public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
-                                    ProtectionDomain protectionDomain, byte[] classfileBuffer) {
+                                    ProtectionDomain protectionDomain, byte[] classFileBuffer) {
                 if (targetClass.replace('.', '/').equals(className))
-                    return instrumentClass(classfileBuffer);
+                    return instrumentClass(classFileBuffer);
                 else
                     return null;
             }
         });
     }
 
-    private byte[] instrumentClass(byte[] bytes) {
+    public byte[] instrumentClass(byte[] bytes) {
         ClassReader reader = new ClassReader(bytes);
         ClassNode classNode = new ClassNode();
         reader.accept(classNode, ClassReader.SKIP_FRAMES);

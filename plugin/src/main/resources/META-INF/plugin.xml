@@ -13,6 +13,7 @@
     <postStartupActivity implementation="com.github.sulir.runtimesave.StartupActivity"/>
     <executor implementation="com.github.sulir.runtimesave.sample.SamplingExecutor"/>
     <programRunner implementation="com.github.sulir.runtimesave.sample.SamplingRunner"/>
+    <java.programPatcher implementation="com.github.sulir.runtimesave.sample.SamplingPatcher"/>
     <runConfigurationExtension implementation="com.github.sulir.runtimesave.config.SamplingRunConfigExtension"/>
     <xdebugger.breakpointType implementation="com.github.sulir.runtimesave.savepoint.SavepointType"/>
     <debugger.javaBreakpointHandlerFactory
