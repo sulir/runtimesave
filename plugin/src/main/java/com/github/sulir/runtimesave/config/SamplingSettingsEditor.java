@@ -2,21 +2,29 @@ package com.github.sulir.runtimesave.config;
 
 import com.intellij.execution.configurations.RunConfigurationBase;
 import com.intellij.openapi.options.SettingsEditor;
+import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBIntSpinner;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
 public class SamplingSettingsEditor extends SettingsEditor<RunConfigurationBase<?>> {
+    private final Project project;
     private JPanel mainPanel;
     private JBIntSpinner everyNthLineSpinner;
     private JBIntSpinner firstTExecutionsSpinner;
+    private ProjectPackagesFilterEditor filterEditor;
+
+    public SamplingSettingsEditor(Project project) {
+        this.project = project;
+    }
 
     @Override
     protected void resetEditorFrom(@NotNull RunConfigurationBase configuration) {
         SamplingSettings settings = SamplingSettings.getOrDefault(configuration);
         everyNthLineSpinner.setValue(settings.getEveryNthLine());
         firstTExecutionsSpinner.setValue(settings.getFirstTExecutions());
+        filterEditor.setFilters(settings.getIncludeFilters());
     }
 
     @Override
@@ -24,6 +32,7 @@ public class SamplingSettingsEditor extends SettingsEditor<RunConfigurationBase<
         SamplingSettings settings = SamplingSettings.getOrDefault(s);
         settings.setEveryNthLine(everyNthLineSpinner.getNumber());
         settings.setFirstTExecutions(firstTExecutionsSpinner.getNumber());
+        settings.setIncludeFilters(filterEditor.getFilters());
     }
 
     @Override
@@ -35,5 +44,6 @@ public class SamplingSettingsEditor extends SettingsEditor<RunConfigurationBase<
         SamplingSettings defaults = new SamplingSettings();
         everyNthLineSpinner = new JBIntSpinner(defaults.getEveryNthLine(), 1, Integer.MAX_VALUE);
         firstTExecutionsSpinner = new JBIntSpinner(defaults.getFirstTExecutions(), -1, Integer.MAX_VALUE);
+        filterEditor = new ProjectPackagesFilterEditor(project);
     }
 }

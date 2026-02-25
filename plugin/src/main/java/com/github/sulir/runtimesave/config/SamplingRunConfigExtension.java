@@ -24,7 +24,7 @@ public class SamplingRunConfigExtension extends RunConfigurationExtension {
     @Override
     @SuppressWarnings("unchecked")
     protected SettingsEditor<RunConfigurationBase<?>> createEditor(@NotNull RunConfigurationBase configuration) {
-        return new SamplingSettingsEditor();
+        return new SamplingSettingsEditor(configuration.getProject());
     }
 
     @Override
