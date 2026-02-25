@@ -1,6 +1,6 @@
 [versions]
 asm = "9.9.1"
-intellij-idea = "2025.3.2"
+intellij-idea = "2025.3.3"
 intellij-platform = "2.11.0"
 java = "21"
 junit = "6.0.3"
