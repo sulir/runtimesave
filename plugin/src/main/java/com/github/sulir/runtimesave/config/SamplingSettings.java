@@ -44,6 +44,9 @@ public class SamplingSettings {
     }
 
     public String getIncludePattern() {
+        if (includeFilters.length == 0)
+            return ".*";
+
         return Arrays.stream(includeFilters)
                 .filter(ClassFilter::isEnabled)
                 .map(ClassFilter::getPattern)
