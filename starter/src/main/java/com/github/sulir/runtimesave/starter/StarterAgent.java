@@ -3,6 +3,7 @@ package com.github.sulir.runtimesave.starter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
@@ -53,7 +54,7 @@ public class StarterAgent {
         ClassNode classNode = new ClassNode();
         reader.accept(classNode, ClassReader.SKIP_FRAMES);
 
-        for (var method : classNode.methods) {
+        for (MethodNode method : classNode.methods) {
             if (method.name.equals(methodName) && method.desc.equals(descriptor)) {
                 new LineJumpInstrumentation(method).generate(line);
 

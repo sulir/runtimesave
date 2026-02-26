@@ -1,5 +1,10 @@
 package com.github.sulir.runtimesave.instrument;
 
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
+
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
@@ -43,15 +48,25 @@ public class InstrumentAgent {
                 String javaClass = className.replace('/', '.');
 
                 if (included.matcher(javaClass).matches() && !excluded.matcher(javaClass).matches())
-                    return instrumentClass(javaClass, classFileBuffer);
+                    return rewriteClass(classFileBuffer);
                 else
                     return null;
             }
         });
     }
 
-    public byte[] instrumentClass(String className, byte[] bytes) {
-        System.out.printf("Instrumenting %s %d %d\n", className, everyNthLine, firstTExecutions);
-        return null;
+    public byte[] rewriteClass(byte[] bytes) {
+        ClassReader reader = new ClassReader(bytes);
+        ClassNode classNode = new ClassNode();
+        reader.accept(classNode, 0);
+
+        if (classNode.methods.isEmpty() || (classNode.access & Opcodes.ACC_SYNTHETIC) != 0)
+            return null;
+
+        new ClassInstrumentation(classNode).instrument(everyNthLine, firstTExecutions);
+
+        ClassWriter writer = new ClassWriter(reader, 0);
+        classNode.accept(writer);
+        return writer.toByteArray();
     }
 }
