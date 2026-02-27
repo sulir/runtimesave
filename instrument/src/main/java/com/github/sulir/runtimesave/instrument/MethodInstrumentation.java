@@ -21,6 +21,8 @@ public class MethodInstrumentation {
 
                 if (node.getNext() instanceof FrameNode)
                     node = node.getNext();
+                if (node.getNext().getOpcode() == Opcodes.NEW)
+                    node = node.getNext();
                 insertCallAfter(node);
             }
         }
