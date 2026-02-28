@@ -18,8 +18,8 @@ public class ClassInstrumentation {
     }
 
     private boolean excludeMethod(MethodNode method) {
-        return method.instructions.size() == 0
-                || (method.access & Opcodes.ACC_SYNTHETIC) != 0
-                || method.name.equals("<clinit>");
+        return ((method.access & Opcodes.ACC_SYNTHETIC) != 0 && !method.name.startsWith("lambda$"))
+                || method.name.equals("<clinit>")
+                || method.instructions.size() == 0;
     }
 }
