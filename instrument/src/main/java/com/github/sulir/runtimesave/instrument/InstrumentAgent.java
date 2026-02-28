@@ -18,6 +18,7 @@ public class InstrumentAgent {
     };
     public static final Pattern excluded = Pattern.compile(String.join("|", EXCLUDED_PACKAGES)
             .replace(".", "\\.").replace("*", ".*"));
+    public static final boolean DEBUG = System.getenv("RS_DEBUG") != null;
 
     private final int everyNthLine;
     private final int firstTExecutions;
@@ -43,14 +44,19 @@ public class InstrumentAgent {
             @Override
             public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
                                     ProtectionDomain protectionDomain, byte[] classFileBuffer) {
-                if (className == null)
-                    return null;
-                String javaClass = className.replace('/', '.');
+                try {
+                    if (className == null)
+                        return null;
+                    String javaClass = className.replace('/', '.');
 
-                if (included.matcher(javaClass).matches() && !excluded.matcher(javaClass).matches())
-                    return rewriteClass(classFileBuffer);
-                else
+                    if (included.matcher(javaClass).matches() && !excluded.matcher(javaClass).matches())
+                        return rewriteClass(classFileBuffer);
+                    else
+                        return null;
+                } catch (Exception e) {
+                    e.printStackTrace(System.err);
                     return null;
+                }
             }
         });
     }

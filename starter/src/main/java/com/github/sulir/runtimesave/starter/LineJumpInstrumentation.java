@@ -100,6 +100,6 @@ public class LineJumpInstrumentation implements Opcodes {
         Printer printer = new Textifier();
         TraceMethodVisitor tracer = new TraceMethodVisitor(printer);
         instructions.forEach(instruction -> instruction.accept(tracer));
-        printer.getText().forEach(System.out::print);
+        printer.getText().forEach(System.err::print);
     }
 }
