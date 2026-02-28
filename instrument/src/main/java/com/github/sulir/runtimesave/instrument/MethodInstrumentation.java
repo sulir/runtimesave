@@ -18,6 +18,8 @@ public class MethodInstrumentation {
         for (AbstractInsnNode node = instructions.getFirst(); node != null; node = node.getNext()) {
             if (node instanceof LineNumberNode lineNode) {
                 int lineNumber = lineNode.line;
+                if (lineNumber % everyNthLine != 0)
+                    continue;
 
                 if (node.getNext() instanceof FrameNode)
                     node = node.getNext();
