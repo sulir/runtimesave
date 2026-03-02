@@ -1,6 +1,6 @@
 package com.github.sulir.runtimesave.sample;
 
-import com.intellij.execution.executors.DefaultDebugExecutor;
+import com.intellij.execution.executors.DefaultRunExecutor;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.util.text.TextWithMnemonic;
@@ -8,8 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
-public class SamplingExecutor extends DefaultDebugExecutor {
-    public static final String EXECUTOR_ID = "SampleValues";
+public class SamplingRunExecutor extends DefaultRunExecutor {
+    public static final String EXECUTOR_ID = "SamplingRun";
 
     @Override
     public @NotNull String getActionName() {

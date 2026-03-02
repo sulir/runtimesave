@@ -16,13 +16,13 @@ import java.util.Map;
 
 import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
 
-public class SamplingManager {
+public class JdiSamplingManager {
     private final int everyNthLine;
     private final int firstTExecutions;
     private int linesHit = 0;
     private final Map<SourceLocation, Integer> hitsPerLine = new HashMap<>();
 
-    public SamplingManager(int everyNthLine, int firstTExecutions) {
+    public JdiSamplingManager(int everyNthLine, int firstTExecutions) {
         this.everyNthLine = everyNthLine;
         this.firstTExecutions = firstTExecutions;
     }

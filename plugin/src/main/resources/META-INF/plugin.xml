@@ -11,13 +11,15 @@
 
   <extensions defaultExtensionNs="com.intellij">
     <postStartupActivity implementation="com.github.sulir.runtimesave.StartupActivity"/>
-    <executor implementation="com.github.sulir.runtimesave.sample.SamplingExecutor"/>
-    <programRunner implementation="com.github.sulir.runtimesave.sample.SamplingRunner"/>
-    <java.programPatcher implementation="com.github.sulir.runtimesave.sample.SamplingPatcher"/>
-    <runConfigurationExtension implementation="com.github.sulir.runtimesave.config.SamplingRunConfigExtension"/>
     <xdebugger.breakpointType implementation="com.github.sulir.runtimesave.savepoint.SavepointType"/>
     <debugger.javaBreakpointHandlerFactory
             implementation="com.github.sulir.runtimesave.savepoint.SavepointHandlerFactory"/>
+
+    <runConfigurationExtension implementation="com.github.sulir.runtimesave.config.SamplingRunConfigExtension"/>
+    <executor implementation="com.github.sulir.runtimesave.sample.SamplingRunExecutor"/>
+    <programRunner implementation="com.github.sulir.runtimesave.sample.SamplingRunRunner"/>
+    <executor implementation="com.github.sulir.runtimesave.sample.SamplingDebugExecutor"/>
+    <programRunner implementation="com.github.sulir.runtimesave.sample.SamplingDebugRunner"/>
   </extensions>
 
   <actions>
@@ -33,7 +35,7 @@
   </actions>
 
   <projectListeners>
-    <listener class="com.github.sulir.runtimesave.sample.SamplingListener"
+    <listener class="com.github.sulir.runtimesave.sample.JdiSamplingListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
     <listener class="com.github.sulir.runtimesave.savepoint.SavepointListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>

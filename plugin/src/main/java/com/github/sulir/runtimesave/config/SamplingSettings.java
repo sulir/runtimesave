@@ -43,7 +43,14 @@ public class SamplingSettings {
         this.includeFilters = includeFilters;
     }
 
-    public String getIncludePattern() {
+    public String[] getIncludeClassPatterns() {
+        return Arrays.stream(includeFilters)
+                .filter(ClassFilter::isEnabled)
+                .map(ClassFilter::getPattern)
+                .toArray(String[]::new);
+    }
+
+    public String getIncludeRegex() {
         if (includeFilters.length == 0)
             return ".*";
 
