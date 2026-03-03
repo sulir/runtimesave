@@ -14,7 +14,7 @@ public class ClassInstrumentation {
     public void instrument(int everyNthLine, int firstTExecutions) {
         for (MethodNode method : classNode.methods)
             if (!excludeMethod(method))
-                new MethodInstrumentation(method).instrument(everyNthLine);
+                new MethodInstrumentation(method, classNode.name).instrument(everyNthLine);
     }
 
     private boolean excludeMethod(MethodNode method) {

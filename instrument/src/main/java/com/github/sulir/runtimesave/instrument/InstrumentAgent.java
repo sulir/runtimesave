@@ -64,14 +64,14 @@ public class InstrumentAgent {
     public byte[] rewriteClass(byte[] bytes) {
         ClassReader reader = new ClassReader(bytes);
         ClassNode classNode = new ClassNode();
-        reader.accept(classNode, 0);
+        reader.accept(classNode, ClassReader.EXPAND_FRAMES);
 
         if (classNode.methods.isEmpty() || (classNode.access & Opcodes.ACC_SYNTHETIC) != 0)
             return null;
 
         new ClassInstrumentation(classNode).instrument(everyNthLine, firstTExecutions);
 
-        ClassWriter writer = new ClassWriter(reader, 0);
+        ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
         classNode.accept(writer);
         return writer.toByteArray();
     }
