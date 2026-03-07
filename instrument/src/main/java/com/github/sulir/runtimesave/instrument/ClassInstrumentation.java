@@ -6,15 +6,19 @@ import org.objectweb.asm.tree.MethodNode;
 
 public class ClassInstrumentation {
     private final ClassNode classNode;
+    private final LineCfgCreator lineCfgCreator = new LineCfgCreator();
 
     public ClassInstrumentation(ClassNode classNode) {
         this.classNode = classNode;
     }
 
-    public void instrument(int everyNthLine, int firstTExecutions) {
-        for (MethodNode method : classNode.methods)
-            if (!excludeMethod(method))
-                new MethodInstrumentation(method, classNode.name).instrument(everyNthLine);
+    public void instrument(int everyNthLine) {
+        for (MethodNode method : classNode.methods) {
+            if (!excludeMethod(method)) {
+                LineCfg lineCfg = lineCfgCreator.create(method, classNode.name);
+                new MethodInstrumentation(method, lineCfg, everyNthLine).instrument();
+            }
+        }
     }
 
     private boolean excludeMethod(MethodNode method) {

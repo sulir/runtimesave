@@ -69,7 +69,7 @@ public class InstrumentAgent {
         if (classNode.methods.isEmpty() || (classNode.access & Opcodes.ACC_SYNTHETIC) != 0)
             return null;
 
-        new ClassInstrumentation(classNode).instrument(everyNthLine, firstTExecutions);
+        new ClassInstrumentation(classNode).instrument(everyNthLine);
 
         ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
         classNode.accept(writer);

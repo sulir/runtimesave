@@ -8,54 +8,75 @@ import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 public class MethodInstrumentation {
+    private static final int INIT_LINE_ID = -1;
     private static final String COLLECTOR_CLASS = Type.getType(Collector.class).getInternalName();
 
     private final MethodNode method;
-    private final String className;
+    private final LineCfg lineCfg;
+    private final int everyNthLine;
     private final InsnList instructions;
-    private boolean hasLineTracker = false;
 
-    public MethodInstrumentation(MethodNode method, String className) {
+    public MethodInstrumentation(MethodNode method, LineCfg lineCfg, int everyNthLine) {
         this.method = method;
-        this.className = className;
+        this.lineCfg = lineCfg;
+        this.everyNthLine = everyNthLine;
         instructions = method.instructions;
     }
 
-    public void instrument(int everyNthLine) {
-        for (AbstractInsnNode node : instructions) {
-            if (node instanceof LineNumberNode lineNode) {
-                int lineNumber = lineNode.line;
-                if (lineNumber % everyNthLine != 0)
-                    continue;
-                insertCallAfter(node);
-            } else if (node instanceof FrameNode frame) {
-                insertLineTrackerVar();
-                updateFrameForLineTracker(frame);
-            }
-        }
-
+    public void instrument() {
+        boolean linesTracked = instrumentMixedTargets();
+        instrumentLineChangeTargets(linesTracked);
         printDebugInfo();
     }
 
-    private void insertLineTrackerVar() {
-        if (hasLineTracker)
-            return;
-        hasLineTracker = true;
+    private boolean instrumentMixedTargets() {
+        Collection<AbstractInsnNode> mixedTargets = lineCfg.getTargetsOfSameAndOtherLine();
+        boolean trackingNeeded = false;
 
-        InsnList init = new InsnList();
-        init.add(new InsnNode(Opcodes.ICONST_0));
-        init.add(new VarInsnNode(Opcodes.ISTORE, method.maxLocals));
-        instructions.insert(init);
+        for (AbstractInsnNode node : mixedTargets) {
+            int lineId = lineCfg.getLineId(node);
+            InsnList instrumentation = new InsnList();
+            if (lineId % everyNthLine == 0) {
+                instrumentation.add(generateCollectionIfLineChanged(lineId));
+                trackingNeeded = true;
+            }
+            instrumentation.add(generateLineIdUpdate(lineId));
+            instructions.insert(findInsertionPoint(node), instrumentation);
+        }
+
+        if (trackingNeeded) {
+            instructions.insert(generateLineIdUpdate(INIT_LINE_ID));
+            updateFramesForLineTracker();
+        }
+
+        return trackingNeeded;
     }
 
-    private void updateFrameForLineTracker(FrameNode frame) {
-        int padding = method.maxLocals - countLocalSlots(frame);
-        frame.local.addAll(Collections.nCopies(padding, Opcodes.TOP));
-        frame.local.add(Opcodes.INTEGER);
+    private void instrumentLineChangeTargets(boolean trackLines) {
+        for (AbstractInsnNode node : lineCfg.getTargetsOfOtherLineOnly()) {
+            int lineId = lineCfg.getLineId(node);
+            InsnList instrumentation = new InsnList();
+
+            if (lineId % everyNthLine == 0)
+                instrumentation.add(generateCollection(lineId));
+            if (trackLines)
+                instrumentation.add(generateLineIdUpdate(lineId));
+
+            instructions.insert(findInsertionPoint(node), instrumentation);
+        }
+    }
+
+    private void updateFramesForLineTracker() {
+        for (FrameNode frame : lineCfg.getFrames()) {
+            int padding = method.maxLocals - countLocalSlots(frame);
+            frame.local.addAll(Collections.nCopies(padding, Opcodes.TOP));
+            frame.local.add(Opcodes.INTEGER);
+        }
     }
 
     private int countLocalSlots(FrameNode frame) {
@@ -67,21 +88,60 @@ public class MethodInstrumentation {
         return slots;
     }
 
-    private void insertCallAfter(AbstractInsnNode node) {
-        if (node.getNext().getType() == AbstractInsnNode.FRAME)
-            node = node.getNext();
-        if (node.getNext().getOpcode() == Opcodes.NEW)
-            node = node.getNext();
+    private InsnList generateLineIdUpdate(int lineId) {
+        InsnList result = new InsnList();
+        result.add(generatePush(lineId));
+        result.add(new VarInsnNode(Opcodes.ISTORE, method.maxLocals));
+        return result;
+    }
 
-        MethodInsnNode call = new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, "collect", "()V");
-        instructions.insert(node, call);
+    private AbstractInsnNode generatePush(int constant) {
+        if (constant >= -1 && constant <= 5)
+            return new InsnNode(Opcodes.ICONST_0 + constant);
+
+        if (constant >= Byte.MIN_VALUE && constant <= Byte.MAX_VALUE)
+            return new IntInsnNode(Opcodes.BIPUSH, constant);
+
+        if (constant >= Short.MIN_VALUE && constant <= Short.MAX_VALUE)
+            return new IntInsnNode(Opcodes.SIPUSH, constant);
+
+        return new LdcInsnNode(constant);
+    }
+
+    private AbstractInsnNode findInsertionPoint(AbstractInsnNode node) {
+        if (node.getType() != AbstractInsnNode.LABEL) {
+            LabelNode label = new LabelNode();
+            instructions.insertBefore(node, label);
+            return label;
+        }
+
+        while (node.getNext() != null && node.getNext().getOpcode() == -1)
+            node = node.getNext();
+        if (node.getNext() != null && node.getNext().getOpcode() == Opcodes.NEW)
+            node = node.getNext();
+        return node;
+    }
+
+    private InsnList generateCollectionIfLineChanged(int newLineId) {
+        InsnList result = new InsnList();
+        result.add(new VarInsnNode(Opcodes.ILOAD, method.maxLocals));
+        result.add(generatePush(newLineId));
+        result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, "collectIfLineChanged", "(II)V"));
+        return result;
+    }
+
+    private InsnList generateCollection(int lineId) {
+        InsnList result = new InsnList();
+        result.add(generatePush(lineId));
+        result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, "collect", "(I)V"));
+        return result;
     }
 
     private void printDebugInfo() {
         if (!InstrumentAgent.DEBUG)
             return;
 
-        System.err.printf("--- %s %s%s ---\n", className, method.name, method.desc);
+        System.err.printf("--- %s%s ---\n", method.name, method.desc);
         Printer printer = new Textifier();
         TraceMethodVisitor tracer = new TraceMethodVisitor(printer);
         instructions.forEach(instruction -> instruction.accept(tracer));
