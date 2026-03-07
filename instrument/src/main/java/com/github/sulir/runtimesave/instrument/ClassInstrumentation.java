@@ -3,6 +3,7 @@ package com.github.sulir.runtimesave.instrument;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.analysis.AnalyzerException;
 
 public class ClassInstrumentation {
     private final ClassNode classNode;
@@ -15,8 +16,10 @@ public class ClassInstrumentation {
     public void instrument(int everyNthLine) {
         for (MethodNode method : classNode.methods) {
             if (!excludeMethod(method)) {
-                LineCfg lineCfg = lineCfgCreator.create(method, classNode.name);
-                new MethodInstrumentation(method, lineCfg, everyNthLine).instrument();
+                try {
+                    LineCfg lineCfg = lineCfgCreator.create(method, classNode.name);
+                    new MethodInstrumentation(method, lineCfg, everyNthLine).instrument();
+                } catch (LineNumberException|AnalyzerException ignored) { }
             }
         }
     }

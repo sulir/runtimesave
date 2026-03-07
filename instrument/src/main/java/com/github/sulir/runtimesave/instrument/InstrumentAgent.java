@@ -66,7 +66,7 @@ public class InstrumentAgent {
         ClassNode classNode = new ClassNode();
         reader.accept(classNode, ClassReader.EXPAND_FRAMES);
 
-        if (classNode.methods.isEmpty() || (classNode.access & Opcodes.ACC_SYNTHETIC) != 0)
+        if (excludeClass(classNode))
             return null;
 
         new ClassInstrumentation(classNode).instrument(everyNthLine);
@@ -74,5 +74,11 @@ public class InstrumentAgent {
         ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
         classNode.accept(writer);
         return writer.toByteArray();
+    }
+
+    private boolean excludeClass(ClassNode classNode) {
+        return (classNode.access & Opcodes.ACC_SYNTHETIC) != 0
+                || classNode.sourceFile == null
+                || classNode.methods.isEmpty();
     }
 }

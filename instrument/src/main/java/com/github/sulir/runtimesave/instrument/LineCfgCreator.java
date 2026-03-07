@@ -1,49 +1,43 @@
 package com.github.sulir.runtimesave.instrument;
 
 import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.BasicInterpreter;
-import org.objectweb.asm.tree.analysis.BasicValue;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class LineCfgCreator {
-    public static final int NO_LINE = -1;
-
     private int lineId = 0;
 
-    public LineCfg create(MethodNode method, String className) {
+    public LineCfg create(MethodNode method, String className) throws LineNumberException, AnalyzerException {
         LineCfg lineCfg = new LineCfg(method.instructions, lineId);
-        buildLineNumbers(method, lineCfg);
+        buildLineNumbers(method.instructions, lineCfg);
         buildControlFlowGraph(method, className, lineCfg);
         return lineCfg;
     }
 
-    private void buildLineNumbers(MethodNode method, LineCfg lineCfg) {
-        Map<LabelNode, Integer> labelLines = new HashMap<>();
+    private void buildLineNumbers(InsnList instructions, LineCfg lineCfg) throws LineNumberException {
+        if (instructions.size() < 2 || !(instructions.getFirst().getNext() instanceof LineNumberNode node))
+            throw new LineNumberException();
 
-        for (AbstractInsnNode instruction : method.instructions)
-            if (instruction instanceof LineNumberNode lineNode)
-                labelLines.put(lineNode.start, lineNode.line);
-
-        int line = NO_LINE;
-        for (AbstractInsnNode instruction : method.instructions) {
-            if (instruction instanceof LabelNode label)
-                line = labelLines.getOrDefault(label, line);
-
+        int line = node.line;
+        for (AbstractInsnNode instruction : instructions) {
+            if (instruction instanceof LineNumberNode lineNode) {
+                if (lineNode.start != lineNode.getPrevious())
+                    throw new LineNumberException();
+                line = lineNode.line;
+                lineCfg.setLineNumber(lineNode.getPrevious(), line);
+            }
             lineCfg.setLineNumber(instruction, line);
         }
 
         lineId = lineCfg.getNextLineId();
     }
 
-    private void buildControlFlowGraph(MethodNode method, String className, LineCfg lineCfg) {
-        Analyzer<BasicValue> analyzer = new Analyzer<>(new BasicInterpreter()) {
+    private void buildControlFlowGraph(MethodNode method, String className, LineCfg lineCfg) throws AnalyzerException {
+        new Analyzer<>(new BasicInterpreter()) {
             @Override
             protected void newControlFlowEdge(int fromIndex, int toIndex) {
                 lineCfg.addEdge(fromIndex, toIndex);
@@ -54,12 +48,6 @@ public class LineCfgCreator {
                 lineCfg.addEdge(fromIndex, toIndex);
                 return true;
             }
-        };
-
-        try {
-            analyzer.analyze(className, method);
-        } catch (AnalyzerException e) {
-            throw new RuntimeException(e);
-        }
+        }.analyze(className, method);
     }
 }
