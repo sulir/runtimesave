@@ -126,13 +126,16 @@ public class MethodInstrumentation {
         InsnList result = new InsnList();
         result.add(new VarInsnNode(Opcodes.ILOAD, method.maxLocals));
         result.add(generatePush(newLineId));
-        result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, "collectIfLineChanged", "(II)V"));
+        if (everyNthLine != 1)
+            result.add(generatePush(newLineId / everyNthLine));
+        String descriptor = everyNthLine == 1 ? "(II)V" : "(III)V";
+        result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, "collectIfLineChanged", descriptor));
         return result;
     }
 
     private InsnList generateCollection(int lineId) {
         InsnList result = new InsnList();
-        result.add(generatePush(lineId));
+        result.add(generatePush(lineId / everyNthLine));
         result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, "collect", "(I)V"));
         return result;
     }

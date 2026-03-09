@@ -9,4 +9,9 @@ public class Collector {
         if (oldLineId != newLineId)
             collect(newLineId);
     }
+
+    public static void collectIfLineChanged(int oldLineId, int newLineId, int compactLineId) {
+        if (oldLineId != newLineId)
+            collect(compactLineId);
+    }
 }
