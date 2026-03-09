@@ -12,6 +12,9 @@ public class LineCfgCreator {
     private int lineId = 0;
 
     public LineCfg create(MethodNode method, String className) throws LineNumberException, AnalyzerException {
+        if (method.instructions.size() < 2 || !(method.instructions.getFirst().getNext() instanceof LineNumberNode))
+            throw new LineNumberException();
+
         LineCfg lineCfg = new LineCfg(method.instructions, lineId);
         buildLineNumbers(method.instructions, lineCfg);
         buildControlFlowGraph(method, className, lineCfg);
@@ -19,10 +22,8 @@ public class LineCfgCreator {
     }
 
     private void buildLineNumbers(InsnList instructions, LineCfg lineCfg) throws LineNumberException {
-        if (instructions.size() < 2 || !(instructions.getFirst().getNext() instanceof LineNumberNode node))
-            throw new LineNumberException();
+        int line = ((LineNumberNode) instructions.getFirst().getNext()).line;
 
-        int line = node.line;
         for (AbstractInsnNode instruction : instructions) {
             if (instruction instanceof LineNumberNode lineNode) {
                 if (lineNode.start != lineNode.getPrevious())

@@ -35,17 +35,19 @@ public class MethodInstrumentation {
     }
 
     private boolean instrumentMixedTargets() {
-        Collection<AbstractInsnNode> mixedTargets = lineCfg.getTargetsOfSameAndOtherLine();
+        Collection<LabelNode> mixedTargets = lineCfg.getTargetsOfSameAndOtherLine();
         boolean trackingNeeded = false;
 
-        for (AbstractInsnNode node : mixedTargets) {
+        for (LabelNode node : mixedTargets) {
             int lineId = lineCfg.getLineId(node);
             InsnList instrumentation = new InsnList();
+
             if (lineId % everyNthLine == 0) {
                 instrumentation.add(generateCollectionIfLineChanged(lineId));
                 trackingNeeded = true;
             }
-            instrumentation.add(generateLineIdUpdate(lineId));
+            if (trackingNeeded && lineCfg.lineIsSourceOfMixedTarget(lineId))
+                instrumentation.add(generateLineIdUpdate(lineId));
             instructions.insert(findInsertionPoint(node), instrumentation);
         }
 
@@ -58,13 +60,13 @@ public class MethodInstrumentation {
     }
 
     private void instrumentLineChangeTargets(boolean trackLines) {
-        for (AbstractInsnNode node : lineCfg.getTargetsOfOtherLineOnly()) {
+        for (LabelNode node : lineCfg.getTargetsOfOtherLineOnly()) {
             int lineId = lineCfg.getLineId(node);
             InsnList instrumentation = new InsnList();
 
             if (lineId % everyNthLine == 0)
                 instrumentation.add(generateCollection(lineId));
-            if (trackLines)
+            if (trackLines && lineCfg.lineIsSourceOfMixedTarget(lineId))
                 instrumentation.add(generateLineIdUpdate(lineId));
 
             instructions.insert(findInsertionPoint(node), instrumentation);
@@ -109,12 +111,6 @@ public class MethodInstrumentation {
     }
 
     private AbstractInsnNode findInsertionPoint(AbstractInsnNode node) {
-        if (node.getType() != AbstractInsnNode.LABEL) {
-            LabelNode label = new LabelNode();
-            instructions.insertBefore(node, label);
-            return label;
-        }
-
         while (node.getNext() != null && node.getNext().getOpcode() == -1)
             node = node.getNext();
         if (node.getNext() != null && node.getNext().getOpcode() == Opcodes.NEW)
