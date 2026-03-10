@@ -2,10 +2,6 @@ plugins {
     id("java-agent")
 }
 
-dependencies {
-    implementation(libs.asm.analysis)
-}
-
 tasks.shadowJar {
     manifest {
         attributes(mapOf(

@@ -10,7 +10,6 @@ import java.util.*;
 public class LineCfg {
     private enum TargetKind { FROM_SAME_LINE, FROM_OTHER_LINE, MIXED }
 
-    private final InsnList instructions;
     private int lineId;
     private final Map<AbstractInsnNode, Integer> instructionToLine;
     private final Map<Integer, Integer> lineToId = new HashMap<>();
@@ -19,7 +18,6 @@ public class LineCfg {
     private final Set<FrameNode> frames = new HashSet<>();
 
     public LineCfg(InsnList instructions, int startLineId) {
-        this.instructions = instructions;
         lineId = startLineId;
         instructionToLine = new IdentityHashMap<>(instructions.size());
         targetKinds.put((LabelNode) instructions.getFirst(), TargetKind.FROM_OTHER_LINE);
@@ -30,9 +28,7 @@ public class LineCfg {
         lineToId.computeIfAbsent(lineNumber, x -> lineId++);
     }
 
-    public void addEdge(int fromIndex, int toIndex) {
-        AbstractInsnNode from = instructions.get(fromIndex);
-        AbstractInsnNode to = instructions.get(toIndex);
+    public void addEdge(AbstractInsnNode from, AbstractInsnNode to) {
         Integer fromLine = instructionToLine.get(from);
         Integer toLine = instructionToLine.get(to);
         if (fromLine == null || toLine == null)
