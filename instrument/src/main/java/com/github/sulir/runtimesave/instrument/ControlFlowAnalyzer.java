@@ -7,30 +7,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ControlFlowAnalyzer {
-    private LineCfg cfg;
+    public LineCfg analyze(MethodNode method, int lineId) {
+        LineCfg cfg = new LineCfg(method.instructions, lineId);
 
-    public void analyze(MethodNode method, LineCfg cfg) {
-        this.cfg = cfg;
         List<AbstractInsnNode> jsrSuccessors = new ArrayList<>(0);
         List<AbstractInsnNode> rets = new ArrayList<>(0);
 
         for (AbstractInsnNode instruction : method.instructions)
-            processInstruction(instruction, jsrSuccessors, rets);
+            processInstruction(instruction, jsrSuccessors, rets, cfg);
 
-        addRetEdges(jsrSuccessors, rets);
-        addExceptionEdges(method);
-        this.cfg = null;
+        addRetEdges(jsrSuccessors, rets, cfg);
+        addExceptionEdges(method, cfg);
+
+        return cfg;
     }
 
     private void processInstruction(AbstractInsnNode instruction, List<AbstractInsnNode> jsrSuccessors,
-                                    List<AbstractInsnNode> rets) {
+                                    List<AbstractInsnNode> rets, LineCfg cfg) {
         int opcode = instruction.getOpcode();
 
         if (instruction instanceof JumpInsnNode jump) {
             cfg.addEdge(instruction, jump.label);
 
-            if (opcode != Opcodes.GOTO && opcode != Opcodes.JSR)
-                addEdgeToNext(instruction);
+            if (opcode != Opcodes.GOTO && opcode != Opcodes.JSR && instruction.getNext() != null)
+                cfg.addEdge(instruction, instruction.getNext());
 
             if (opcode == Opcodes.JSR && instruction.getNext() != null)
                 jsrSuccessors.add(instruction.getNext());
@@ -45,22 +45,18 @@ public class ControlFlowAnalyzer {
                 cfg.addEdge(instruction, label);
             cfg.addEdge(instruction, lookupSwitch.dflt);
         } else if (!(opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) && opcode != Opcodes.ATHROW) {
-            addEdgeToNext(instruction);
+            if (instruction.getNext() != null)
+                cfg.addEdge(instruction, instruction.getNext());
         }
     }
 
-    private void addEdgeToNext(AbstractInsnNode instruction) {
-        if (instruction.getNext() != null)
-            cfg.addEdge(instruction, instruction.getNext());
-    }
-
-    private void addRetEdges(List<AbstractInsnNode> jsrSuccessors, List<AbstractInsnNode> rets) {
+    private void addRetEdges(List<AbstractInsnNode> jsrSuccessors, List<AbstractInsnNode> rets, LineCfg cfg) {
         for (AbstractInsnNode ret : rets)
             for (AbstractInsnNode jsrSuccessor : jsrSuccessors)
                 cfg.addEdge(ret, jsrSuccessor);
     }
 
-    private void addExceptionEdges(MethodNode method) {
+    private void addExceptionEdges(MethodNode method, LineCfg cfg) {
         for (TryCatchBlockNode block : method.tryCatchBlocks)
             for (AbstractInsnNode node = block.start; node != block.end; node = node.getNext())
                 if (node.getOpcode() != -1)

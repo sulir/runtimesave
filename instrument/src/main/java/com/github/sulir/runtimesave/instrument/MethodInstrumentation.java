@@ -39,7 +39,7 @@ public class MethodInstrumentation {
         boolean trackingNeeded = false;
 
         for (LabelNode node : mixedTargets) {
-            int lineId = lineCfg.getLineId(node);
+            int lineId = lineCfg.findLineId(node);
             InsnList instrumentation = new InsnList();
 
             if (lineId % everyNthLine == 0) {
@@ -61,7 +61,7 @@ public class MethodInstrumentation {
 
     private void instrumentLineChangeTargets(boolean trackLines) {
         for (LabelNode node : lineCfg.getTargetsOfOtherLineOnly()) {
-            int lineId = lineCfg.getLineId(node);
+            int lineId = lineCfg.findLineId(node);
             InsnList instrumentation = new InsnList();
 
             if (lineId % everyNthLine == 0)
@@ -74,10 +74,12 @@ public class MethodInstrumentation {
     }
 
     private void updateFramesForLineTracker() {
-        for (FrameNode frame : lineCfg.getFrames()) {
-            int padding = method.maxLocals - countLocalSlots(frame);
-            frame.local.addAll(Collections.nCopies(padding, Opcodes.TOP));
-            frame.local.add(Opcodes.INTEGER);
+        for (AbstractInsnNode node : instructions) {
+            if (node instanceof FrameNode frame) {
+                int padding = method.maxLocals - countLocalSlots(frame);
+                frame.local.addAll(Collections.nCopies(padding, Opcodes.TOP));
+                frame.local.add(Opcodes.INTEGER);
+            }
         }
     }
 

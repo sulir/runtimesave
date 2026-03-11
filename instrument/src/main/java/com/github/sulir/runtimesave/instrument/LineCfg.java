@@ -1,9 +1,9 @@
 package com.github.sulir.runtimesave.instrument;
 
 import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LineNumberNode;
 
 import java.util.*;
 
@@ -11,60 +11,56 @@ public class LineCfg {
     private enum TargetKind { FROM_SAME_LINE, FROM_OTHER_LINE, MIXED }
 
     private int lineId;
-    private final Map<AbstractInsnNode, Integer> instructionToLine;
     private final Map<Integer, Integer> lineToId = new HashMap<>();
     private final Map<Integer, Set<LabelNode>> lineIdToTargets = new HashMap<>();
     private final Map<LabelNode, TargetKind> targetKinds = new IdentityHashMap<>();
-    private final Set<FrameNode> frames = new HashSet<>();
 
     public LineCfg(InsnList instructions, int startLineId) {
         lineId = startLineId;
-        instructionToLine = new IdentityHashMap<>(instructions.size());
         targetKinds.put((LabelNode) instructions.getFirst(), TargetKind.FROM_OTHER_LINE);
     }
 
-    public void setLineNumber(AbstractInsnNode instruction, int lineNumber) {
-        instructionToLine.put(instruction, lineNumber);
-        lineToId.computeIfAbsent(lineNumber, x -> lineId++);
+    public void addEdge(AbstractInsnNode from, AbstractInsnNode to) {
+        saveNewLineId(from);
+        if (!(to instanceof LabelNode target))
+            return;
+
+        int fromLine = findLine(from);
+        int toLine = findLine(to);
+        int fromLineId = lineToId.computeIfAbsent(fromLine, x -> lineId++);
+        lineIdToTargets.computeIfAbsent(fromLineId, x -> new HashSet<>()).add(target);
+
+        TargetKind kind = targetKinds.get(target);
+        boolean same = kind == TargetKind.FROM_SAME_LINE || kind == TargetKind.MIXED || fromLine == toLine;
+        boolean other = kind == TargetKind.FROM_OTHER_LINE || kind == TargetKind.MIXED || fromLine != toLine;
+
+        if (same && other)
+            targetKinds.put(target, TargetKind.MIXED);
+        else if (same)
+            targetKinds.put(target, TargetKind.FROM_SAME_LINE);
+        else
+            targetKinds.put(target, TargetKind.FROM_OTHER_LINE);
     }
 
-    public void addEdge(AbstractInsnNode from, AbstractInsnNode to) {
-        Integer fromLine = instructionToLine.get(from);
-        Integer toLine = instructionToLine.get(to);
-        if (fromLine == null || toLine == null)
-            throw new IllegalArgumentException("Instruction lacks line number");
-
-        if (to instanceof LabelNode target) {
-            int lineId = lineToId.get(fromLine);
-            lineIdToTargets.computeIfAbsent(lineId, x -> new HashSet<>()).add(target);
-
-            TargetKind kind = targetKinds.get(target);
-            boolean same = kind == TargetKind.FROM_SAME_LINE || kind == TargetKind.MIXED || fromLine.equals(toLine);
-            boolean other = kind == TargetKind.FROM_OTHER_LINE || kind == TargetKind.MIXED || !fromLine.equals(toLine);
-
-            if (same && other)
-                targetKinds.put(target, TargetKind.MIXED);
-            else if (same)
-                targetKinds.put(target, TargetKind.FROM_SAME_LINE);
-            else
-                targetKinds.put(target, TargetKind.FROM_OTHER_LINE);
-        } else if (to instanceof FrameNode frame) {
-            frames.add(frame);
-        }
+    private void saveNewLineId(AbstractInsnNode instruction) {
+        if (instruction.getNext() instanceof LineNumberNode)
+            lineToId.computeIfAbsent(findLine(instruction), x -> lineId++);
     }
 
     public Collection<LabelNode> getTargetsOfOtherLineOnly() {
-        return targetKinds.entrySet().stream()
-                .filter(e -> e.getValue() == TargetKind.FROM_OTHER_LINE)
-                .map(Map.Entry::getKey)
-                .toList();
+        ArrayList<LabelNode> result = new ArrayList<>();
+        for (Map.Entry<LabelNode, TargetKind> entry : targetKinds.entrySet())
+            if (entry.getValue() == TargetKind.FROM_OTHER_LINE)
+                result.add(entry.getKey());
+        return result;
     }
 
     public Collection<LabelNode> getTargetsOfSameAndOtherLine() {
-        return targetKinds.entrySet().stream()
-                .filter(e -> e.getValue() == TargetKind.MIXED)
-                .map(Map.Entry::getKey)
-                .toList();
+        ArrayList<LabelNode> result = new ArrayList<>();
+        for (Map.Entry<LabelNode, TargetKind> entry : targetKinds.entrySet())
+            if (entry.getValue() == TargetKind.MIXED)
+                result.add(entry.getKey());
+        return result;
     }
 
     public boolean lineIsSourceOfMixedTarget(int lineId) {
@@ -75,16 +71,18 @@ public class LineCfg {
         return false;
     }
 
-    public Collection<FrameNode> getFrames() {
-        return frames;
+    public int findLine(AbstractInsnNode instruction) {
+        if (instruction.getNext() instanceof LineNumberNode lineNode && lineNode.start == instruction)
+            return lineNode.line;
+
+        while (!(instruction.getPrevious() instanceof LineNumberNode lineNode))
+            instruction = instruction.getPrevious();
+        return lineNode.line;
     }
 
-    public int getLine(AbstractInsnNode instruction) {
-        return instructionToLine.get(instruction);
-    }
-
-    public int getLineId(AbstractInsnNode instruction) {
-        return lineToId.get(getLine(instruction));
+    public int findLineId(LabelNode instruction) {
+        int line = findLine(instruction);
+        return lineToId.get(line);
     }
 
     public int getNextLineId() {
