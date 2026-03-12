@@ -16,25 +16,9 @@ public class InstrumentAgent {
     };
     public static final Pattern excluded = Pattern.compile(String.join("|", EXCLUDED_PACKAGES)
             .replace(".", "\\.").replace("*", ".*"));
-    public static final boolean DEBUG = System.getenv("RS_DEBUG") != null;
-
-    private final int everyNthLine;
-    private final int firstTExecutions;
-    private final Pattern included;
-
-    public InstrumentAgent(int everyNthLine, int firstTExecutions, Pattern included) {
-        this.everyNthLine = everyNthLine;
-        this.firstTExecutions = firstTExecutions;
-        this.included = included;
-    }
 
     public static void premain(String agentArgs, Instrumentation inst) {
-        int everyNthLine = Integer.parseInt(System.getProperty("runtimesave.n"));
-        int firstTExecutions = Integer.parseInt(System.getProperty("runtimesave.t"));
-        Pattern included = Pattern.compile(System.getProperty("runtimesave.include"));
-
-        InstrumentAgent agent = new InstrumentAgent(everyNthLine, firstTExecutions, included);
-        agent.setup(inst);
+        new InstrumentAgent().setup(inst);
     }
 
     public void setup(Instrumentation inst) {
@@ -47,7 +31,7 @@ public class InstrumentAgent {
                         return null;
                     String javaClass = className.replace('/', '.');
 
-                    if (included.matcher(javaClass).matches() && !excluded.matcher(javaClass).matches())
+                    if (Settings.INCLUDE.matcher(javaClass).matches() && !excluded.matcher(javaClass).matches())
                         return rewriteClass(classFileBuffer);
                     else
                         return null;
@@ -62,7 +46,7 @@ public class InstrumentAgent {
     public byte[] rewriteClass(byte[] bytes) {
         ClassReader reader = new ClassReader(bytes);
         ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
-        ClassTransformer transformer = new ClassTransformer(writer, everyNthLine);
+        ClassTransformer transformer = new ClassTransformer(writer);
 
         try {
             reader.accept(transformer, ClassReader.EXPAND_FRAMES);

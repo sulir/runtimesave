@@ -9,14 +9,12 @@ public class ClassTransformer extends ClassVisitor {
     private static final int ASM_VERSION = Opcodes.ASM9;
 
     private final ControlFlowAnalyzer controlFlowAnalyzer = new ControlFlowAnalyzer();
-    private final int everyNthLine;
     private boolean hasSource;
     private boolean hasInstrumentedMethods;
     private int lineId = 0;
 
-    protected ClassTransformer(ClassWriter writer, int everyNthLine) {
+    protected ClassTransformer(ClassWriter writer) {
         super(ASM_VERSION, writer);
-        this.everyNthLine = everyNthLine;
     }
 
     @Override
@@ -72,6 +70,6 @@ public class ClassTransformer extends ClassVisitor {
 
         LineCfg lineCfg = controlFlowAnalyzer.analyze(method, lineId);
         lineId = lineCfg.getNextLineId();
-        new MethodInstrumentation(method, lineCfg, everyNthLine).instrument();
+        new MethodInstrumentation(method, lineCfg).instrument();
     }
 }

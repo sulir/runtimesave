@@ -18,13 +18,12 @@ public class MethodInstrumentation {
 
     private final MethodNode method;
     private final LineCfg lineCfg;
-    private final int everyNthLine;
+    private final int everyNthLine = Settings.LINE;
     private final InsnList instructions;
 
-    public MethodInstrumentation(MethodNode method, LineCfg lineCfg, int everyNthLine) {
+    public MethodInstrumentation(MethodNode method, LineCfg lineCfg) {
         this.method = method;
         this.lineCfg = lineCfg;
-        this.everyNthLine = everyNthLine;
         instructions = method.instructions;
     }
 
@@ -139,7 +138,7 @@ public class MethodInstrumentation {
     }
 
     private void printDebugInfo() {
-        if (!InstrumentAgent.DEBUG)
+        if (!Settings.DEBUG)
             return;
 
         System.err.printf("--- %s%s ---\n", method.name, method.desc);

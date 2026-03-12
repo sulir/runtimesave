@@ -33,8 +33,8 @@ public class SamplingRunRunner extends DefaultJavaProgramRunner {
         vm.add("-javaagent:" + agentPath);
 
         SamplingSettings settings = SamplingSettings.getOrDefault((RunConfigurationBase<?>) runProfile);
-        vm.addProperty("runtimesave.n", String.valueOf(settings.getEveryNthLine()));
-        vm.addProperty("runtimesave.t", String.valueOf(settings.getFirstTExecutions()));
+        vm.addProperty("runtimesave.line", String.valueOf(settings.getEveryNthLine()));
+        vm.addProperty("runtimesave.hits", String.valueOf(settings.getFirstTExecutions()));
         vm.addProperty("runtimesave.include", settings.getIncludeRegex());
 
         super.patch(javaParameters, runnerSettings, runProfile, beforeExecution);
