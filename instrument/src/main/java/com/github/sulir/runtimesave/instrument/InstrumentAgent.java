@@ -2,8 +2,6 @@ package com.github.sulir.runtimesave.instrument;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
@@ -63,22 +61,14 @@ public class InstrumentAgent {
 
     public byte[] rewriteClass(byte[] bytes) {
         ClassReader reader = new ClassReader(bytes);
-        ClassNode classNode = new ClassNode();
-        reader.accept(classNode, ClassReader.EXPAND_FRAMES);
-
-        if (excludeClass(classNode))
-            return null;
-
-        new ClassInstrumentation(classNode).instrument(everyNthLine);
-
         ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
-        classNode.accept(writer);
-        return writer.toByteArray();
-    }
+        ClassTransformer transformer = new ClassTransformer(writer, everyNthLine);
 
-    private boolean excludeClass(ClassNode classNode) {
-        return (classNode.access & Opcodes.ACC_SYNTHETIC) != 0
-                || classNode.sourceFile == null
-                || classNode.methods.isEmpty();
+        try {
+            reader.accept(transformer, ClassReader.EXPAND_FRAMES);
+            return writer.toByteArray();
+        } catch (ExcludedClassException e) {
+            return null;
+        }
     }
 }
