@@ -18,8 +18,9 @@ public class MethodInstrumentation {
 
     private final MethodNode method;
     private final LineCfg lineCfg;
-    private final int everyNthLine = Settings.LINE;
     private final InsnList instructions;
+    private final int everyNthLine = Settings.LINE;
+    private final boolean infinityHits = Settings.HITS == -1;
 
     public MethodInstrumentation(MethodNode method, LineCfg lineCfg) {
         this.method = method;
@@ -125,15 +126,17 @@ public class MethodInstrumentation {
         result.add(generatePush(newLineId));
         if (everyNthLine != 1)
             result.add(generatePush(newLineId / everyNthLine));
+        String calledMethod = infinityHits ? "collectInfinityIfLineChanged" : "collectIfLineChanged";
         String descriptor = everyNthLine == 1 ? "(II)V" : "(III)V";
-        result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, "collectIfLineChanged", descriptor));
+        result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, calledMethod, descriptor));
         return result;
     }
 
     private InsnList generateCollection(int lineId) {
         InsnList result = new InsnList();
         result.add(generatePush(lineId / everyNthLine));
-        result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, "collect", "(I)V"));
+        String calledMethod = infinityHits ? "collectInfinity" : "collect";
+        result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, calledMethod, "(I)V"));
         return result;
     }
 

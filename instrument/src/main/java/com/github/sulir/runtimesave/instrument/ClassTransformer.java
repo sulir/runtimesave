@@ -11,7 +11,6 @@ public class ClassTransformer extends ClassVisitor {
     private final ControlFlowAnalyzer controlFlowAnalyzer = new ControlFlowAnalyzer();
     private boolean hasSource;
     private boolean hasInstrumentedMethods;
-    private int lineId = 0;
 
     protected ClassTransformer(ClassWriter writer) {
         super(ASM_VERSION, writer);
@@ -68,8 +67,7 @@ public class ClassTransformer extends ClassVisitor {
         if (!(label.getNext() instanceof LineNumberNode line && line.start == label))
             return;
 
-        LineCfg lineCfg = controlFlowAnalyzer.analyze(method, lineId);
-        lineId = lineCfg.getNextLineId();
+        LineCfg lineCfg = controlFlowAnalyzer.analyze(method);
         new MethodInstrumentation(method, lineCfg).instrument();
     }
 }
