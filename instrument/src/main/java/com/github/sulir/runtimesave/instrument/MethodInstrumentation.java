@@ -14,18 +14,22 @@ import java.util.List;
 
 public class MethodInstrumentation {
     private static final int INIT_LINE_ID = -1;
-    private static final String COLLECTOR_CLASS = Type.getType(Collector.class).getInternalName();
+    private static final String COLLECTOR = Type.getType(Collector.class).getInternalName();
 
     private final MethodNode method;
+    private final String className;
     private final LineCfg lineCfg;
     private final InsnList instructions;
+    private final int lineIdIndex;
     private final int everyNthLine = Settings.LINE;
     private final boolean infinityHits = Settings.HITS == -1;
 
-    public MethodInstrumentation(MethodNode method, LineCfg lineCfg) {
+    public MethodInstrumentation(MethodNode method, String className, LineCfg lineCfg) {
         this.method = method;
+        this.className = className;
         this.lineCfg = lineCfg;
         instructions = method.instructions;
+        lineIdIndex = method.maxLocals;
     }
 
     public void instrument() {
@@ -76,7 +80,7 @@ public class MethodInstrumentation {
     private void updateFramesForLineTracker() {
         for (AbstractInsnNode node : instructions) {
             if (node instanceof FrameNode frame) {
-                int padding = method.maxLocals - countLocalSlots(frame);
+                int padding = lineIdIndex - countLocalSlots(frame);
                 frame.local.addAll(Collections.nCopies(padding, Opcodes.TOP));
                 frame.local.add(Opcodes.INTEGER);
             }
@@ -95,11 +99,11 @@ public class MethodInstrumentation {
     private InsnList generateLineIdUpdate(int lineId) {
         InsnList result = new InsnList();
         result.add(generatePush(lineId));
-        result.add(new VarInsnNode(Opcodes.ISTORE, method.maxLocals));
+        result.add(new VarInsnNode(Opcodes.ISTORE, lineIdIndex));
         return result;
     }
 
-    private AbstractInsnNode generatePush(int constant) {
+    public static AbstractInsnNode generatePush(int constant) {
         if (constant >= -1 && constant <= 5)
             return new InsnNode(Opcodes.ICONST_0 + constant);
 
@@ -122,21 +126,31 @@ public class MethodInstrumentation {
 
     private InsnList generateCollectionIfLineChanged(int newLineId) {
         InsnList result = new InsnList();
-        result.add(new VarInsnNode(Opcodes.ILOAD, method.maxLocals));
+        result.add(new VarInsnNode(Opcodes.ILOAD, lineIdIndex));
         result.add(generatePush(newLineId));
-        if (everyNthLine != 1)
-            result.add(generatePush(newLineId / everyNthLine));
-        String calledMethod = infinityHits ? "collectInfinityIfLineChanged" : "collectIfLineChanged";
-        String descriptor = everyNthLine == 1 ? "(II)V" : "(III)V";
-        result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, calledMethod, descriptor));
+
+        if (infinityHits) {
+            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectInfinityIfLineChanged", "(II)V"));
+        } else {
+            result.add(new FieldInsnNode(Opcodes.GETSTATIC, className, ClassTransformer.HITS_FIELD, "[B"));
+            if (everyNthLine != 1)
+                result.add(generatePush(newLineId / everyNthLine));
+            String descriptor = everyNthLine == 1 ? "(II[B)V" : "(II[BI)V";
+            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectIfLineChanged", descriptor));
+        }
         return result;
     }
 
     private InsnList generateCollection(int lineId) {
         InsnList result = new InsnList();
-        result.add(generatePush(lineId / everyNthLine));
-        String calledMethod = infinityHits ? "collectInfinity" : "collect";
-        result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR_CLASS, calledMethod, "(I)V"));
+
+        if (infinityHits) {
+            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectInfinity", "()V"));
+        } else {
+            result.add(generatePush(lineId / everyNthLine));
+            result.add(new FieldInsnNode(Opcodes.GETSTATIC, className, ClassTransformer.HITS_FIELD, "[B"));
+            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collect", "(I[B)V"));
+        }
         return result;
     }
 

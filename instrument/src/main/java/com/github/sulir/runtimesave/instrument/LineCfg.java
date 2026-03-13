@@ -1,37 +1,33 @@
 package com.github.sulir.runtimesave.instrument;
 
-import com.github.sulir.runtimesave.runtime.Collector;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LineNumberNode;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class LineCfg {
     private enum TargetKind { FROM_SAME_LINE, FROM_OTHER_LINE, MIXED }
 
-    private static final AtomicInteger lineId = new AtomicInteger();
-
+    private int lineId;
     private final Map<Integer, Integer> lineToId = new HashMap<>();
     private final Map<Integer, Set<LabelNode>> lineIdToTargets = new HashMap<>();
     private final Map<LabelNode, TargetKind> targetKinds = new IdentityHashMap<>();
 
-    public LineCfg(InsnList instructions) {
+    public LineCfg(InsnList instructions, int startLineId) {
+        lineId = startLineId;
         targetKinds.put((LabelNode) instructions.getFirst(), TargetKind.FROM_OTHER_LINE);
     }
 
     public void addEdge(AbstractInsnNode from, AbstractInsnNode to) {
-        if (from.getNext() instanceof LineNumberNode)
-            generateLineId(findLine(from));
-
+        saveNewLineId(from);
         if (!(to instanceof LabelNode target))
             return;
 
         int fromLine = findLine(from);
         int toLine = findLine(to);
-        int fromLineId = generateLineId(fromLine);
+        int fromLineId = lineToId.computeIfAbsent(fromLine, x -> lineId++);
         lineIdToTargets.computeIfAbsent(fromLineId, x -> new HashSet<>()).add(target);
 
         TargetKind kind = targetKinds.get(target);
@@ -46,15 +42,9 @@ public class LineCfg {
             targetKinds.put(target, TargetKind.FROM_OTHER_LINE);
     }
 
-    private int generateLineId(int line) {
-        Integer id = lineToId.get(line);
-        if (id == null) {
-            id = lineId.getAndIncrement();
-            lineToId.put(line, id);
-        }
-
-        Collector.enlargeHitsIfNeeded(id + 1);
-        return id;
+    private void saveNewLineId(AbstractInsnNode instruction) {
+        if (instruction.getNext() instanceof LineNumberNode)
+            lineToId.computeIfAbsent(findLine(instruction), x -> lineId++);
     }
 
     public Collection<LabelNode> getTargetsOfOtherLineOnly() {
@@ -93,5 +83,9 @@ public class LineCfg {
     public int findLineId(LabelNode instruction) {
         int line = findLine(instruction);
         return lineToId.get(line);
+    }
+
+    public int getNextLineId() {
+        return lineId;
     }
 }

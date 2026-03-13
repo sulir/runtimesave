@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ControlFlowAnalyzer {
-    public LineCfg analyze(MethodNode method) {
-        LineCfg cfg = new LineCfg(method.instructions);
+    public LineCfg analyze(MethodNode method, int lineId) {
+        LineCfg cfg = new LineCfg(method.instructions, lineId);
 
         List<AbstractInsnNode> jsrSuccessors = new ArrayList<>(0);
         List<AbstractInsnNode> rets = new ArrayList<>(0);
