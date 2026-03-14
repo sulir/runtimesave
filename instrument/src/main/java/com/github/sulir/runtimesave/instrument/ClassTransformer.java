@@ -65,7 +65,11 @@ public class ClassTransformer extends ClassVisitor {
         if (!hasSource || !hasInstrumentedMethods)
             throw ExcludedClassException.INSTANCE;
 
-        addHitsField();
+        if (Settings.HITS != -1)
+            addHitsField();
+        if (clInit != null)
+            clInit.accept(cv);
+
         super.visitEnd();
     }
 
@@ -92,7 +96,6 @@ public class ClassTransformer extends ClassVisitor {
             clInit.instructions.add(new InsnNode(Opcodes.RETURN));
         }
         instrumentClInit(clInit);
-        clInit.accept(cv);
     }
 
     private void instrumentClInit(MethodNode clInit) {
