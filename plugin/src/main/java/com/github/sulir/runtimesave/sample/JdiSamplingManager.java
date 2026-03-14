@@ -17,6 +17,8 @@ import java.util.Map;
 import static com.github.sulir.runtimesave.UncheckedThrowing.uncheck;
 
 public class JdiSamplingManager {
+    private static final boolean DEBUG = System.getenv("RS_DEBUG") != null;
+
     private final int everyNthLine;
     private final int firstTExecutions;
     private int linesHit = 0;
@@ -28,7 +30,8 @@ public class JdiSamplingManager {
     }
 
     public void addBreakpoints(ReferenceType clazz) {
-        System.out.println("Adding breakpoints to " + clazz.name());
+        if (DEBUG)
+            System.out.println("Adding breakpoints to " + clazz.name());
         if (firstTExecutions == 0)
             return;
 
@@ -58,7 +61,8 @@ public class JdiSamplingManager {
         if (newHitCount >= firstTExecutions && firstTExecutions != -1)
             event.virtualMachine().eventRequestManager().deleteEventRequest(event.request());
 
-        System.out.println(uncheck(event.location()::sourcePath) + ":" + event.location().lineNumber());
+        if (DEBUG)
+            System.out.println(uncheck(event.location()::sourcePath) + ":" + event.location().lineNumber());
         StackFrame frame = uncheck(() -> event.thread().frame(0));
         RuntimeStorageService.getInstance().saveFrame(frame);
     }

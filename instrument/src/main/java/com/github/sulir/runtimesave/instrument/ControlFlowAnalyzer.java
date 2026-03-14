@@ -7,9 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ControlFlowAnalyzer {
-    public LineCfg analyze(MethodNode method, int lineId) {
-        LineCfg cfg = new LineCfg(method.instructions, lineId);
-
+    public void analyze(MethodNode method, LineCfg cfg) {
         List<AbstractInsnNode> jsrSuccessors = new ArrayList<>(0);
         List<AbstractInsnNode> rets = new ArrayList<>(0);
 
@@ -18,8 +16,6 @@ public class ControlFlowAnalyzer {
 
         addRetEdges(jsrSuccessors, rets, cfg);
         addExceptionEdges(method, cfg);
-
-        return cfg;
     }
 
     private void processInstruction(AbstractInsnNode instruction, List<AbstractInsnNode> jsrSuccessors,

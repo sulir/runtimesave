@@ -83,7 +83,8 @@ public class ClassTransformer extends ClassVisitor {
         if (!(label.getNext() instanceof LineNumberNode line && line.start == label))
             return;
 
-        LineCfg lineCfg = controlFlowAnalyzer.analyze(method, lineId);
+        LineCfg lineCfg = new LineCfg(method.instructions, lineId);
+        controlFlowAnalyzer.analyze(method, lineCfg);
         lineId = lineCfg.getNextLineId();
         new MethodInstrumentation(method, className, lineCfg).instrument();
     }
