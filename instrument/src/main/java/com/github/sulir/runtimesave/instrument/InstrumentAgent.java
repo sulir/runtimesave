@@ -6,9 +6,12 @@ import org.objectweb.asm.ClassWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 public class InstrumentAgent {
+    private final AtomicInteger lineId = new AtomicInteger(0);
+
     private static final String[] EXCLUDED_PACKAGES = {
             "com.sun.*", "java.*", "javax.*", "jdk.*", "sun.*",
             "com.intellij.execution.*", "com.intellij.rt.*", "org.jetbrains.capture.*",
@@ -46,7 +49,7 @@ public class InstrumentAgent {
     public byte[] rewriteClass(byte[] bytes) {
         ClassReader reader = new ClassReader(bytes);
         ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_MAXS);
-        ClassTransformer transformer = new ClassTransformer(writer);
+        ClassTransformer transformer = new ClassTransformer(writer, lineId);
 
         try {
             reader.accept(transformer, ClassReader.EXPAND_FRAMES);

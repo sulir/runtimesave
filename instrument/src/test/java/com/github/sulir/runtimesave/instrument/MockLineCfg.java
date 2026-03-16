@@ -6,6 +6,7 @@ import org.objectweb.asm.tree.InsnList;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MockLineCfg extends LineCfg {
     public static class Edge {
@@ -38,7 +39,7 @@ public class MockLineCfg extends LineCfg {
     private final Set<Edge> edges = new HashSet<>();
 
     public MockLineCfg() {
-        super(new InsnList(), -1);
+        super(new InsnList(), new AtomicInteger(-1));
     }
 
     @Override

@@ -17,16 +17,14 @@ public class MethodInstrumentation {
     private static final String COLLECTOR = Type.getType(Collector.class).getInternalName();
 
     private final MethodNode method;
-    private final String className;
     private final LineCfg lineCfg;
     private final InsnList instructions;
     private final int lineIdIndex;
     private final int everyNthLine = Settings.LINE;
     private final boolean infinityHits = Settings.HITS == -1;
 
-    public MethodInstrumentation(MethodNode method, String className, LineCfg lineCfg) {
+    public MethodInstrumentation(MethodNode method, LineCfg lineCfg) {
         this.method = method;
-        this.className = className;
         this.lineCfg = lineCfg;
         instructions = method.instructions;
         lineIdIndex = method.maxLocals;
@@ -103,7 +101,7 @@ public class MethodInstrumentation {
         return result;
     }
 
-    public static AbstractInsnNode generatePush(int constant) {
+    private AbstractInsnNode generatePush(int constant) {
         if (constant >= -1 && constant <= 5)
             return new InsnNode(Opcodes.ICONST_0 + constant);
 
@@ -131,12 +129,11 @@ public class MethodInstrumentation {
 
         if (infinityHits) {
             result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectInfinityIfLineChanged", "(II)V"));
+        } else if (everyNthLine == 1) {
+            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectIfLineChanged", "(II)V"));
         } else {
-            result.add(new FieldInsnNode(Opcodes.GETSTATIC, className, ClassTransformer.HITS_FIELD, "[B"));
-            if (everyNthLine != 1)
-                result.add(generatePush(newLineId / everyNthLine));
-            String descriptor = everyNthLine == 1 ? "(II[B)V" : "(II[BI)V";
-            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectIfLineChanged", descriptor));
+            result.add(generatePush(newLineId / everyNthLine));
+            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectIfLineChanged", "(III)V"));
         }
         return result;
     }
@@ -148,8 +145,7 @@ public class MethodInstrumentation {
             result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectInfinity", "()V"));
         } else {
             result.add(generatePush(lineId / everyNthLine));
-            result.add(new FieldInsnNode(Opcodes.GETSTATIC, className, ClassTransformer.HITS_FIELD, "[B"));
-            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collect", "(I[B)V"));
+            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collect", "(I)V"));
         }
         return result;
     }
