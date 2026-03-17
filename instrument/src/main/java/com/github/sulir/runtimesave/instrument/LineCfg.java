@@ -1,10 +1,11 @@
 package com.github.sulir.runtimesave.instrument;
 
-import com.github.sulir.runtimesave.runtime.Collector;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LineNumberNode;
+
+import com.github.sulir.runtimesave.rt.Collector;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;

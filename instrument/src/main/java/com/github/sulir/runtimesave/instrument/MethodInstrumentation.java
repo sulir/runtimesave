@@ -1,12 +1,13 @@
 package com.github.sulir.runtimesave.instrument;
 
-import com.github.sulir.runtimesave.runtime.Collector;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
+
+import com.github.sulir.runtimesave.rt.Collector;
 
 import java.util.Collection;
 import java.util.Collections;

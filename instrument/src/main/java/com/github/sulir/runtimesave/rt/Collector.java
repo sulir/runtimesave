@@ -1,4 +1,4 @@
-package com.github.sulir.runtimesave.runtime;
+package com.github.sulir.runtimesave.rt;
 
 import com.github.sulir.runtimesave.instrument.Settings;
 
@@ -9,27 +9,27 @@ public class Collector {
     private static int[] hits = new int[128 * 1024];
 
     public static void collectInfinity() {
-        doCollection();
+        doCollect();
     }
 
     public static void collect(int lineId) {
         int count;
         if ((count = hits[lineId]) < Settings.HITS) {
             hits[lineId] = count + 1;
-            doCollection();
+            doCollect();
         }
     }
 
     public static void collectInfinityIfLineChanged(int oldLineId, int newLineId) {
         if (oldLineId != newLineId)
-            doCollection();
+            doCollect();
     }
 
     public static void collectIfLineChanged(int oldLineId, int newLineId) {
         int count;
         if (oldLineId != newLineId && (count = hits[newLineId]) < Settings.HITS) {
             hits[newLineId] = count + 1;
-            doCollection();
+            doCollect();
         }
     }
 
@@ -37,7 +37,7 @@ public class Collector {
         int count;
         if (oldLineId != newLineId && (count = hits[compactLineId]) < Settings.HITS) {
             hits[compactLineId] = count + 1;
-            doCollection();
+            doCollect();
         }
     }
 
@@ -46,6 +46,5 @@ public class Collector {
             hits = Arrays.copyOf(hits, 2 * hits.length);
     }
 
-    private static void doCollection() {
-    }
+    private static native void doCollect();
 }
