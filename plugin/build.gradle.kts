@@ -42,15 +42,28 @@ tasks.jar {
     }
 }
 
-tasks.buildPlugin {
+tasks.register<Copy>("copyNativeToSandbox") {
+    dependsOn(":runtimesave-collect:buildNativeAgent")
+    from(rootDir.resolve("dist"))
+    include("*.so", "*.dll", "*.dylib")
+    into(tasks.prepareSandbox.get().pluginDirectory.dir("lib").get())
+}
+
+tasks.prepareSandbox {
     dependsOn(":runtimesave-instrument:jar")
     dependsOn(":runtimesave-starter:jar")
+    finalizedBy("copyNativeToSandbox")
+}
+
+tasks.prepareJarSearchableOptions {
+    dependsOn("copyNativeToSandbox")
+}
+
+tasks.buildPlugin {
     destinationDirectory = project.rootProject.file("dist")
 }
 
 tasks.runIde {
-    dependsOn(":runtimesave-instrument:jar")
-    dependsOn(":runtimesave-starter:jar")
     jvmArgs("-Didea.load.plugins.id=com.github.sulir.runtimesave,org.jetbrains.idea.maven,com.intellij.gradle," +
             "JUnit,ByteCodeViewer,org.jetbrains.java.decompiler,com.intellij.properties")
 }

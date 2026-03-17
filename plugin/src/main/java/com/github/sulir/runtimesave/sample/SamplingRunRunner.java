@@ -5,6 +5,7 @@ import com.intellij.execution.CommonJavaRunConfigurationParameters;
 import com.intellij.execution.configurations.*;
 import com.intellij.execution.impl.DefaultJavaProgramRunner;
 import com.intellij.ide.plugins.PluginManager;
+import com.intellij.openapi.extensions.PluginDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,9 +29,10 @@ public class SamplingRunRunner extends DefaultJavaProgramRunner {
     @Override
     public void patch(@NotNull JavaParameters javaParameters, @Nullable RunnerSettings runnerSettings, @NotNull RunProfile runProfile, boolean beforeExecution) {
         ParametersList vm = javaParameters.getVMParametersList();
-        Path pluginPath = Objects.requireNonNull(PluginManager.getPluginByClass(getClass())).getPluginPath();
-        String agentPath = pluginPath.resolve("lib").resolve("runtimesave-instrument.jar").toString();
-        vm.add("-javaagent:" + agentPath);
+        PluginDescriptor plugin = Objects.requireNonNull(PluginManager.getPluginByClass(getClass()));
+        Path libPath = plugin.getPluginPath().resolve("lib");
+        vm.add("-javaagent:" + libPath.resolve("runtimesave-instrument.jar"));
+        vm.add("-agentpath:" + libPath.resolve(System.mapLibraryName("runtimesave")));
 
         SamplingSettings settings = SamplingSettings.getOrDefault((RunConfigurationBase<?>) runProfile);
         vm.addProperty("runtimesave.line", String.valueOf(settings.getEveryNthLine()));

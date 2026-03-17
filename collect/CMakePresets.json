@@ -1,0 +1,9 @@
+{
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "default",
+            "binaryDir": "${sourceDir}/build"
+        }
+    ]
+}
