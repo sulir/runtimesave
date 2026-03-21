@@ -9,27 +9,27 @@ public class Collector {
     private static int[] hits = new int[128 * 1024];
 
     public static void collectInfinity() {
-        doCollect();
+        collectData();
     }
 
     public static void collect(int lineId) {
         int count;
         if ((count = hits[lineId]) < Settings.HITS) {
             hits[lineId] = count + 1;
-            doCollect();
+            collectData();
         }
     }
 
     public static void collectInfinityIfLineChanged(int oldLineId, int newLineId) {
         if (oldLineId != newLineId)
-            doCollect();
+            collectData();
     }
 
     public static void collectIfLineChanged(int oldLineId, int newLineId) {
         int count;
         if (oldLineId != newLineId && (count = hits[newLineId]) < Settings.HITS) {
             hits[newLineId] = count + 1;
-            doCollect();
+            collectData();
         }
     }
 
@@ -37,7 +37,7 @@ public class Collector {
         int count;
         if (oldLineId != newLineId && (count = hits[compactLineId]) < Settings.HITS) {
             hits[compactLineId] = count + 1;
-            doCollect();
+            collectData();
         }
     }
 
@@ -46,5 +46,11 @@ public class Collector {
             hits = Arrays.copyOf(hits, 2 * hits.length);
     }
 
-    private static native void doCollect();
+    private static void collectData() {
+        JvmSourceLocation location = findLocation();
+        if (Settings.DEBUG)
+            System.err.println(location);
+    }
+
+    private static native JvmSourceLocation findLocation();
 }
