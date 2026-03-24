@@ -1,5 +1,6 @@
 package com.github.sulir.runtimesave.rt;
 
+import com.github.sulir.runtimesave.SourceLocation;
 import com.github.sulir.runtimesave.instrument.Settings;
 
 import java.util.Arrays;
@@ -47,10 +48,10 @@ public class Collector {
     }
 
     private static void collectData() {
-        JvmSourceLocation location = findLocation();
+        SourceLocation location = findLocation();
         if (Settings.DEBUG)
             System.err.println(location);
     }
 
-    private static native JvmSourceLocation findLocation();
+    private static native SourceLocation findLocation();
 }

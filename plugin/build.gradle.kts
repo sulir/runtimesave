@@ -13,12 +13,13 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":runtimesave-graph"))
     intellijPlatform {
         intellijIdea(libs.versions.intellij.idea)
         bundledPlugin("com.intellij.java")
     }
-
     implementation(libs.neo4j.driver)
+
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.junit4)

@@ -1,30 +1,53 @@
 package com.github.sulir.runtimesave.instrument;
 
+import com.github.sulir.runtimesave.db.DbConnection;
+import com.github.sulir.runtimesave.db.DbIndex;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
+import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.jar.JarFile;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class InstrumentAgent {
+    private static final String[] SYSTEM_PACKAGES = {
+            "com.sun.*", "java.*", "javax.*", "jdk.*", "sun.*",
+            "com.intellij.execution.*", "com.intellij.rt.*", "org.jetbrains.capture.*"
+    };
+
+    private final Pattern excluded;
     private final AtomicInteger lineId = new AtomicInteger(0);
 
-    private static final String[] EXCLUDED_PACKAGES = {
-            "com.sun.*", "java.*", "javax.*", "jdk.*", "sun.*",
-            "com.intellij.execution.*", "com.intellij.rt.*", "org.jetbrains.capture.*",
-            "com.github.sulir.runtimesave.*"
-    };
-    public static final Pattern excluded = Pattern.compile(String.join("|", EXCLUDED_PACKAGES)
-            .replace(".", "\\.").replace("*", ".*"));
-
-    public static void premain(String agentArgs, Instrumentation inst) {
-        new InstrumentAgent().setup(inst);
+    public InstrumentAgent() {
+        try (JarFile jar = new JarFile(getClass().getProtectionDomain().getCodeSource().getLocation().getFile())) {
+            String[] agentPackages = jar.getManifest().getMainAttributes().getValue("Agent-Packages").split(",");
+            String[] packages = Stream.of(SYSTEM_PACKAGES, agentPackages).flatMap(Stream::of).toArray(String[]::new);
+            excluded = packagesToRegex(packages);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void setup(Instrumentation inst) {
+    private static Pattern packagesToRegex(String[] packages) {
+        return Pattern.compile(String.join("|", packages).replace(".", "\\.").replace("*", ".*"));
+    }
+
+    public static void premain(String agentArgs, Instrumentation inst) {
+        InstrumentAgent agent = new InstrumentAgent();
+        agent.setupRuntime();
+        agent.startInstrumenting(inst);
+    }
+
+    public void setupRuntime() {
+        new DbIndex(DbConnection.getInstance()).createIndexes();
+    }
+
+    public void startInstrumenting(Instrumentation inst) {
         inst.addTransformer(new ClassFileTransformer() {
             @Override
             public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,

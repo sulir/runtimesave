@@ -23,7 +23,8 @@ val agentArchive = project.name + ".jar"
 tasks.shadowJar {
     destinationDirectory = distDir
     archiveFileName = agentArchive
-    relocate("org.objectweb.asm", "com.github.sulir.runtimesave.renamed.asm")
+
+    addAgentPackage("org.objectweb.asm", "asm")
 
     from(resources.text.fromUri(javaClass.getResource("/LICENSE-ASM.txt")!!.toURI())) {
         rename { "META-INF/LICENSE-ASM.txt" }

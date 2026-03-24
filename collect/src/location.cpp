@@ -8,7 +8,7 @@ JvmSourceLocation jvmSourceLocation;
 
 jclass JvmSourceLocation::cls(JNIEnv *env) {
     if (!cls_) {
-        jclass localClass = env->FindClass("com/github/sulir/runtimesave/rt/JvmSourceLocation");
+        jclass localClass = env->FindClass("com/github/sulir/runtimesave/SourceLocation");
         if (!jni_check(localClass, env))
             return nullptr;
         cls_ = static_cast<jclass>(env->NewGlobalRef(localClass));
@@ -21,7 +21,7 @@ jmethodID JvmSourceLocation::fromJvmTi(JNIEnv *env) {
     if (!fromJvmTi_) {
         fromJvmTi_ = env->GetStaticMethodID(cls_, "fromJvmTi",
             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)"
-            "Lcom/github/sulir/runtimesave/rt/JvmSourceLocation;");
+            "Lcom/github/sulir/runtimesave/SourceLocation;");
         jni_check(fromJvmTi_, env);
     }
     return fromJvmTi_;
