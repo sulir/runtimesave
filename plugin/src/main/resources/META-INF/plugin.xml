@@ -1,5 +1,5 @@
 <idea-plugin>
-  <id>com.github.sulir.runtimesave</id>
+  <id>io.github.sulir.runtimesave</id>
   <name>RuntimeSave</name>
   <vendor email="matus.sulir@gmail.com" url="https://sulir.github.io">Matúš Sulír</vendor>
   <description>
@@ -10,36 +10,36 @@
   <resource-bundle>messages.Bundle</resource-bundle>
 
   <extensions defaultExtensionNs="com.intellij">
-    <postStartupActivity implementation="com.github.sulir.runtimesave.StartupActivity"/>
-    <xdebugger.breakpointType implementation="com.github.sulir.runtimesave.savepoint.SavepointType"/>
+    <postStartupActivity implementation="io.github.sulir.runtimesave.StartupActivity"/>
+    <xdebugger.breakpointType implementation="io.github.sulir.runtimesave.savepoint.SavepointType"/>
     <debugger.javaBreakpointHandlerFactory
-            implementation="com.github.sulir.runtimesave.savepoint.SavepointHandlerFactory"/>
+            implementation="io.github.sulir.runtimesave.savepoint.SavepointHandlerFactory"/>
 
-    <runConfigurationExtension implementation="com.github.sulir.runtimesave.config.SamplingRunConfigExtension"/>
-    <executor implementation="com.github.sulir.runtimesave.sample.SamplingRunExecutor"/>
-    <programRunner implementation="com.github.sulir.runtimesave.sample.SamplingRunRunner"/>
-    <executor implementation="com.github.sulir.runtimesave.sample.SamplingDebugExecutor"/>
-    <programRunner implementation="com.github.sulir.runtimesave.sample.SamplingDebugRunner"/>
+    <runConfigurationExtension implementation="io.github.sulir.runtimesave.config.SamplingRunConfigExtension"/>
+    <executor implementation="io.github.sulir.runtimesave.sample.SamplingRunExecutor"/>
+    <programRunner implementation="io.github.sulir.runtimesave.sample.SamplingRunRunner"/>
+    <executor implementation="io.github.sulir.runtimesave.sample.SamplingDebugExecutor"/>
+    <programRunner implementation="io.github.sulir.runtimesave.sample.SamplingDebugRunner"/>
   </extensions>
 
   <actions>
-    <action id="RuntimeSave.StartProgramAction" class="com.github.sulir.runtimesave.start.StartProgramAction"
+    <action id="RuntimeSave.StartProgramAction" class="io.github.sulir.runtimesave.start.StartProgramAction"
             icon="AllIcons.Debugger.SmartStepInto">
       <add-to-group group-id="RunMenu" anchor="after" relative-to-action="ChooseDebugConfiguration"/>
       <keyboard-shortcut keymap="$default" first-keystroke="F10"/>
     </action>
 
-    <action id="RuntimeSave.AddSavepointAction" class="com.github.sulir.runtimesave.savepoint.AddSavepointAction">
+    <action id="RuntimeSave.AddSavepointAction" class="io.github.sulir.runtimesave.savepoint.AddSavepointAction">
       <add-to-group group-id="XDebugger.Hover.Breakpoint.Context.Menu" anchor="last"/>
     </action>
   </actions>
 
   <projectListeners>
-    <listener class="com.github.sulir.runtimesave.sample.JdiSamplingListener"
+    <listener class="io.github.sulir.runtimesave.sample.JdiSamplingListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
-    <listener class="com.github.sulir.runtimesave.savepoint.SavepointListener"
+    <listener class="io.github.sulir.runtimesave.savepoint.SavepointListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
-    <listener class="com.github.sulir.runtimesave.start.StartLineListener"
+    <listener class="io.github.sulir.runtimesave.start.StartLineListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
   </projectListeners>
 </idea-plugin>

@@ -1,0 +1,54 @@
+package io.github.sulir.runtimesave.db;
+
+import io.github.sulir.runtimesave.MismatchException;
+import io.github.sulir.runtimesave.SourceLocation;
+import io.github.sulir.runtimesave.hash.NodeHash;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.exceptions.NoSuchRecordException;
+
+import java.util.Map;
+
+public class Metadata {
+    private final DbConnection db;
+
+    public Metadata(DbConnection db) {
+        this.db = db;
+    }
+
+    public NodeHash findFrame(SourceLocation location) throws MismatchException {
+        try (Session session = db.createSession()) {
+            String query = "MATCH (:Class {name: $class})"
+                    + "-->(:Method {signature: $method})"
+                    + "-->(l:Line {number: $line})"
+                    + "-->(f:Frame)"
+                    + " RETURN f.hash AS frameHash";
+            Result result = session.run(query, Map.of("class", location.className(), "method", location.method(),
+                "line", location.line()));
+
+            return NodeHash.fromString(result.single().get("frameHash").asString());
+        } catch (NoSuchRecordException e) {
+            throw new MismatchException("No or multiple frames found for " + location);
+        }
+    }
+
+    public void addLocation(NodeHash frameHash, SourceLocation location) {
+        try (Session session = db.createSession()) {
+            String query = "MATCH (f:Frame {hash: $hash})"
+                    + " MERGE (c:Class:Meta {name: $class})"
+                    + " MERGE (c)-[:DECLARES]->(m:Method:Meta {signature: $method})"
+                    + " MERGE (m)-[:CONTAINS]->(l:Line:Meta {number: $line})"
+                    + " MERGE (l)-[:MAPS_TO]->(f)";
+            session.run(query, Map.of("hash", frameHash.toString(), "class", location.className(),
+                "method", location.method(), "line", location.line()));
+        }
+    }
+
+    public void addNote(NodeHash idHash, String text) {
+        String query = "MATCH (h:Hashed {idHash: $idHash})"
+                + " CREATE (n:Note:Meta {text: $text})-[:DESCRIBES]->(h)";
+        try (Session session = db.createSession()) {
+            session.run(query, Map.of("idHash", idHash.toString(), "text", text));
+        }
+    }
+}

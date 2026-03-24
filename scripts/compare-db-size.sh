@@ -17,7 +17,7 @@ for approach in "plain" "packed" "hashed" "pack&hash"; do
 
   sudo systemctl start neo4j
   journalctl -u neo4j -f -n0 --no-pager | sed -n '/Started\./{q;}'
-  java -cp "$classpath" com.github.sulir.runtimesave.comparison.Comparison "$approach"
+  java -cp "$classpath" io.github.sulir.runtimesave.comparison.Comparison "$approach"
   sudo systemctl stop neo4j
 
   du -sb "$neo4j_dir/databases/runtimesave"

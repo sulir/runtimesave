@@ -65,7 +65,7 @@ tasks.buildPlugin {
 }
 
 tasks.runIde {
-    jvmArgs("-Didea.load.plugins.id=com.github.sulir.runtimesave,org.jetbrains.idea.maven,com.intellij.gradle," +
+    jvmArgs("-Didea.load.plugins.id=io.github.sulir.runtimesave,org.jetbrains.idea.maven,com.intellij.gradle," +
             "JUnit,ByteCodeViewer,org.jetbrains.java.decompiler,com.intellij.properties")
 }
 

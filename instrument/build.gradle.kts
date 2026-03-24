@@ -7,7 +7,7 @@ dependencies {
 }
 
 tasks.shadowJar {
-    addAgentPackage("com.github.sulir.runtimesave")
+    addAgentPackage("io.github.sulir.runtimesave")
     addAgentPackage("io.netty", "netty")
     addAgentPackage("org.neo4j", "neo4j")
     addAgentPackage("org.reactivestreams", "reactivestreams")
@@ -19,7 +19,7 @@ tasks.shadowJar {
 
     manifest {
         attributes(mapOf(
-            "Premain-Class" to "com.github.sulir.runtimesave.instrument.InstrumentAgent"
+            "Premain-Class" to "io.github.sulir.runtimesave.instrument.InstrumentAgent"
         ))
     }
 }

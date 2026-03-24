@@ -3,11 +3,11 @@ plugins {
 }
 
 tasks.shadowJar {
-    addAgentPackage("com.github.sulir.runtimesave")
+    addAgentPackage("io.github.sulir.runtimesave")
 
     manifest {
         attributes(mapOf(
-            "Premain-Class" to "com.github.sulir.runtimesave.starter.StarterAgent"
+            "Premain-Class" to "io.github.sulir.runtimesave.starter.StarterAgent"
         ))
     }
 }

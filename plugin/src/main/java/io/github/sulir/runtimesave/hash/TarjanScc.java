@@ -1,0 +1,64 @@
+package io.github.sulir.runtimesave.hash;
+
+import io.github.sulir.runtimesave.graph.GraphNode;
+
+import java.util.*;
+
+public class TarjanScc {
+    private Map<GraphNode, NodeData> nodeToData;
+    private int index;
+    private Deque<GraphNode> stack;
+    private List<StrongComponent> result;
+
+    public List<StrongComponent> computeComponents(GraphNode root) {
+        nodeToData = new HashMap<>();
+        index = 0;
+        stack = new ArrayDeque<>();
+        result = new ArrayList<>();
+        strongConnect(root);
+        return result;
+    }
+
+    private void strongConnect(GraphNode node) {
+        NodeData data = getData(node);
+        data.index = data.lowLink = index++;
+        stack.push(node);
+        data.onStack = true;
+
+        node.forEachTarget(targetNode -> {
+            NodeData target = getData(targetNode);
+            if (target.index == NodeData.UNVISITED) {
+                strongConnect(targetNode);
+                data.lowLink = Math.min(data.lowLink, target.lowLink);
+            } else if (target.onStack) {
+                data.lowLink = Math.min(data.lowLink, target.index);
+            }
+        });
+
+        if (data.lowLink == data.index) {
+            StrongComponent component = new StrongComponent();
+            GraphNode added;
+            do {
+                added = stack.pop();
+                getData(added).onStack = false;
+                component.add(added);
+            } while (added != node);
+            result.add(component);
+        }
+    }
+
+    @IgnoreInGeneratedCoverage
+    private static class NodeData {
+        static final int UNVISITED = -1;
+
+        int index = UNVISITED;
+        int lowLink;
+        boolean onStack;
+    }
+
+    private NodeData getData(GraphNode node) {
+        return nodeToData.computeIfAbsent(node, n -> new NodeData());
+    }
+
+    private @interface IgnoreInGeneratedCoverage { }
+}
