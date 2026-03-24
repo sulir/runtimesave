@@ -20,12 +20,13 @@ public class InstrumentAgent {
             "com.intellij.execution.*", "com.intellij.rt.*", "org.jetbrains.capture.*"
     };
 
+    private final String[] agentPackages;
     private final Pattern excluded;
     private final AtomicInteger lineId = new AtomicInteger(0);
 
     public InstrumentAgent() {
         try (JarFile jar = new JarFile(getClass().getProtectionDomain().getCodeSource().getLocation().getFile())) {
-            String[] agentPackages = jar.getManifest().getMainAttributes().getValue("Agent-Packages").split(",");
+            agentPackages = jar.getManifest().getMainAttributes().getValue("Agent-Packages").split(",");
             String[] packages = Stream.of(SYSTEM_PACKAGES, agentPackages).flatMap(Stream::of).toArray(String[]::new);
             excluded = packagesToRegex(packages);
         } catch (IOException e) {
@@ -44,6 +45,8 @@ public class InstrumentAgent {
     }
 
     public void setupRuntime() {
+        System.setProperty("java.util.logging.manager", AppUnaffectingLogManager.class.getName());
+        AppUnaffectingLogManager.setAgentPackages(packagesToRegex(agentPackages));
         new DbIndex(DbConnection.getInstance()).createIndexes();
     }
 
