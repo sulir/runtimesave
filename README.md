@@ -4,7 +4,7 @@ RuntimeSave is an IntelliJ IDEA extension to save the runtime values of variable
 
 ## Setup
 
-Make sure you have JDK 21+ installed.
+Make sure you have JDK 21+, CMake and a C++ compiler installed.
 
 1. Install [Neo4j](https://neo4j.com/docs/operations-manual/current/installation/) and [APOC Core](https://neo4j.com/docs/apoc/current/installation/).
 2. Change `initial.dbms.default_database` in [neo4j.conf](https://neo4j.com/docs/operations-manual/current/database-administration/standard-databases/configuration-parameters/) to `runtimesave`.

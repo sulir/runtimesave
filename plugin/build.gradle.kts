@@ -25,16 +25,11 @@ dependencies {
     testRuntimeOnly(libs.junit4)
 }
 
-tasks.withType<JavaCompile> {
-    options.compilerArgs.add("-parameters")
-}
-
 tasks.assemble {
     dependsOn(tasks.buildPlugin)
 }
 
 tasks.jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(rootProject.file("LICENSE.txt")) {
         into("META-INF/")
     }
