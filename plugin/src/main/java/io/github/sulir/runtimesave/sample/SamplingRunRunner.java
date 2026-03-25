@@ -30,9 +30,9 @@ public class SamplingRunRunner extends DefaultJavaProgramRunner {
     public void patch(@NotNull JavaParameters javaParameters, @Nullable RunnerSettings runnerSettings, @NotNull RunProfile runProfile, boolean beforeExecution) {
         ParametersList vm = javaParameters.getVMParametersList();
         PluginDescriptor plugin = Objects.requireNonNull(PluginManager.getPluginByClass(getClass()));
-        Path libPath = plugin.getPluginPath().resolve("lib");
-        vm.add("-javaagent:" + libPath.resolve("runtimesave-instrument.jar"));
-        vm.add("-agentpath:" + libPath.resolve(System.mapLibraryName("runtimesave")));
+        Path agentsPath = plugin.getPluginPath().resolve("agent");
+        vm.add("-javaagent:" + agentsPath.resolve("runtimesave-instrument.jar"));
+        vm.add("-agentpath:" + agentsPath.resolve(System.mapLibraryName("runtimesave")));
 
         SamplingSettings settings = SamplingSettings.getOrDefault((RunConfigurationBase<?>) runProfile);
         vm.addProperty("runtimesave.line", String.valueOf(settings.getEveryNthLine()));

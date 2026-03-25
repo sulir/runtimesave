@@ -100,7 +100,7 @@ public class StartProgramAction extends AnAction {
     private String configureAgent(ApplicationConfiguration config) {
         PluginAwareClassLoader thisLoader = (PluginAwareClassLoader) this.getClass().getClassLoader();
         Path pluginPath = thisLoader.getPluginDescriptor().getPluginPath();
-        String agentJar = pluginPath.resolve("lib").resolve("runtimesave-starter.jar").toString();
+        String agentJar = pluginPath.resolve("agent").resolve("runtimesave-starter.jar").toString();
         String vmArgs = String.format("-javaagent:%s", agentJar);
         config.setVMParameters(vmArgs);
         return agentJar;

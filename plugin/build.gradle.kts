@@ -23,9 +23,6 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.junit4)
-
-    runtimeOnly(project(":runtimesave-instrument")) { isTransitive = false }
-    runtimeOnly(project(":runtimesave-starter")) { isTransitive = false }
 }
 
 tasks.withType<JavaCompile> {
@@ -43,21 +40,22 @@ tasks.jar {
     }
 }
 
-tasks.register<Copy>("copyNativeToSandbox") {
+tasks.register<Copy>("copyAgentsToSandbox") {
     dependsOn(":runtimesave-collect:buildNativeAgent")
+    dependsOn(":runtimesave-instrument:jar")
+    dependsOn(":runtimesave-starter:jar")
+
     from(rootDir.resolve("dist"))
-    include("*.so", "*.dll", "*.dylib")
-    into(tasks.prepareSandbox.get().pluginDirectory.dir("lib").get())
+    include("*.so", "*.dll", "*.dylib", "*.jar")
+    into(tasks.prepareSandbox.get().pluginDirectory.dir("agent").get())
 }
 
 tasks.prepareSandbox {
-    dependsOn(":runtimesave-instrument:jar")
-    dependsOn(":runtimesave-starter:jar")
-    finalizedBy("copyNativeToSandbox")
+    finalizedBy("copyAgentsToSandbox")
 }
 
 tasks.prepareJarSearchableOptions {
-    dependsOn("copyNativeToSandbox")
+    dependsOn("copyAgentsToSandbox")
 }
 
 tasks.buildPlugin {
