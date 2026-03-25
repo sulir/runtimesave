@@ -1,7 +1,7 @@
 package io.github.sulir.runtimesave.config;
 
-import com.intellij.execution.configurations.RunConfigurationBase;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.UserDataHolderEx;
 import com.intellij.ui.classFilter.ClassFilter;
 import com.intellij.util.PatternUtil;
 
@@ -15,7 +15,7 @@ public class SamplingSettings {
     private int firstTExecutions = 1;
     private ClassFilter[] includeFilters = new ClassFilter[0];
 
-    public static SamplingSettings getOrDefault(RunConfigurationBase<?> configuration) {
+    public static SamplingSettings getOrDefault(UserDataHolderEx configuration) {
         return configuration.putUserDataIfAbsent(key, new SamplingSettings());
     }
 
