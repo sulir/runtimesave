@@ -10,3 +10,13 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     compileOnly(libs.jetbrains.annotations)
 }
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+tasks.register<DefaultTask>("printTestClasspath") {
+    doLast{
+        println(project.extensions.getByType(SourceSetContainer::class.java)["test"].runtimeClasspath.asPath)
+    }
+}

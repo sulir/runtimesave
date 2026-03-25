@@ -70,12 +70,6 @@ tasks.clean {
     delete(tasks.buildPlugin.get().archiveFile)
 }
 
-tasks.register<DefaultTask>("printTestClasspath") {
-    doLast{
-        println(project.extensions.getByType(SourceSetContainer::class.java)["test"].runtimeClasspath.asPath)
-    }
-}
-
 configurations.all {
     resolutionStrategy {
         cacheDynamicVersionsFor(7, "days")
