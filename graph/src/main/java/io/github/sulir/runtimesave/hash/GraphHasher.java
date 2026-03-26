@@ -2,7 +2,8 @@ package io.github.sulir.runtimesave.hash;
 
 import io.github.sulir.runtimesave.graph.GraphNode;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class GraphHasher {
     private final ObjectHasher objectHasher = new ObjectHasher();

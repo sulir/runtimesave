@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.security.MessageDigest;
 
-import static io.github.sulir.runtimesave.UncheckedThrowing.uncheck;
+import static io.github.sulir.runtimesave.misc.UncheckedThrowing.uncheck;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NodeHashTest {

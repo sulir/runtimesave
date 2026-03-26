@@ -1,11 +1,11 @@
 package io.github.sulir.runtimesave.sample;
 
-import io.github.sulir.runtimesave.config.SamplingSettings;
 import com.intellij.execution.CommonJavaRunConfigurationParameters;
 import com.intellij.execution.configurations.*;
 import com.intellij.execution.impl.DefaultJavaProgramRunner;
 import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.extensions.PluginDescriptor;
+import io.github.sulir.runtimesave.config.SamplingSettings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

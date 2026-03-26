@@ -1,15 +1,15 @@
 package io.github.sulir.runtimesave.jdi;
 
 import com.sun.jdi.*;
-import io.github.sulir.runtimesave.MismatchException;
 import io.github.sulir.runtimesave.graph.ValueNode;
+import io.github.sulir.runtimesave.misc.MismatchException;
 import io.github.sulir.runtimesave.nodes.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.sulir.runtimesave.UncheckedThrowing.uncheck;
+import static io.github.sulir.runtimesave.misc.UncheckedThrowing.uncheck;
 
 public class JdiWriter {
     private static final String UNSAFE_HELPER = "io.github.sulir.runtimesave.starter.UnsafeHelper";

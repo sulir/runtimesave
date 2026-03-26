@@ -8,7 +8,7 @@ import java.security.MessageDigest;
 import java.util.List;
 import java.util.function.BiFunction;
 
-import static io.github.sulir.runtimesave.UncheckedThrowing.uncheck;
+import static io.github.sulir.runtimesave.misc.UncheckedThrowing.uncheck;
 
 public class ObjectHasher {
     private final MessageDigest sha = uncheck(() -> MessageDigest.getInstance("SHA-224"));

@@ -1,4 +1,4 @@
-package io.github.sulir.runtimesave;
+package io.github.sulir.runtimesave.misc;
 
 public class MismatchException extends Exception {
     public MismatchException(String message) {

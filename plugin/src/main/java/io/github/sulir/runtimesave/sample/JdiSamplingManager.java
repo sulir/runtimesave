@@ -1,7 +1,5 @@
 package io.github.sulir.runtimesave.sample;
 
-import io.github.sulir.runtimesave.RuntimeStorageService;
-import io.github.sulir.runtimesave.SourceLocation;
 import com.intellij.debugger.engine.DebugProcessEvents;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.Location;
@@ -10,11 +8,13 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.EventRequestManager;
+import io.github.sulir.runtimesave.misc.SourceLocation;
+import io.github.sulir.runtimesave.plugin.RuntimeStorageService;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.github.sulir.runtimesave.UncheckedThrowing.uncheck;
+import static io.github.sulir.runtimesave.misc.UncheckedThrowing.uncheck;
 
 public class JdiSamplingManager {
     private static final boolean DEBUG = System.getenv("RS_DEBUG") != null;

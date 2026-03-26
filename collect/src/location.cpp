@@ -4,11 +4,13 @@
 #include "common.hpp"
 #include "location.hpp"
 
+#define LOCATION_CLASS "io/github/sulir/runtimesave/misc/SourceLocation"
+
 JvmSourceLocation jvmSourceLocation;
 
 jclass JvmSourceLocation::cls(JNIEnv *env) {
     if (!cls_) {
-        jclass localClass = env->FindClass("io/github/sulir/runtimesave/SourceLocation");
+        jclass localClass = env->FindClass(LOCATION_CLASS);
         if (!jni_check(localClass, env))
             return nullptr;
         cls_ = static_cast<jclass>(env->NewGlobalRef(localClass));
@@ -21,7 +23,7 @@ jmethodID JvmSourceLocation::fromJvmTi(JNIEnv *env) {
     if (!fromJvmTi_) {
         fromJvmTi_ = env->GetStaticMethodID(cls(env), "fromJvmTi",
             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)"
-            "Lio/github/sulir/runtimesave/SourceLocation;");
+            "L" LOCATION_CLASS ";");
         jni_check(fromJvmTi_, env);
     }
     return fromJvmTi_;

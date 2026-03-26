@@ -1,4 +1,4 @@
-package io.github.sulir.runtimesave;
+package io.github.sulir.runtimesave.plugin;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;

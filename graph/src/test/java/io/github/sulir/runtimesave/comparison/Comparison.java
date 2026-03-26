@@ -32,7 +32,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.github.sulir.runtimesave.UncheckedThrowing.uncheck;
+import static io.github.sulir.runtimesave.misc.UncheckedThrowing.uncheck;
 
 public class Comparison {
     private static final int WARMUP_ROUNDS = 20;

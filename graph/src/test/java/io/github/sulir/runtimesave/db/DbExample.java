@@ -1,12 +1,12 @@
 package io.github.sulir.runtimesave.db;
 
-import io.github.sulir.runtimesave.SourceLocation;
 import io.github.sulir.runtimesave.graph.NodeFactory;
 import io.github.sulir.runtimesave.graph.ReflectionReader;
 import io.github.sulir.runtimesave.graph.ValueNode;
 import io.github.sulir.runtimesave.hash.AcyclicGraph;
 import io.github.sulir.runtimesave.hash.GraphHasher;
 import io.github.sulir.runtimesave.hash.GraphIdHasher;
+import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.FrameNode;
 import io.github.sulir.runtimesave.pack.ValuePacker;
 

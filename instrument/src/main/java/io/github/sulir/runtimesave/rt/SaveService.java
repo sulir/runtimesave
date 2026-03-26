@@ -1,6 +1,5 @@
 package io.github.sulir.runtimesave.rt;
 
-import io.github.sulir.runtimesave.SourceLocation;
 import io.github.sulir.runtimesave.db.DbConnection;
 import io.github.sulir.runtimesave.db.DbIndex;
 import io.github.sulir.runtimesave.db.HashedDb;
@@ -10,6 +9,7 @@ import io.github.sulir.runtimesave.hash.AcyclicGraph;
 import io.github.sulir.runtimesave.hash.GraphHasher;
 import io.github.sulir.runtimesave.hash.GraphIdHasher;
 import io.github.sulir.runtimesave.misc.BoundedExecutor;
+import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.FrameNode;
 import io.github.sulir.runtimesave.pack.ValuePacker;
 

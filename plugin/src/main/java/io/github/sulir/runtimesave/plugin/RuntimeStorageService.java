@@ -1,4 +1,4 @@
-package io.github.sulir.runtimesave;
+package io.github.sulir.runtimesave.plugin;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
@@ -15,6 +15,8 @@ import io.github.sulir.runtimesave.hash.NodeHash;
 import io.github.sulir.runtimesave.jdi.JdiReader;
 import io.github.sulir.runtimesave.jdi.JdiWriter;
 import io.github.sulir.runtimesave.misc.BoundedExecutor;
+import io.github.sulir.runtimesave.misc.MismatchException;
+import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.FrameNode;
 import io.github.sulir.runtimesave.pack.ValuePacker;
 

@@ -1,8 +1,8 @@
 package io.github.sulir.runtimesave.db;
 
-import io.github.sulir.runtimesave.MismatchException;
-import io.github.sulir.runtimesave.SourceLocation;
 import io.github.sulir.runtimesave.hash.NodeHash;
+import io.github.sulir.runtimesave.misc.MismatchException;
+import io.github.sulir.runtimesave.misc.SourceLocation;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.exceptions.NoSuchRecordException;

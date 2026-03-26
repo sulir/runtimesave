@@ -10,7 +10,7 @@
   <resource-bundle>messages.Bundle</resource-bundle>
 
   <extensions defaultExtensionNs="com.intellij">
-    <postStartupActivity implementation="io.github.sulir.runtimesave.StartupActivity"/>
+    <postStartupActivity implementation="io.github.sulir.runtimesave.plugin.StartupActivity"/>
     <xdebugger.breakpointType implementation="io.github.sulir.runtimesave.savepoint.SavepointType"/>
     <debugger.javaBreakpointHandlerFactory
             implementation="io.github.sulir.runtimesave.savepoint.SavepointHandlerFactory"/>

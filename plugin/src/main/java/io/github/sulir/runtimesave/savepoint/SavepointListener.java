@@ -1,6 +1,5 @@
 package io.github.sulir.runtimesave.savepoint;
 
-import io.github.sulir.runtimesave.RuntimeStorageService;
 import com.intellij.debugger.engine.jdi.StackFrameProxy;
 import com.intellij.debugger.impl.DebuggerManagerListener;
 import com.intellij.debugger.impl.DebuggerSession;
@@ -19,10 +18,11 @@ import com.intellij.xdebugger.XDebugSessionListener;
 import com.intellij.xdebugger.XDebuggerManager;
 import com.intellij.xdebugger.breakpoints.XBreakpointManager;
 import com.sun.jdi.StackFrame;
+import io.github.sulir.runtimesave.plugin.RuntimeStorageService;
 
 import java.util.function.Consumer;
 
-import static io.github.sulir.runtimesave.UncheckedThrowing.uncheck;
+import static io.github.sulir.runtimesave.misc.UncheckedThrowing.uncheck;
 
 public class SavepointListener implements DebuggerManagerListener {
     public static final int DEBUG_WINDOW_DISABLED_MS = 1000;

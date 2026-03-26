@@ -1,4 +1,4 @@
-package io.github.sulir.runtimesave;
+package io.github.sulir.runtimesave.misc;
 
 import com.sun.jdi.Location;
 import org.jetbrains.annotations.NotNull;

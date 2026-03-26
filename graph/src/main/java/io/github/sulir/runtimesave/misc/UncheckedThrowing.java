@@ -1,4 +1,4 @@
-package io.github.sulir.runtimesave;
+package io.github.sulir.runtimesave.misc;
 
 public interface UncheckedThrowing<T> {
     T call() throws Throwable;

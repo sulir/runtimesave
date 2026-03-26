@@ -1,7 +1,7 @@
 package io.github.sulir.runtimesave.rt;
 
-import io.github.sulir.runtimesave.SourceLocation;
 import io.github.sulir.runtimesave.instrument.Settings;
+import io.github.sulir.runtimesave.misc.SourceLocation;
 
 import java.util.Arrays;
 
