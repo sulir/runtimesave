@@ -1,9 +1,12 @@
 package io.github.sulir.runtimesave;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.Service;
+import com.sun.jdi.StackFrame;
 import io.github.sulir.runtimesave.db.DbConnection;
 import io.github.sulir.runtimesave.db.DbIndex;
-import io.github.sulir.runtimesave.db.Metadata;
 import io.github.sulir.runtimesave.db.HashedDb;
+import io.github.sulir.runtimesave.db.Metadata;
 import io.github.sulir.runtimesave.graph.NodeFactory;
 import io.github.sulir.runtimesave.hash.AcyclicGraph;
 import io.github.sulir.runtimesave.hash.GraphHasher;
@@ -11,20 +14,16 @@ import io.github.sulir.runtimesave.hash.GraphIdHasher;
 import io.github.sulir.runtimesave.hash.NodeHash;
 import io.github.sulir.runtimesave.jdi.JdiReader;
 import io.github.sulir.runtimesave.jdi.JdiWriter;
+import io.github.sulir.runtimesave.misc.BoundedExecutor;
 import io.github.sulir.runtimesave.nodes.FrameNode;
 import io.github.sulir.runtimesave.pack.ValuePacker;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.Service;
-import com.sun.jdi.StackFrame;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.BooleanSupplier;
 
 @Service
 public final class RuntimeStorageService {
-    private final ExecutorService cpuPool = Executors.newWorkStealingPool();
-    private final ExecutorService dbPool = Executors.newSingleThreadExecutor();
+    private final BoundedExecutor cpuPool = BoundedExecutor.usingAllCores();
+    private final BoundedExecutor dbPool = BoundedExecutor.singleThreaded();
     private final ValuePacker packer = ValuePacker.fromServiceLoader();
     private final NodeFactory factory = new NodeFactory(packer);
     private final ThreadLocal<GraphHasher> hasher = ThreadLocal.withInitial(GraphHasher::new);
