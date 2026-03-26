@@ -23,6 +23,9 @@ public class BoundedExecutor extends ThreadPoolExecutor {
     }
 
     private void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
+        if (executor.isShutdown())
+            return;
+
         try {
             getQueue().put(runnable);
         } catch (InterruptedException e) {
