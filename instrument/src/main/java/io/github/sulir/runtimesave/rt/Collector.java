@@ -51,6 +51,7 @@ public class Collector {
         SourceLocation location = findLocation();
         if (Settings.DEBUG)
             System.err.println(location);
+        SaveService.getInstance().saveLocation(location);
     }
 
     private static native SourceLocation findLocation();

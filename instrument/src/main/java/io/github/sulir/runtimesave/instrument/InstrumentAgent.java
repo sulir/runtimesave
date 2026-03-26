@@ -1,7 +1,6 @@
 package io.github.sulir.runtimesave.instrument;
 
-import io.github.sulir.runtimesave.db.DbConnection;
-import io.github.sulir.runtimesave.db.DbIndex;
+import io.github.sulir.runtimesave.rt.SaveService;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
@@ -47,7 +46,7 @@ public class InstrumentAgent {
     public void setupRuntime() {
         System.setProperty("java.util.logging.manager", AppUnaffectingLogManager.class.getName());
         AppUnaffectingLogManager.setAgentPackages(packagesToRegex(agentPackages));
-        new DbIndex(DbConnection.getInstance()).createIndexes();
+        SaveService.getInstance().createIndexes();
     }
 
     public void startInstrumenting(Instrumentation inst) {
