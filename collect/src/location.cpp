@@ -19,12 +19,17 @@ jclass JvmSourceLocation::cls(JNIEnv *env) {
 
 jmethodID JvmSourceLocation::fromJvmTi(JNIEnv *env) {
     if (!fromJvmTi_) {
-        fromJvmTi_ = env->GetStaticMethodID(cls_, "fromJvmTi",
+        fromJvmTi_ = env->GetStaticMethodID(cls(env), "fromJvmTi",
             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)"
             "Lio/github/sulir/runtimesave/SourceLocation;");
         jni_check(fromJvmTi_, env);
     }
     return fromJvmTi_;
+}
+
+void JvmSourceLocation::cleanup(JNIEnv *env) {
+    if (cls_)
+        env->DeleteGlobalRef(cls_);
 }
 
 static bool getMethodInfo(jmethodID method, char **classSig, char **methodName, char **methodSig) {

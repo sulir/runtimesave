@@ -24,5 +24,5 @@ extern "C" JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *vm) {
     JNIEnv *jni;
     if(!jni_ok(vm->GetEnv(reinterpret_cast<void **>(&jni), JNI_VERSION_21)))
         return;
-    jni->DeleteGlobalRef(jvmSourceLocation.cls(jni));
+    jvmSourceLocation.cleanup(jni);
 }
