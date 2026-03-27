@@ -2,7 +2,7 @@
 
 #include <jni.h>
 
-class JvmSourceLocation {
+class SourceLocation {
 public:
     jclass cls(JNIEnv *env);
     jmethodID fromJvmTi(JNIEnv *env);
@@ -12,4 +12,4 @@ private:
     jmethodID fromJvmTi_ = nullptr;
 };
 
-extern JvmSourceLocation jvmSourceLocation;
+extern SourceLocation sourceLocation;

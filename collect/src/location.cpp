@@ -6,9 +6,9 @@
 
 #define LOCATION_CLASS "io/github/sulir/runtimesave/misc/SourceLocation"
 
-JvmSourceLocation jvmSourceLocation;
+SourceLocation sourceLocation;
 
-jclass JvmSourceLocation::cls(JNIEnv *env) {
+jclass SourceLocation::cls(JNIEnv *env) {
     if (!cls_) {
         jclass localClass = env->FindClass(LOCATION_CLASS);
         if (!jni_check(localClass, env))
@@ -19,7 +19,7 @@ jclass JvmSourceLocation::cls(JNIEnv *env) {
     return cls_;
 }
 
-jmethodID JvmSourceLocation::fromJvmTi(JNIEnv *env) {
+jmethodID SourceLocation::fromJvmTi(JNIEnv *env) {
     if (!fromJvmTi_) {
         fromJvmTi_ = env->GetStaticMethodID(cls(env), "fromJvmTi",
             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)"
@@ -29,7 +29,7 @@ jmethodID JvmSourceLocation::fromJvmTi(JNIEnv *env) {
     return fromJvmTi_;
 }
 
-void JvmSourceLocation::cleanup(JNIEnv *env) {
+void SourceLocation::cleanup(JNIEnv *env) {
     if (cls_)
         env->DeleteGlobalRef(cls_);
 }
@@ -80,8 +80,8 @@ extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collect
     if (line == - 1)
         return nullptr;
 
-    jclass cls = jvmSourceLocation.cls(env);
-    jmethodID calledMethod = jvmSourceLocation.fromJvmTi(env);
+    jclass cls = sourceLocation.cls(env);
+    jmethodID calledMethod = sourceLocation.fromJvmTi(env);
     if (!cls || !calledMethod)
         return nullptr;
     return env->CallStaticObjectMethod(cls, calledMethod, env->NewStringUTF(classSig.get()),

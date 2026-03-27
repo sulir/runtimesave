@@ -1,5 +1,8 @@
 #pragma once
 
+#include <atomic>
+#include <chrono>
+#include <iostream>
 #include <jni.h>
 #include <jvmti.h>
 #include <source_location>
@@ -45,4 +48,19 @@ public:
     JvmtiDealloc& operator=(const JvmtiDealloc&) = delete;
 private:
     T *ptr;
+};
+
+struct MethodTime {
+    using Clock = std::chrono::steady_clock;
+    std::chrono::time_point<Clock> start = Clock::now();
+    inline static std::atomic<long long> total{0};
+    
+    ~MethodTime() {
+        auto end = Clock::now();
+        auto diff = std::chrono::nanoseconds(end - start).count();
+        total.fetch_add(diff, std::memory_order_relaxed);
+    }
+    inline static struct Reporter {
+        ~Reporter() { std::cerr << total / 1'000'000 << " ms\n"; }
+    } reporter;
 };
