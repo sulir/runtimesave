@@ -9,8 +9,9 @@
 
 extern jvmtiEnv *ti;
 
-inline bool jvmti_ok(jvmtiError err, std::source_location loc = std::source_location::current()) {
-    if (err != JVMTI_ERROR_NONE) {
+inline bool jvmti_ok(jvmtiError err, jvmtiError allowedErr = JVMTI_ERROR_NONE,
+                     std::source_location loc = std::source_location::current()) {
+    if (err != JVMTI_ERROR_NONE && err != allowedErr) {
         fprintf(stderr, "JVMTI error %d at %s:%d\n", err, loc.file_name(), loc.line());
         return false;
     }
@@ -32,14 +33,24 @@ T jni_check(T value, JNIEnv *env) {
     return value;
 } 
 
+inline bool is_obsolete(jmethodID method) {
+    jboolean obsolete;
+    if (!jvmti_ok(ti->IsMethodObsolete(method, &obsolete)))
+        return true;
+    return obsolete;
+}
+
+template <typename T>
+void dealloc(T *ptr) {
+    if (ti)
+        ti->Deallocate(reinterpret_cast<unsigned char *>(ptr));
+}
+
 template <typename T>
 class JvmtiDealloc {
 public:
     explicit JvmtiDealloc(): ptr(nullptr) {}
-    ~JvmtiDealloc() {
-        if (ptr)
-            ti->Deallocate(reinterpret_cast<unsigned char *>(ptr));
-    }
+    ~JvmtiDealloc() { dealloc(ptr); }
 
     T **out() { return &ptr; }
     T *get() { return ptr; }
@@ -61,6 +72,9 @@ struct MethodTime {
         total.fetch_add(diff, std::memory_order_relaxed);
     }
     inline static struct Reporter {
-        ~Reporter() { std::cerr << total / 1'000'000 << " ms\n"; }
+        ~Reporter() {
+            if (total != 0)
+                std::cerr << total / 1'000'000 << " ms\n";
+        }
     } reporter;
 };
