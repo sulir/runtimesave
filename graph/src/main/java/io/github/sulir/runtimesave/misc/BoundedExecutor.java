@@ -17,7 +17,8 @@ public class BoundedExecutor extends ThreadPoolExecutor {
     }
 
     public BoundedExecutor(int threads, int queueSize) {
-        super(threads, threads, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>(queueSize));
+        super(threads, threads, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>(queueSize),
+                Thread.ofPlatform().daemon().factory());
         setRejectedExecutionHandler(this::rejectedExecution);
         Runtime.getRuntime().addShutdownHook(new Thread(this::appShuttingDown));
     }
