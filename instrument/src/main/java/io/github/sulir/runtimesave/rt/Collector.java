@@ -3,6 +3,8 @@ package io.github.sulir.runtimesave.rt;
 import io.github.sulir.runtimesave.instrument.Settings;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 @SuppressWarnings("unused")
@@ -48,11 +50,18 @@ public class Collector {
     }
 
     private static void collectData() {
-        SourceLocation location = findLocation();
+        ByteBuffer buffer = readData();
+        if (buffer == null) {
+            System.err.println("Error: Cannot read runtime data");
+            return;
+        }
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        SourceLocation location = SourceLocation.fromBuffer(buffer);
         if (Settings.DEBUG)
             System.err.println(location);
         SaveService.getInstance().saveLocation(location);
     }
 
-    private static native SourceLocation findLocation();
+    private static native ByteBuffer readData();
 }

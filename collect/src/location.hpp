@@ -2,19 +2,8 @@
 
 #include <jni.h>
 
-#include "common.hpp"
-
-class SourceLocation {
-public:
-    jclass cls(JNIEnv *env);
-    jmethodID fromJvmTi(JNIEnv *env);
-    void cleanup(JNIEnv *env);
-private:
-    jclass cls_ = nullptr;
-    jmethodID fromJvmTi_ = nullptr;
-};
-
-inline SourceLocation sourceLocation;
+#include "agent.hpp"
+#include "buffer.hpp"
 
 struct MethodInfo {
     jmethodID method;
@@ -43,4 +32,4 @@ struct MethodInfo {
 
 inline thread_local MethodInfo methodInfo = {};
 
-jobject readLocation(JNIEnv *env, jmethodID method, jlocation location);
+bool readLocation(jmethodID method, jlocation location, Buffer& buffer);

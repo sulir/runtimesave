@@ -7,12 +7,12 @@
 #include <jvmti.h>
 #include <source_location>
 
-extern jvmtiEnv *ti;
+inline jvmtiEnv *ti = nullptr;
 
 template <typename T>
 bool ok(T err, jvmtiError allowedErr = JVMTI_ERROR_NONE, std::source_location loc = std::source_location::current()) {
     if (err && err != allowedErr) {
-        fprintf(stderr, "Error %d at %s:%d\n", err, loc.file_name(), loc.line());
+        std::fprintf(stderr, "Error %d at %s:%d\n", err, loc.file_name(), loc.line());
         return false;
     }
     return true;
@@ -31,21 +31,6 @@ void dealloc(T *ptr) {
         ti->Deallocate(reinterpret_cast<unsigned char *>(ptr));
 }
 
-template <typename T>
-class JvmtiDealloc {
-public:
-    explicit JvmtiDealloc(): ptr(nullptr) {}
-    ~JvmtiDealloc() { dealloc(ptr); }
-
-    T **out() { return &ptr; }
-    T *get() { return ptr; }
-
-    JvmtiDealloc(const JvmtiDealloc&) = delete;
-    JvmtiDealloc& operator=(const JvmtiDealloc&) = delete;
-private:
-    T *ptr;
-};
-
 template <int Id = 0>
 struct MethodTime {
     using Clock = std::chrono::steady_clock;
@@ -60,7 +45,7 @@ struct MethodTime {
     }
     inline static struct Reporter {
         ~Reporter() {
-            fprintf(stderr, "Timer %d: %lld ms\n", Id, total / 1'000'000);
+            std::fprintf(stderr, "Timer %d: %lld ms\n", Id, total / 1'000'000);
         }
     } reportAtProgramExit;
 };

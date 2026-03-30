@@ -1,10 +1,9 @@
 #include <jni.h>
 #include <jvmti.h>
 
-#include "common.hpp"
+#include "agent.hpp"
+#include "buffer.hpp"
 #include "location.hpp"
-
-jvmtiEnv *ti = nullptr;
 
 extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *, void *) {
     if(!ok(vm->GetEnv(reinterpret_cast<void **>(&ti), JVMTI_VERSION_21)))
@@ -19,21 +18,20 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *, void *) {
     return 0;
 }
 
-extern "C" JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *vm) {
+extern "C" JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *) {
     ti = nullptr;
-
-    JNIEnv *jni;
-    if(!ok(vm->GetEnv(reinterpret_cast<void **>(&jni), JNI_VERSION_21)))
-        return;
-    sourceLocation.cleanup(jni);
 }
 
-extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collector_findLocation(JNIEnv *env, jclass) {
+extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collector_readData(JNIEnv *env, jclass) {
+    Buffer& buffer = Buffer::getThreadInstance();
+    buffer.reset();
+
     constexpr int CALLER_STACK_POS = 3;
     jmethodID method;
     jlocation location;
     if (!ok(ti->GetFrameLocation(nullptr, CALLER_STACK_POS, &method, &location)))
         return nullptr;
 
-    return readLocation(env, method, location);
+    readLocation(method, location, buffer);
+    return buffer.result(env);
 }
