@@ -1,13 +1,13 @@
 [versions]
 asm = "9.9.1"
 intellij-idea = "2025.3.3"
-intellij-platform = "2.11.0"
+intellij-platform = "2.13.1"
 java = "21"
 jetbrains-annotations = "26.1.0"
 junit = "6.0.3"
 junit4 = "4.13.2"
-neo4j = "6.0.3"
-shadow = "9.3.1"
+neo4j = "6.0.4"
+shadow = "9.4.1"
 version-catalog-update = "1.1.0"
 
 [libraries]
