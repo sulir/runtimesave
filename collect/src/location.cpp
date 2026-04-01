@@ -1,5 +1,5 @@
 #include <algorithm>
-#include <jni.h>
+#include <jvmti.h>
 
 #include "agent.hpp"
 #include "buffer.hpp"
@@ -12,7 +12,7 @@ static bool isObsolete(jmethodID method) {
     return obsolete;
 }
 
-static bool loadMethodInfo(jmethodID method) {
+static bool loadMethodInfo(jmethodID method, MethodInfo& methodInfo) {
     if (method == methodInfo.method && !isObsolete(method))
         return true;
 
@@ -26,9 +26,9 @@ static bool loadMethodInfo(jmethodID method) {
         return false;
     if (!ok(ti->GetMethodName(method, &methodInfo.name, &methodInfo.sig, nullptr)))
         return false;
-    if (!ok(ti->GetLineNumberTable(method, &methodInfo.linesSize, &methodInfo.lines)))
+    if (!ok(ti->GetLineNumberTable(method, &methodInfo.numLines, &methodInfo.lines)))
         return false;
-    if (!ok(ti->GetLocalVariableTable(method, &methodInfo.localsSize, &methodInfo.locals),
+    if (!ok(ti->GetLocalVariableTable(method, &methodInfo.numLocals, &methodInfo.locals),
             JVMTI_ERROR_ABSENT_INFORMATION))
         return false;
 
@@ -36,9 +36,9 @@ static bool loadMethodInfo(jmethodID method) {
     return true;
 }
 
-static int getLineNumber(jlocation location) {
+static jint getLineNumber(jlocation location, MethodInfo& methodInfo) {
     jvmtiLineNumberEntry *first = methodInfo.lines;
-    auto entry = std::upper_bound(first, first + methodInfo.linesSize, location,
+    auto entry = std::upper_bound(first, first + methodInfo.numLines, location,
         [](jlocation value, const jvmtiLineNumberEntry& entry) {
             return value < entry.start_location;
         });
@@ -48,17 +48,17 @@ static int getLineNumber(jlocation location) {
     return (entry - 1)->line_number;
 }
 
-bool readLocation(jmethodID method, jlocation location, Buffer& buffer) {
-    if (!loadMethodInfo(method))
+bool readLocation(jmethodID method, jlocation location, MethodInfo& methodInfo, Buffer& buffer) {
+    if (!loadMethodInfo(method, methodInfo))
         return false;
 
-    int line = getLineNumber(location);
+    jint line = getLineNumber(location, methodInfo);
     if (line == - 1)
         return false;
 
     buffer.addString(methodInfo.classSig);
     buffer.addString(methodInfo.name);
     buffer.addString(methodInfo.sig);
-    buffer.addInt(line);
+    buffer.add(line);
     return true;
 }

@@ -1,5 +1,6 @@
 package io.github.sulir.runtimesave.rt;
 
+import io.github.sulir.runtimesave.buffer.BufferReader;
 import io.github.sulir.runtimesave.db.DbConnection;
 import io.github.sulir.runtimesave.db.DbIndex;
 import io.github.sulir.runtimesave.db.HashedDb;
@@ -8,10 +9,13 @@ import io.github.sulir.runtimesave.graph.NodeFactory;
 import io.github.sulir.runtimesave.hash.AcyclicGraph;
 import io.github.sulir.runtimesave.hash.GraphHasher;
 import io.github.sulir.runtimesave.hash.GraphIdHasher;
+import io.github.sulir.runtimesave.instrument.Settings;
 import io.github.sulir.runtimesave.misc.BoundedExecutor;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.FrameNode;
 import io.github.sulir.runtimesave.pack.ValuePacker;
+
+import java.nio.ByteBuffer;
 
 public class SaveService {
     private static SaveService instance;
@@ -19,11 +23,11 @@ public class SaveService {
     private final BoundedExecutor thread = BoundedExecutor.singleThreaded();
     private final DbIndex dbIndex = new DbIndex(DbConnection.getInstance());
     private final ValuePacker packer = ValuePacker.fromServiceLoader();
-    private final Metadata metadata = new Metadata(DbConnection.getInstance());
     private final GraphHasher hasher = new GraphHasher();
     private final GraphIdHasher idHasher = new GraphIdHasher();
     private final NodeFactory factory = new NodeFactory(packer);
     private final HashedDb database  = new HashedDb(DbConnection.getInstance(), factory);
+    private final Metadata metadata = new Metadata(DbConnection.getInstance());
 
     public static SaveService getInstance() {
         if (instance == null)
@@ -35,15 +39,24 @@ public class SaveService {
         dbIndex.createIndexes();
     }
 
-    public void saveLocation(SourceLocation location) {
+    public void saveFrame(ByteBuffer buffer) {
+        BufferReader reader = new BufferReader(buffer);
+        SourceLocation location = reader.readLocation();
+        if (Settings.DEBUG)
+            System.err.println(location);
+        FrameNode frame = reader.readFrame();
+        if (Settings.DEBUG)
+            System.err.println(frame);
+
         thread.execute(() -> {
-            FrameNode frame = new FrameNode();
             packer.pack(frame);
             AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
             hasher.assignHashes(dag);
             idHasher.assignIdHashes(frame);
-            database.write(dag);
-            metadata.addLocation(frame.hash(), location);
+            if (System.getenv("RS_WRITE") != null) {
+                database.write(dag);
+                metadata.addLocation(frame.hash(), location);
+            }
         });
     }
 }

@@ -10,17 +10,22 @@ struct MethodInfo {
     char *classSig;
     char *name;
     char *sig;
-    jint linesSize;
+    jint numLines;
     jvmtiLineNumberEntry *lines;
-    jint localsSize;
+    jint numLocals;
     jvmtiLocalVariableEntry *locals;
 
+    static MethodInfo& getThreadInstance() {
+        static thread_local MethodInfo instance = {};
+        return instance;
+    }
+    
     void cleanup() {
         dealloc(classSig);
         dealloc(name);
         dealloc(sig);
         dealloc(lines);
-        for (int i = 0; i < localsSize; i++) {
+        for (int i = 0; i < numLocals; i++) {
             dealloc(locals[i].name);
             dealloc(locals[i].signature);
             dealloc(locals[i].generic_signature);
@@ -30,6 +35,4 @@ struct MethodInfo {
     ~MethodInfo() { cleanup(); };
 };
 
-inline thread_local MethodInfo methodInfo = {};
-
-bool readLocation(jmethodID method, jlocation location, Buffer& buffer);
+bool readLocation(jmethodID method, jlocation location, MethodInfo& methodInfo, Buffer& buffer);

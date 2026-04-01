@@ -7,6 +7,7 @@
 #include <jvmti.h>
 #include <source_location>
 
+constexpr int CALLER_DEPTH = 3;
 inline jvmtiEnv *ti = nullptr;
 
 template <typename T>
@@ -32,20 +33,20 @@ void dealloc(T *ptr) {
 }
 
 template <int Id = 0>
-struct MethodTime {
+class ScopeTime {
     using Clock = std::chrono::steady_clock;
     std::chrono::time_point<Clock> start = Clock::now();
     inline static std::atomic<long long> total{0};
-    
-    ~MethodTime() {
+    inline static struct Reporter {
+        ~Reporter() {
+            std::fprintf(stderr, "C++ timer %d: %lld ms\n", Id, total / 1'000'000);
+        }
+    } reportAtProgramExit;
+public:
+    ~ScopeTime() {
         auto end = Clock::now();
         auto diff = std::chrono::nanoseconds(end - start).count();
         total.fetch_add(diff, std::memory_order_relaxed);
         (void) reportAtProgramExit;
     }
-    inline static struct Reporter {
-        ~Reporter() {
-            std::fprintf(stderr, "Timer %d: %lld ms\n", Id, total / 1'000'000);
-        }
-    } reportAtProgramExit;
 };

@@ -1,6 +1,7 @@
 #include <bit>
 #include <cstdlib>
 #include <cstring>
+#include <jni.h>
 
 #include "agent.hpp"
 #include "buffer.hpp"
@@ -15,21 +16,25 @@ void Buffer::reset() {
     failed = false;
 }
 
+void Buffer::checkpoint() {
+    checkpointPos = pos;
+}
+
+void Buffer::restore() {
+    pos = checkpointPos;
+}
+
 void Buffer::add(const void *data, size_t size) {
     if (size == 0 || !grow(size))
         return;
-    
+
     std::memcpy(static_cast<std::byte *>(mem) + pos, data, size);
     pos += size;
 }
 
-void Buffer::addInt(int i) {
-    add(&i, sizeof i);
-}
-
 void Buffer::addString(const char *str) {
     jsize length = strlen(str);
-    add(&length, sizeof length);
+    add(length);
     add(str, length);
 }
 
