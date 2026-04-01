@@ -1,6 +1,7 @@
 package io.github.sulir.runtimesave.instrument;
 
 import io.github.sulir.runtimesave.rt.Collector;
+import io.github.sulir.runtimesave.misc.Log;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
@@ -33,7 +34,7 @@ public class MethodInstrumentation {
     public void instrument() {
         boolean linesTracked = instrumentMixedTargets();
         instrumentLineChangeTargets(linesTracked);
-        printDebugInfo();
+        Log.debug(this::getDebugInfo);
     }
 
     private boolean instrumentMixedTargets() {
@@ -150,16 +151,14 @@ public class MethodInstrumentation {
         return result;
     }
 
-    private void printDebugInfo() {
-        if (!Settings.DEBUG)
-            return;
-
-        System.err.printf("--- %s%s ---\n", method.name, method.desc);
+    private String getDebugInfo() {
+        StringBuilder result = new StringBuilder("--- %s%s ---%n".formatted(method.name, method.desc));
         Printer printer = new Textifier();
         TraceMethodVisitor tracer = new TraceMethodVisitor(printer);
         instructions.forEach(instruction -> instruction.accept(tracer));
         List<Object> lines = printer.getText();
         for (int i = 0; i < lines.size(); i++)
-            System.err.printf("%d:%s", i, lines.get(i));
+            result.append(i).append(":").append(lines.get(i));
+        return result.toString();
     }
 }

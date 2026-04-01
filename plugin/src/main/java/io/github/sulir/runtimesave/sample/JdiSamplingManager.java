@@ -1,6 +1,7 @@
 package io.github.sulir.runtimesave.sample;
 
 import com.intellij.debugger.engine.DebugProcessEvents;
+import com.intellij.openapi.diagnostic.Logger;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
@@ -16,7 +17,7 @@ import java.util.Map;
 import static io.github.sulir.runtimesave.misc.UncheckedThrowing.uncheck;
 
 public class JdiSamplingManager {
-    private static final boolean DEBUG = System.getenv("RS_DEBUG") != null;
+    private static final Logger log = Logger.getInstance(JdiSamplingManager.class);
 
     private final int everyNthLine;
     private final int firstTExecutions;
@@ -29,8 +30,7 @@ public class JdiSamplingManager {
     }
 
     public void addBreakpoints(ReferenceType clazz) {
-        if (DEBUG)
-            System.out.println("Adding breakpoints to " + clazz.name());
+        log.info("Adding breakpoints to " + clazz.name());
         if (firstTExecutions == 0)
             return;
 
@@ -60,8 +60,7 @@ public class JdiSamplingManager {
         if (newHitCount >= firstTExecutions && firstTExecutions != -1)
             event.virtualMachine().eventRequestManager().deleteEventRequest(event.request());
 
-        if (DEBUG)
-            System.out.println(uncheck(event.location()::sourcePath) + ":" + event.location().lineNumber());
+        log.debug(uncheck(event.location()::sourcePath) + ":" + event.location().lineNumber());
         StackFrame frame = uncheck(() -> event.thread().frame(0));
         RuntimeStorageService.getInstance().saveFrame(frame);
     }

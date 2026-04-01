@@ -1,5 +1,6 @@
 package io.github.sulir.runtimesave.instrument;
 
+import io.github.sulir.runtimesave.misc.Log;
 import io.github.sulir.runtimesave.rt.SaveService;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -63,8 +64,8 @@ public class InstrumentAgent {
                         return rewriteClass(classFileBuffer);
                     else
                         return null;
-                } catch (Exception e) {
-                    e.printStackTrace(System.err);
+                } catch (Throwable e) {
+                    Log.error(e);
                     return null;
                 }
             }

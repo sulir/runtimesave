@@ -1,6 +1,7 @@
 package io.github.sulir.runtimesave.rt;
 
 import io.github.sulir.runtimesave.instrument.Settings;
+import io.github.sulir.runtimesave.misc.Log;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -52,7 +53,7 @@ public class Collector {
         if (buffer != null)
             SaveService.getInstance().saveFrame(buffer);
         else
-            System.err.println("Error: Cannot read runtime data");
+            Log.error("Cannot read runtime data");
     }
 
     private static native ByteBuffer readData();

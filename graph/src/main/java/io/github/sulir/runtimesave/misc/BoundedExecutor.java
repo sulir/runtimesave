@@ -41,7 +41,7 @@ public class BoundedExecutor extends ThreadPoolExecutor {
             if (!awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS))
                 shutdownNow();
         } catch (InterruptedException e) {
-            e.printStackTrace(System.err);
+            Log.error(e);
             shutdownNow();
         }
     }

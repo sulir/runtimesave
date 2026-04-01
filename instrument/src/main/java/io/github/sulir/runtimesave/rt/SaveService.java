@@ -9,8 +9,8 @@ import io.github.sulir.runtimesave.graph.NodeFactory;
 import io.github.sulir.runtimesave.hash.AcyclicGraph;
 import io.github.sulir.runtimesave.hash.GraphHasher;
 import io.github.sulir.runtimesave.hash.GraphIdHasher;
-import io.github.sulir.runtimesave.instrument.Settings;
 import io.github.sulir.runtimesave.misc.BoundedExecutor;
+import io.github.sulir.runtimesave.misc.Log;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.FrameNode;
 import io.github.sulir.runtimesave.pack.ValuePacker;
@@ -42,11 +42,9 @@ public class SaveService {
     public void saveFrame(ByteBuffer buffer) {
         BufferReader reader = new BufferReader(buffer);
         SourceLocation location = reader.readLocation();
-        if (Settings.DEBUG)
-            System.err.println(location);
+        Log.info(location);
         FrameNode frame = reader.readFrame();
-        if (Settings.DEBUG)
-            System.err.println(frame);
+        Log.info(frame);
 
         thread.execute(() -> {
             packer.pack(frame);

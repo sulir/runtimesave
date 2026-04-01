@@ -10,7 +10,7 @@ import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 
 public class StarterAgent {
-    public static final boolean DEBUG = System.getenv("RS_DEBUG") != null;
+    public static final boolean DEBUG = "debug".equals(System.getenv("RS_LOG"));
     @SuppressWarnings("unused")
     public static boolean JUMPED_TO_LINE = false;
 
