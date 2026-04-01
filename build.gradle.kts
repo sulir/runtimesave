@@ -9,7 +9,7 @@ versionCatalogUpdate {
 }
 
 repositories {
+    maven("https://www.jetbrains.com/intellij-repository/releases")
     mavenCentral()
     gradlePluginPortal()
-    maven("https://www.jetbrains.com/intellij-repository/releases")
 }
