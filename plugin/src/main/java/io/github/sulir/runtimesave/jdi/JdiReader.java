@@ -2,6 +2,7 @@ package io.github.sulir.runtimesave.jdi;
 
 import com.sun.jdi.*;
 import io.github.sulir.runtimesave.graph.ValueNode;
+import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.*;
 
 import java.util.List;
@@ -13,6 +14,13 @@ public class JdiReader {
 
     public JdiReader(StackFrame frame) {
         this.frame = frame;
+    }
+
+    public SourceLocation readLocation() {
+        Location location = frame.location();
+        String className = location.declaringType().name();
+        String method = location.method().name() + location.method().signature();
+        return new SourceLocation(className, method, location.lineNumber());
     }
 
     public FrameNode readFrame() {

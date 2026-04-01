@@ -1,5 +1,6 @@
 package io.github.sulir.runtimesave.rt;
 
+import io.github.sulir.runtimesave.buffer.BufferReader;
 import io.github.sulir.runtimesave.instrument.Settings;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 
@@ -57,7 +58,8 @@ public class Collector {
         }
         buffer.order(ByteOrder.LITTLE_ENDIAN);
 
-        SourceLocation location = SourceLocation.fromBuffer(buffer);
+        BufferReader reader = new BufferReader(buffer);
+        SourceLocation location = reader.readLocation();
         if (Settings.DEBUG)
             System.err.println(location);
         SaveService.getInstance().saveLocation(location);

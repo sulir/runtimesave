@@ -40,15 +40,16 @@ public final class RuntimeStorageService {
     }
 
     public void loadFrame(StackFrame frame) throws MismatchException {
-        NodeHash hash = metadata.findFrame(SourceLocation.fromJDI(frame.location()));
+        NodeHash hash = metadata.findFrame(new JdiReader(frame).readLocation());
         FrameNode frameNode = database.read(hash, FrameNode.class);
         packer.unpack(frameNode);
         new JdiWriter(frame).writeFrame(frameNode);
     }
 
     public void saveFrame(StackFrame frame) {
-        FrameNode frameNode = new JdiReader(frame).readFrame();
-        SourceLocation location = SourceLocation.fromJDI(frame.location());
+        JdiReader reader = new JdiReader(frame);
+        FrameNode frameNode = reader.readFrame();
+        SourceLocation location = reader.readLocation();
 
         cpuPool.execute(() -> {
             packer.pack(frameNode);

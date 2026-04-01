@@ -8,7 +8,6 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.EventRequestManager;
-import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.plugin.RuntimeStorageService;
 
 import java.util.HashMap;
@@ -22,7 +21,7 @@ public class JdiSamplingManager {
     private final int everyNthLine;
     private final int firstTExecutions;
     private int linesHit = 0;
-    private final Map<SourceLocation, Integer> hitsPerLine = new HashMap<>();
+    private final Map<String, Integer> hitsPerLine = new HashMap<>();
 
     public JdiSamplingManager(int everyNthLine, int firstTExecutions) {
         this.everyNthLine = everyNthLine;
@@ -41,7 +40,7 @@ public class JdiSamplingManager {
                 if (linesHit != 0)
                     continue;
 
-                if (hitsPerLine.putIfAbsent(SourceLocation.fromJDI(location), 0) != null)
+                if (hitsPerLine.putIfAbsent(getLocationId(location), 0) != null)
                     continue;
 
                 EventRequestManager manager = clazz.virtualMachine().eventRequestManager();
@@ -54,9 +53,9 @@ public class JdiSamplingManager {
     }
 
     private void handleBreakpoint(BreakpointEvent event) {
-        SourceLocation location = SourceLocation.fromJDI(event.location());
-        int newHitCount = hitsPerLine.get(location) + 1;
-        hitsPerLine.put(location, newHitCount);
+        String locationId = getLocationId(event.location());
+        int newHitCount = hitsPerLine.get(locationId) + 1;
+        hitsPerLine.put(locationId, newHitCount);
 
         if (newHitCount >= firstTExecutions && firstTExecutions != -1)
             event.virtualMachine().eventRequestManager().deleteEventRequest(event.request());
@@ -65,5 +64,11 @@ public class JdiSamplingManager {
             System.out.println(uncheck(event.location()::sourcePath) + ":" + event.location().lineNumber());
         StackFrame frame = uncheck(() -> event.thread().frame(0));
         RuntimeStorageService.getInstance().saveFrame(frame);
+    }
+
+    private String getLocationId(Location location) {
+        String className = location.declaringType().name();
+        String method = location.method().name() + location.method().signature();
+        return className + ":" + method + ":" + location.lineNumber();
     }
 }
