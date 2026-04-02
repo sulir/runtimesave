@@ -51,7 +51,7 @@ public class Collector {
     private static void collectData() {
         ByteBuffer buffer = readData();
         if (buffer != null)
-            SaveService.getInstance().saveFrame(buffer);
+            SaveService.getInstance().saveFrame(new BufferReader(buffer));
         else
             Log.error("Cannot read runtime data");
     }

@@ -25,8 +25,7 @@ extern "C" JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *) {
 
 extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collector_readData(JNIEnv *env, jclass) {
     MethodInfo& methodInfo = MethodInfo::getThreadInstance();
-    Buffer& buffer = Buffer::getThreadInstance();
-    buffer.reset();
+    Buffer buffer;
 
     jmethodID method;
     jlocation location;
@@ -38,4 +37,9 @@ extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collect
         return nullptr;
     
     return buffer.result(env);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_io_github_sulir_runtimesave_rt_BufferReader_dispose(JNIEnv *env, jclass, jobject buffer) {
+    free(env->GetDirectBufferAddress(buffer));
 }

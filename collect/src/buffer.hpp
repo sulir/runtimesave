@@ -7,21 +7,17 @@
 
 class Buffer {
 public:
-    static Buffer& getThreadInstance();
-    void reset();
+    Buffer() = default;
+    Buffer(const Buffer&) = delete;
+    Buffer& operator=(const Buffer&) = delete;
+
+    void add(const void *data, size_t size);
+    void addString(const char *str);
+    template <typename T> requires (!std::is_pointer_v<T>)
+    void add(T value) { add(&value, sizeof(T)); }
+
     void checkpoint();
     void restore();
-    void add(const void *data, size_t size);
-    template <typename T> requires (!std::is_pointer_v<T>)
-    void add(T value) {
-        constexpr size_t size = sizeof(T);
-        if (!grow(size))
-            return;
-
-        std::memcpy(static_cast<std::byte *>(mem) + pos, &value, size);
-        pos += size;
-    }
-    void addString(const char *str);
     jobject result(JNIEnv *env);
     ~Buffer();
 private:
@@ -31,5 +27,4 @@ private:
     size_t capacity = 0;
     size_t pos = 0;
     size_t checkpointPos = 0;
-    bool failed = false;
 };

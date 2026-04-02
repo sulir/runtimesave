@@ -1,4 +1,4 @@
-package io.github.sulir.runtimesave.buffer;
+package io.github.sulir.runtimesave.rt;
 
 import io.github.sulir.runtimesave.graph.ValueNode;
 import io.github.sulir.runtimesave.misc.SourceLocation;
@@ -67,4 +67,10 @@ public class BufferReader {
         buffer.position(buffer.position() + length);
         return string;
     }
+
+    public void close() {
+        dispose(buffer);
+    }
+
+    private static native void dispose(ByteBuffer buffer);
 }

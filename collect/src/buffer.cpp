@@ -6,24 +6,6 @@
 #include "agent.hpp"
 #include "buffer.hpp"
 
-Buffer& Buffer::getThreadInstance() {
-    static thread_local Buffer instance;
-    return instance;
-}
-
-void Buffer::reset() {
-    pos = 0;
-    failed = false;
-}
-
-void Buffer::checkpoint() {
-    checkpointPos = pos;
-}
-
-void Buffer::restore() {
-    pos = checkpointPos;
-}
-
 void Buffer::add(const void *data, size_t size) {
     if (size == 0 || !grow(size))
         return;
@@ -38,33 +20,46 @@ void Buffer::addString(const char *str) {
     add(str, length);
 }
 
+void Buffer::checkpoint() {
+    checkpointPos = pos;
+}
+
+void Buffer::restore() {
+    pos = checkpointPos;
+}
+
 static_assert(std::endian::native == std::endian::little, "ByteBuffer is set to LE on Java side");
 
 jobject Buffer::result(JNIEnv *env) {
-    if (!mem || failed)
+    if (capacity == SIZE_MAX)
         return nullptr;
-    return jniCatch(env->NewDirectByteBuffer(mem, pos), env);
+    jobject nioBuffer = jniCatch(env->NewDirectByteBuffer(mem, pos), env);
+    if (nioBuffer)
+        pos = 0;
+    return nioBuffer;
 }
 
 Buffer::~Buffer() {
-    free(mem);
+    if (pos != 0)
+        free(mem);
 }
 
 bool Buffer::grow(size_t added) {
-    if (pos + added <= capacity)
+    if (pos + added <= capacity || capacity == SIZE_MAX)
         return true;
 
     constexpr size_t ROUND = 1024 * 1024;
-    capacity = (pos + added + ROUND - 1) / ROUND * ROUND;
-    void *newMem = std::realloc(mem, capacity);
+    size_t newCapacity = (pos + added + ROUND - 1) / ROUND * ROUND;
+    void *newMem = std::realloc(mem, newCapacity);
     
     if (!newMem) {
-        failed = true;
         free(mem);
         mem = nullptr;
+        capacity = SIZE_MAX;
         return false;
     }
 
     mem = newMem;
+    capacity = newCapacity;
     return true;
 }

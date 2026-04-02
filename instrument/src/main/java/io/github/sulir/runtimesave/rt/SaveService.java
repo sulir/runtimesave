@@ -1,6 +1,5 @@
 package io.github.sulir.runtimesave.rt;
 
-import io.github.sulir.runtimesave.buffer.BufferReader;
 import io.github.sulir.runtimesave.db.DbConnection;
 import io.github.sulir.runtimesave.db.DbIndex;
 import io.github.sulir.runtimesave.db.HashedDb;
@@ -14,8 +13,6 @@ import io.github.sulir.runtimesave.misc.Log;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.FrameNode;
 import io.github.sulir.runtimesave.pack.ValuePacker;
-
-import java.nio.ByteBuffer;
 
 public class SaveService {
     private static SaveService instance;
@@ -39,21 +36,22 @@ public class SaveService {
         dbIndex.createIndexes();
     }
 
-    public void saveFrame(ByteBuffer buffer) {
-        BufferReader reader = new BufferReader(buffer);
-        SourceLocation location = reader.readLocation();
-        Log.info(location);
-        FrameNode frame = reader.readFrame();
-        Log.info(frame);
-
+    public void saveFrame(BufferReader reader) {
         thread.execute(() -> {
-            packer.pack(frame);
-            AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
-            hasher.assignHashes(dag);
-            idHasher.assignIdHashes(frame);
-            if (System.getenv("RS_WRITE") != null) {
-                database.write(dag);
-                metadata.addLocation(frame.hash(), location);
+            try {
+                SourceLocation location = reader.readLocation();
+                FrameNode frame = reader.readFrame();
+                Log.info(location, frame);
+                packer.pack(frame);
+                AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
+                hasher.assignHashes(dag);
+                idHasher.assignIdHashes(frame);
+                if (System.getenv("RS_WRITE") != null) {
+                    database.write(dag);
+                    metadata.addLocation(frame.hash(), location);
+                }
+            } finally {
+                reader.close();
             }
         });
     }

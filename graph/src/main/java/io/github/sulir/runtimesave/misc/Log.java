@@ -26,9 +26,10 @@ public class Log {
             throwable.printStackTrace(output);
     }
 
-    public static void info(Object text) {
+    public static void info(Object... text) {
         if (level.ordinal() >= Level.INFO.ordinal())
-            output.println(text.toString());
+            for (Object line : text)
+                output.println(line.toString());
     }
 
     public static void debug(Supplier<?> text) {
