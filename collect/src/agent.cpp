@@ -2,8 +2,9 @@
 #include <jvmti.h>
 
 #include "agent.hpp"
-#include "frame.hpp"
 #include "buffer.hpp"
+#include "frame.hpp"
+#include "heap.hpp"
 #include "location.hpp"
 
 extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *, void *) {
@@ -19,7 +20,12 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *, void *) {
     return 0;
 }
 
-extern "C" JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *) {
+extern "C" JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *vm) {
+    JNIEnv *jni;
+    if(!ok(vm->GetEnv(reinterpret_cast<void **>(&jni), JNI_VERSION_21)))
+        return;
+
+    ObjectClass::dispose(jni);
     ti = nullptr;
 }
 
@@ -33,7 +39,7 @@ extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collect
         return nullptr;
     if (!readLocation(method, location, methodInfo, buffer))
         return nullptr;
-    if (!readFrame(env, location, methodInfo, buffer))
+    if (!readFrame(location, methodInfo, buffer, env))
         return nullptr;
     
     return buffer.result(env);

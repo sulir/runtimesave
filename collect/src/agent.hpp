@@ -27,6 +27,15 @@ T jniCatch(T value, JNIEnv *env) {
 }
 
 template <typename T>
+T replaceWithGlobal(T localRef, JNIEnv *env) {
+    if (!localRef)
+        return nullptr;
+    T global = static_cast<T>(env->NewGlobalRef(localRef));
+    env->DeleteLocalRef(localRef);
+    return global;
+}
+
+template <typename T>
 void dealloc(T *ptr) {
     if (ti)
         ti->Deallocate(reinterpret_cast<unsigned char *>(ptr));

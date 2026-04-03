@@ -7,6 +7,7 @@ add_library(runtimesave SHARED
     src/agent.cpp
     src/buffer.cpp
     src/frame.cpp
+    src/heap.cpp
     src/location.cpp)
 
 target_include_directories(runtimesave PRIVATE

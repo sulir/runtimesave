@@ -4,4 +4,4 @@
 #include "buffer.hpp"
 #include "location.hpp"
 
-bool readFrame(JNIEnv *env, jlocation location, MethodInfo& methodInfo, Buffer& buffer);
+bool readFrame(jlocation location, MethodInfo& methodInfo, Buffer& buffer, JNIEnv *jni);

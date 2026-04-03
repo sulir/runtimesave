@@ -3,6 +3,7 @@ package io.github.sulir.runtimesave.rt;
 import io.github.sulir.runtimesave.graph.ValueNode;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.FrameNode;
+import io.github.sulir.runtimesave.nodes.NullNode;
 import io.github.sulir.runtimesave.nodes.ObjectNode;
 import io.github.sulir.runtimesave.nodes.PrimitiveNode;
 
@@ -52,10 +53,11 @@ public class BufferReader {
             case 'J' -> new PrimitiveNode(buffer.getLong(), "long");
             case 'F' -> new PrimitiveNode(buffer.getFloat(), "float");
             case 'D' -> new PrimitiveNode(buffer.getDouble(), "double");
-            case 'L', '[' -> {
+            case 'R' -> {
                 buffer.getInt();
                 yield new ObjectNode("Unknown");
             }
+            case 'N' -> NullNode.getInstance();
             default -> throw new IllegalArgumentException("Unknown variable kind: " + (char) kind);
         };
     }
