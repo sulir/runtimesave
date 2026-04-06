@@ -1,7 +1,9 @@
+#include <atomic>
 #include <cstring>
 #include <jvmti.h>
 #include <vector>
 
+#include "agent.hpp"
 #include "frame.hpp"
 #include "heap.hpp"
 #include "location.hpp"
@@ -10,6 +12,8 @@ template <typename T, typename Storage, typename Getter>
 static jvmtiError readLocalPrimitive(Getter getter, int slot, jbyte kind, Buffer& buffer) {
     Storage value;
     jvmtiError err = (ti->*getter)(nullptr, CALLER_DEPTH, slot, &value);
+    if (err)
+        return err;
     buffer.add(kind);
     buffer.add(static_cast<T>(value));
     return err;
@@ -18,9 +22,20 @@ static jvmtiError readLocalPrimitive(Getter getter, int slot, jbyte kind, Buffer
 static jvmtiError readLocalReference(int slot, Buffer& buffer, std::vector<jobject>& objects) {
     jobject value = nullptr;
     jvmtiError err = ti->GetLocalObject(nullptr, CALLER_DEPTH, slot, &value);
-    if (value) {
+    if (err)
+        return err;
+    
+    if (value != nullptr) {
+        jlong tag;
+        if ((err = ti->GetTag(value, &tag)))
+            return err;
+        if (tag == 0) {
+            tag = nextObjectTag.fetch_add(1, std::memory_order_relaxed);
+            if ((err = ti->SetTag(value, tag)))
+                return err;
+        }
         buffer.add('R');
-        buffer.add(static_cast<jint>(objects.size()));
+        buffer.add(tag);
         objects.push_back(value);
     } else {
         buffer.add('N');

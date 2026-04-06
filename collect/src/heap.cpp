@@ -2,9 +2,9 @@
 
 #include "heap.hpp"
 
-jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni) {
+static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni) {
     size_t count = objects.size();
-    jobjectArray array = jni->NewObjectArray(count, ObjectClass::get(jni), nullptr);
+    jobjectArray array = jni->NewObjectArray(count, systemClasses.objectClass, nullptr);
     if (!array)
         return nullptr;
     
@@ -13,10 +13,19 @@ jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni) {
     return array;
 }
 
+static jint referenceCallback(jvmtiHeapReferenceKind, const jvmtiHeapReferenceInfo *, jlong,
+        jlong, jlong, jlong *, jlong *, jint, void *) {
+    return JVMTI_VISIT_ABORT;
+}
+
 bool readObjects(const std::vector<jobject>& objects, Buffer& buffer, JNIEnv *jni) {
     jobjectArray root = createRoot(objects, jni);
     if (!root)
         return false;
+
+    jvmtiHeapCallbacks callbacks{};
+    callbacks.heap_reference_callback = referenceCallback;
+    ti->FollowReferences(0, nullptr, root, &callbacks, nullptr);
 
     buffer.add(nullptr, 0);
     return true;

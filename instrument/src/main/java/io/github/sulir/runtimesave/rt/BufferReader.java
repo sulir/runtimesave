@@ -54,7 +54,7 @@ public class BufferReader {
             case 'F' -> new PrimitiveNode(buffer.getFloat(), "float");
             case 'D' -> new PrimitiveNode(buffer.getDouble(), "double");
             case 'R' -> {
-                buffer.getInt();
+                buffer.getLong();
                 yield new ObjectNode("Unknown");
             }
             case 'N' -> NullNode.getInstance();

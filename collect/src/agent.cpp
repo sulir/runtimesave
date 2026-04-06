@@ -1,3 +1,4 @@
+#include <array>
 #include <jni.h>
 #include <jvmti.h>
 
@@ -7,6 +8,14 @@
 #include "heap.hpp"
 #include "location.hpp"
 
+void JNICALL onVMInit(jvmtiEnv *, JNIEnv *jni, jthread) {
+    systemClasses.load(jni);
+}
+
+void JNICALL onVMDeath(jvmtiEnv *, JNIEnv *jni) {
+    systemClasses.unload(jni);
+}
+
 extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *, void *) {
     if(!ok(vm->GetEnv(reinterpret_cast<void **>(&ti), JVMTI_VERSION_21)))
         return 1;
@@ -14,19 +23,21 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *, void *) {
     jvmtiCapabilities capabilities{};
     capabilities.can_get_line_numbers = 1;
     capabilities.can_access_local_variables = 1;
+    capabilities.can_tag_objects = 1;
     if (!ok(ti->AddCapabilities(&capabilities)))
         return 1;
 
+    jvmtiEventCallbacks callbacks{};
+    callbacks.VMInit = onVMInit;
+    callbacks.VMDeath = onVMDeath;
+    if (!ok(ti->SetEventCallbacks(&callbacks, sizeof callbacks)))
+        return 1;
+    static constexpr std::array events = {JVMTI_EVENT_VM_INIT, JVMTI_EVENT_VM_DEATH};
+    for (jvmtiEvent event : events)
+        if (!ok(ti->SetEventNotificationMode(JVMTI_ENABLE, event, nullptr)))
+            return 1;
+    
     return 0;
-}
-
-extern "C" JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *vm) {
-    JNIEnv *jni;
-    if(!ok(vm->GetEnv(reinterpret_cast<void **>(&jni), JNI_VERSION_21)))
-        return;
-
-    ObjectClass::dispose(jni);
-    ti = nullptr;
 }
 
 extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collector_readData(JNIEnv *env, jclass) {
