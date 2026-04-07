@@ -1,6 +1,7 @@
 #pragma once
 
 #include <jni.h>
+#include <jvmti.h>
 
 #include "agent.hpp"
 #include "buffer.hpp"
@@ -35,4 +36,4 @@ struct MethodInfo {
     ~MethodInfo() { cleanup(); };
 };
 
-bool readLocation(jmethodID method, jlocation location, MethodInfo& methodInfo, Buffer& buffer);
+bool readLocation(jmethodID *method, jlocation *location, MethodInfo& methodInfo, Buffer& buffer);

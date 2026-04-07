@@ -20,6 +20,10 @@ void Buffer::addString(const char *str) {
     add(str, length);
 }
 
+size_t Buffer::position() {
+    return pos;
+}
+
 void Buffer::checkpoint() {
     checkpointPos = pos;
 }
@@ -30,10 +34,10 @@ void Buffer::restore() {
 
 static_assert(std::endian::native == std::endian::little, "ByteBuffer is set to LE on Java side");
 
-jobject Buffer::result(JNIEnv *env) {
+jobject Buffer::result(JNIEnv *jni) {
     if (capacity == SIZE_MAX)
         return nullptr;
-    jobject nioBuffer = jniCatch(env->NewDirectByteBuffer(mem, pos), env);
+    jobject nioBuffer = jniCatch(jni->NewDirectByteBuffer(mem, pos), jni);
     if (nioBuffer)
         pos = 0;
     return nioBuffer;

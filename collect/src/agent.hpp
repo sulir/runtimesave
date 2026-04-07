@@ -10,7 +10,22 @@
 
 constexpr int CALLER_DEPTH = 3;
 inline jvmtiEnv *ti = nullptr;
-inline std::atomic<jlong> nextObjectTag{1};
+
+inline struct SystemClasses {
+    jclass objectClass = nullptr;
+    const jlong STRING_TAG = std::numeric_limits<jlong>::min();
+    void load(JNIEnv *jni);
+    void unload(JNIEnv *jni);
+} systemClasses;
+
+#pragma pack(push, 1)
+struct MainBufferHeader {
+    jint location = sizeof(MainBufferHeader);
+    jint locals = -1;
+    jint nodes = -1;
+    jint classes = -1;
+};
+#pragma pack(pop)
 
 template <typename T>
 bool ok(T err, jvmtiError allowedErr = JVMTI_ERROR_NONE, std::source_location loc = std::source_location::current()) {
@@ -22,18 +37,18 @@ bool ok(T err, jvmtiError allowedErr = JVMTI_ERROR_NONE, std::source_location lo
 }
 
 template <typename T>
-T jniCatch(T value, JNIEnv *env) {
-    if (!value && env->ExceptionCheck())
-        env->ExceptionDescribe();
+T jniCatch(T value, JNIEnv *jni) {
+    if (!value && jni->ExceptionCheck())
+        jni->ExceptionDescribe();
     return value;
 }
 
 template <typename T>
-T replaceWithGlobal(T localRef, JNIEnv *env) {
+T replaceWithGlobal(T localRef, JNIEnv *jni) {
     if (!localRef)
         return nullptr;
-    T global = static_cast<T>(env->NewGlobalRef(localRef));
-    env->DeleteLocalRef(localRef);
+    T global = static_cast<T>(jni->NewGlobalRef(localRef));
+    jni->DeleteLocalRef(localRef);
     return global;
 }
 
@@ -42,22 +57,6 @@ void dealloc(T *ptr) {
     if (ti)
         ti->Deallocate(reinterpret_cast<unsigned char *>(ptr));
 }
-
-inline struct SystemClasses {
-    jclass objectClass = nullptr;
-    const jlong STRING_TAG = std::numeric_limits<jlong>::min();
-
-    void load(JNIEnv *jni) {
-        objectClass = replaceWithGlobal(jniCatch(jni->FindClass("java/lang/Object"), jni), jni);
-
-        jclass stringClass = jniCatch(jni->FindClass("java/lang/Object"), jni);
-        if (stringClass)
-            ok(ti->SetTag(stringClass, STRING_TAG));
-    }
-    void unload(JNIEnv *jni) {
-        jni->DeleteGlobalRef(objectClass);
-    }
-} systemClasses;
 
 template <int Id = 0>
 class ScopeTime {

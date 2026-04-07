@@ -4,9 +4,22 @@
 
 #include "agent.hpp"
 #include "buffer.hpp"
-#include "frame.hpp"
+#include "classes.hpp"
 #include "heap.hpp"
+#include "locals.hpp"
 #include "location.hpp"
+
+void SystemClasses::load(JNIEnv *jni) {
+    objectClass = replaceWithGlobal(jniCatch(jni->FindClass("java/lang/Object"), jni), jni);
+
+    jclass stringClass = jniCatch(jni->FindClass("java/lang/Object"), jni);
+    if (stringClass)
+        ok(ti->SetTag(stringClass, STRING_TAG));
+}
+
+void SystemClasses::unload(JNIEnv *jni) {
+    jni->DeleteGlobalRef(objectClass);
+}
 
 void JNICALL onVMInit(jvmtiEnv *, JNIEnv *jni, jthread) {
     systemClasses.load(jni);
@@ -40,23 +53,32 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *, void *) {
     return 0;
 }
 
-extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collector_readData(JNIEnv *env, jclass) {
-    MethodInfo& methodInfo = MethodInfo::getThreadInstance();
+extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collector_readData(JNIEnv *jni, jclass) {
     Buffer buffer;
+    buffer.add(MainBufferHeader{});
 
     jmethodID method;
     jlocation location;
-    if (!ok(ti->GetFrameLocation(nullptr, CALLER_DEPTH, &method, &location)))
-        return nullptr;
-    if (!readLocation(method, location, methodInfo, buffer))
-        return nullptr;
-    if (!readFrame(location, methodInfo, buffer, env))
+    MethodInfo& methodInfo = MethodInfo::getThreadInstance();
+    if (!readLocation(&method, &location, methodInfo, buffer))
         return nullptr;
     
-    return buffer.result(env);
+    buffer.head<MainBufferHeader>()->locals = buffer.position();
+    std::vector<jobject> objects;
+    if (!readLocals(location, methodInfo, buffer, objects))
+        return nullptr;
+    
+    buffer.head<MainBufferHeader>()->nodes = buffer.position();
+    std::vector<jint> newClasses;
+    if (!readHeap(objects, buffer, newClasses, jni))
+        return nullptr;
+    
+    buffer.head<MainBufferHeader>()->classes = buffer.position();
+    loadClassesInfo(newClasses, buffer);
+    return buffer.result(jni);
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_io_github_sulir_runtimesave_rt_BufferReader_dispose(JNIEnv *env, jclass, jobject buffer) {
-    free(env->GetDirectBufferAddress(buffer));
+Java_io_github_sulir_runtimesave_rt_BufferReader_dispose(JNIEnv *jni, jclass, jobject buffer) {
+    free(jni->GetDirectBufferAddress(buffer));
 }

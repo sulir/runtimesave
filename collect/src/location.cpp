@@ -48,11 +48,14 @@ static jint getLineNumber(jlocation location, MethodInfo& methodInfo) {
     return (entry - 1)->line_number;
 }
 
-bool readLocation(jmethodID method, jlocation location, MethodInfo& methodInfo, Buffer& buffer) {
-    if (!loadMethodInfo(method, methodInfo))
+bool readLocation(jmethodID *method, jlocation *location, MethodInfo& methodInfo, Buffer& buffer) {
+    if (!ok(ti->GetFrameLocation(nullptr, CALLER_DEPTH, method, location)))
         return false;
 
-    jint line = getLineNumber(location, methodInfo);
+    if (!loadMethodInfo(*method, methodInfo))
+        return false;
+
+    jint line = getLineNumber(*location, methodInfo);
     if (line == - 1)
         return false;
 

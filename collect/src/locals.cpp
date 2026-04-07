@@ -1,11 +1,8 @@
-#include <atomic>
-#include <cstring>
 #include <jvmti.h>
 #include <vector>
 
 #include "agent.hpp"
-#include "frame.hpp"
-#include "heap.hpp"
+#include "locals.hpp"
 #include "location.hpp"
 
 template <typename T, typename Storage, typename Getter>
@@ -26,16 +23,7 @@ static jvmtiError readLocalReference(int slot, Buffer& buffer, std::vector<jobje
         return err;
     
     if (value != nullptr) {
-        jlong tag;
-        if ((err = ti->GetTag(value, &tag)))
-            return err;
-        if (tag == 0) {
-            tag = nextObjectTag.fetch_add(1, std::memory_order_relaxed);
-            if ((err = ti->SetTag(value, tag)))
-                return err;
-        }
         buffer.add('R');
-        buffer.add(tag);
         objects.push_back(value);
     } else {
         buffer.add('N');
@@ -68,8 +56,7 @@ static jvmtiError readLocalValue(jbyte kind, int slot, Buffer& buffer, std::vect
     return JVMTI_ERROR_ILLEGAL_ARGUMENT;
 }
 
-bool readFrame(jlocation location, MethodInfo& methodInfo, Buffer& buffer, JNIEnv *jni) {
-    std::vector<jobject> objects;
+bool readLocals(jlocation location, MethodInfo& methodInfo, Buffer& buffer, std::vector<jobject>& objects) {
     objects.reserve(methodInfo.numLocals);
     buffer.checkpoint();
 
@@ -89,9 +76,5 @@ bool readFrame(jlocation location, MethodInfo& methodInfo, Buffer& buffer, JNIEn
             return false;
         }
     }
-
-    if (objects.empty())
-        return true;
-    else
-        return readObjects(objects, buffer, jni);
+    return true;
 }

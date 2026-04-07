@@ -13,9 +13,9 @@ public:
 
     void add(const void *data, size_t size);
     void addString(const char *str);
-    template <typename T> requires (!std::is_pointer_v<T>)
-    void add(T value) { add(&value, sizeof(T)); }
-
+    template <typename T> requires (!std::is_pointer_v<T>) void add(const T value) { add(&value, sizeof(T)); }
+    size_t position();
+    template <typename T> T *head() { return reinterpret_cast<T *>(mem); }
     void checkpoint();
     void restore();
     jobject result(JNIEnv *env);

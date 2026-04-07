@@ -3,7 +3,11 @@
 #include <jni.h>
 #include <vector>
 
-#include "agent.hpp"
 #include "buffer.hpp"
 
-bool readObjects(const std::vector<jobject>& objects, Buffer& buffer, JNIEnv *jni);
+struct HeapData {
+    Buffer& buffer;
+    std::vector<jint>& newClasses;
+};
+
+bool readHeap(const std::vector<jobject>& objects, Buffer& buffer, std::vector<jint>& newClasses, JNIEnv *jni);
