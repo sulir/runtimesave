@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <jvmti.h>
+#include <mutex>
 
 #include "agent.hpp"
 #include "heap.hpp"
@@ -16,12 +17,13 @@ static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni)
 }
 
 static jint tagClass(jlong *tag, HeapData *data) {
-    static jint nextClassTag = 1;
+    static jlong nextClassTag = 1;
 
     if (*tag == 0) {
-        jint newTag = nextClassTag++;
-        *tag = static_cast<jint>(newTag);
-        data->newClasses.push_back(newTag);
+        *tag = nextClassTag++;
+        if (data->newClassesCount == 0)
+            data->newClassesStart = *tag;
+        data->newClassesCount++;
     }
     return 0;
 }
@@ -39,9 +41,11 @@ static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapRefere
     return 0;
 }
 
-bool readHeap(const std::vector<jobject>& locals, Buffer& buffer, std::vector<jint>& newClasses, JNIEnv *jni) {
-    if (locals.empty())
+bool readHeap(const std::vector<jobject>& locals, HeapData& heapData, JNIEnv *jni) {
+    if (locals.empty()) {
+        heapData.sequenceNum = nextSequenceNum.fetch_add(1, std::memory_order_relaxed);
         return true;
+    }
     
     jobjectArray root = createRoot(locals, jni);
     if (!root)
@@ -50,6 +54,10 @@ bool readHeap(const std::vector<jobject>& locals, Buffer& buffer, std::vector<ji
     jvmtiHeapCallbacks callbacks{};
     callbacks.heap_reference_callback = referenceCallback;
     
-    HeapData heapData{buffer, newClasses};
-    return ok(ti->FollowReferences(0, nullptr, root, &callbacks, &heapData));
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lock(mtx);
+    if (!ok(ti->FollowReferences(0, nullptr, root, &callbacks, &heapData)))
+        return false;
+    heapData.sequenceNum = nextSequenceNum.fetch_add(1, std::memory_order_relaxed);
+    return true;
 }

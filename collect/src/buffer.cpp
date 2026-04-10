@@ -20,6 +20,11 @@ void Buffer::addString(const char *str) {
     add(str, length);
 }
 
+void Buffer::addString(const std::string& str) {
+    add(static_cast<jsize>(str.size()));
+    add(str.c_str(), str.size());
+}
+
 size_t Buffer::position() {
     return pos;
 }

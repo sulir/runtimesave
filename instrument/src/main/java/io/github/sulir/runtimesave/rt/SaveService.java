@@ -37,6 +37,7 @@ public class SaveService {
     }
 
     public void saveFrame(BufferReader reader) {
+        reader.readClasses();
         thread.execute(() -> {
             try {
                 SourceLocation location = reader.readLocation();

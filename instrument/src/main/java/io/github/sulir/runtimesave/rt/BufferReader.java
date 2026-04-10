@@ -11,21 +11,24 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class BufferReader {
     private static ClassInfo[] classesInfo = new ClassInfo[16 * 1024];
-    private static final AtomicInteger lastClass = new AtomicInteger(0);
+    private static final AtomicLong lastSequence = new AtomicLong(0);
 
+    private final long sequenceNum;
     private final ByteBuffer main;
     private final ByteBuffer location;
     private final ByteBuffer locals;
     private final ByteBuffer classes;
+    private boolean classesRead = false;
 
     public BufferReader(ByteBuffer main) {
         this.main = main;
         main.order(ByteOrder.LITTLE_ENDIAN);
 
+        sequenceNum = main.getLong();
         int locationStart = main.getInt();
         int localsStart = main.getInt();
         int nodesStart = main.getInt();
@@ -49,7 +52,8 @@ public class BufferReader {
     }
 
     public FrameNode readFrame() {
-        readClasses();
+        if (!classesRead)
+            throw new IllegalStateException("Metadata of classes not yet read");
 
         FrameNode frame = new FrameNode();
         while (locals.hasRemaining()) {
@@ -79,25 +83,28 @@ public class BufferReader {
     public void readClasses() {
         while (classes.hasRemaining()) {
             int tag = classes.getInt();
-            while (lastClass.get() < tag - 1)
-                Thread.onSpinWait();
             if (tag >= classesInfo.length)
                 classesInfo = Arrays.copyOf(classesInfo, Math.max(2 * classesInfo.length, tag + 1));
             classesInfo[tag] = readClassInfo();
-            lastClass.set(tag);
         }
+        waitForPreviousClasses();
     }
 
     private ClassInfo readClassInfo() {
         String className = BufferReader.readUTF8(classes);
         int fieldStartIndex = classes.getInt();
         int fieldCount = classes.getInt();
-
         String[] fieldNames = new String[fieldCount];
         for (int i = 0; i < fieldCount; i++)
             fieldNames[i] = BufferReader.readUTF8(classes);
 
         return new ClassInfo(className, fieldStartIndex, fieldNames);
+    }
+
+    private void waitForPreviousClasses() {
+        while (!lastSequence.compareAndSet(sequenceNum - 1, sequenceNum))
+            Thread.onSpinWait();
+        classesRead = true;
     }
 
     public static String readUTF8(ByteBuffer buffer) {

@@ -10,7 +10,7 @@
 #include "location.hpp"
 
 void SystemClasses::load(JNIEnv *jni) {
-    objectClass = replaceWithGlobal(jniCatch(jni->FindClass("java/lang/Object"), jni), jni);
+    objectClass = replaceByGlobal(jniCatch(jni->FindClass("java/lang/Object"), jni), jni);
 
     jclass stringClass = jniCatch(jni->FindClass("java/lang/Object"), jni);
     if (stringClass)
@@ -69,12 +69,13 @@ extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collect
         return nullptr;
     
     buffer.head<MainBufferHeader>()->nodes = buffer.position();
-    std::vector<jint> newClasses;
-    if (!readHeap(objects, buffer, newClasses, jni))
+    HeapData heapData = {buffer, 0, 0, 0};
+    if (!readHeap(objects, heapData, jni))
         return nullptr;
+    buffer.head<MainBufferHeader>()->sequenceNum = heapData.sequenceNum;
     
     buffer.head<MainBufferHeader>()->classes = buffer.position();
-    loadClassesInfo(newClasses, buffer);
+    loadClassesInfo(heapData.newClassesStart, heapData.newClassesCount, buffer);
     return buffer.result(jni);
 }
 

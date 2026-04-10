@@ -4,6 +4,7 @@
 #include <cstring>
 #include <type_traits>
 #include <jni.h>
+#include <string>
 
 class Buffer {
 public:
@@ -13,6 +14,7 @@ public:
 
     void add(const void *data, size_t size);
     void addString(const char *str);
+    void addString(const std::string& str);
     template <typename T> requires (!std::is_pointer_v<T>) void add(const T value) { add(&value, sizeof(T)); }
     size_t position();
     template <typename T> T *head() { return reinterpret_cast<T *>(mem); }

@@ -1,13 +1,18 @@
 #pragma once
 
+#include <atomic>
 #include <jni.h>
 #include <vector>
 
 #include "buffer.hpp"
 
+static std::atomic<jlong> nextSequenceNum{1};
+
 struct HeapData {
     Buffer& buffer;
-    std::vector<jint>& newClasses;
+    jlong sequenceNum;
+    jlong newClassesStart;
+    jint newClassesCount;
 };
 
-bool readHeap(const std::vector<jobject>& objects, Buffer& buffer, std::vector<jint>& newClasses, JNIEnv *jni);
+bool readHeap(const std::vector<jobject>& objects, HeapData& heapData, JNIEnv *jni);
