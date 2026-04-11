@@ -1,10 +1,30 @@
 #include <jvmti.h>
 #include <string>
-#include <vector>
 
 #include "agent.hpp"
 #include "buffer.hpp"
 #include "classes.hpp"
+
+ClassCache::ClassCache() {
+    classes.reserve(16*1024);
+}
+
+void ClassCache::add(jclass klass, JNIEnv *jni) {
+    jweak weakClass = jni->NewWeakGlobalRef(klass);
+    if (!weakClass)
+        return;
+    
+    std::lock_guard<std::mutex> lock(mtx);
+    if (!ok(ti->SetTag(klass, nextTag)))
+        return;
+    size_t pos = nextTag++ - MIN_TAG;
+    classes.resize(pos + 1);
+    classes[pos] = weakClass;
+}
+
+jweak ClassCache::get(jlong tag) {
+    return classes[tag - MIN_TAG];
+}
 
 static std::string replaceByClassName(char *signature) {
     std::string result;
@@ -48,33 +68,46 @@ static void loadClassInfo(jclass klass, jlong tag, Buffer& buffer) {
     buffer.add(static_cast<jint>(0));
 }
 
-static void findTagged(const jclass* all, jint allCount, jlong start, jint count, std::vector<jclass>& tagged) {
-    ScopeTime _;
-    jint found = 0;
-    for (jint i = 0; i < allCount && found < count; i++) {
+static void loadCached(const std::vector<jweak>& classes, Buffer& buffer, JNIEnv *jni) {
+    for (jweak weak : classes) {
+        jclass klass = static_cast<jclass>(jni->NewLocalRef(weak));
+        if (!klass)
+            continue;
+        
         jlong tag;
-        if (!ok(ti->GetTag(all[i], &tag)))
+        if (!ok(ti->GetTag(klass, &tag)))
             continue;
 
-        if (tag >= start && tag < start + count) {
-            tagged[tag - start] = all[i];
-            found++;
-        }
+        loadClassInfo(klass, tag, buffer);
     }
-    check(found == count);
 }
 
-void loadClassesInfo(jlong startTag, jint count, Buffer& buffer) {
-    if (count == 0)
+static void loadUncached(std::unordered_set<jlong>& tags, Buffer& buffer, JNIEnv *jni) {
+    jint allCount;
+    jclass *allClasses;
+    if (!ok(ti->GetLoadedClasses(&allCount, &allClasses)))
         return;
+    
+    for (jint i = 0; i < allCount && !tags.empty(); i++) {
+        jlong tag;
+        if (!ok(ti->GetTag(allClasses[i], &tag)))
+            continue;
+        if (tag == 0) {
+            classCache.add(allClasses[i], jni);
+            continue;
+        }
 
-    std::vector<jclass> newClasses(count);
-    jint allCount = 0;
-    jclass *allClasses = nullptr;
-    ok(ti->GetLoadedClasses(&allCount, &allClasses));
-    findTagged(allClasses, allCount, startTag, count, newClasses);
+        if (tags.erase(tag))
+            loadClassInfo(allClasses[i], tag, buffer);
+    }
+
+    check(tags.empty());
     dealloc(allClasses);
+}
 
-    for (jint i = 0; i < count; i++)
-        loadClassInfo(newClasses[i], startTag + i, buffer);
+void loadClassesInfo(const std::vector<jweak>& cached, std::unordered_set<jlong>& uncached, Buffer& buffer,
+        JNIEnv *jni) {
+    loadCached(cached, buffer, jni);
+    if (!uncached.empty())
+        loadUncached(uncached, buffer, jni);
 }

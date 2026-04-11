@@ -3,6 +3,7 @@
 #include <mutex>
 
 #include "agent.hpp"
+#include "classes.hpp"
 #include "heap.hpp"
 
 static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni) {
@@ -16,14 +17,17 @@ static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni)
     return array;
 }
 
-static jint tagClass(jlong *tag, HeapData *data) {
+static jint tagClass(jlong *tagPtr, HeapData *data) {
     static jlong nextClassTag = 1;
+    jlong tag = *tagPtr;
 
-    if (*tag == 0) {
-        *tag = nextClassTag++;
-        if (data->newClassesCount == 0)
-            data->newClassesStart = *tag;
-        data->newClassesCount++;
+    if (tag & classCache.MIN_TAG) {
+        jweak klass = classCache.get(tag);
+        data->cachedClasses.push_back(klass);
+        *tagPtr = nextClassTag++;
+    } else if (tag == 0) {
+        *tagPtr = nextClassTag++;
+        data->uncachedClasses.insert(*tagPtr);
     }
     return 0;
 }

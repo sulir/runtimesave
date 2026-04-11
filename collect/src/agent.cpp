@@ -12,7 +12,7 @@
 void SystemClasses::load(JNIEnv *jni) {
     objectClass = replaceByGlobal(jniCatch(jni->FindClass("java/lang/Object"), jni), jni);
 
-    jclass stringClass = jniCatch(jni->FindClass("java/lang/Object"), jni);
+    jclass stringClass = jniCatch(jni->FindClass("java/lang/String"), jni);
     if (stringClass)
         ok(ti->SetTag(stringClass, STRING_TAG));
 }
@@ -29,6 +29,10 @@ void JNICALL onVMDeath(jvmtiEnv *, JNIEnv *jni) {
     systemClasses.unload(jni);
 }
 
+void JNICALL onClassLoad(jvmtiEnv *, JNIEnv *jni, jthread, jclass klass) {
+    classCache.add(klass, jni);
+}
+
 extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *, void *) {
     if(!ok(vm->GetEnv(reinterpret_cast<void **>(&ti), JVMTI_VERSION_21)))
         return 1;
@@ -43,9 +47,10 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *, void *) {
     jvmtiEventCallbacks callbacks{};
     callbacks.VMInit = onVMInit;
     callbacks.VMDeath = onVMDeath;
+    callbacks.ClassLoad = onClassLoad;
     if (!ok(ti->SetEventCallbacks(&callbacks, sizeof callbacks)))
         return 1;
-    static constexpr std::array events = {JVMTI_EVENT_VM_INIT, JVMTI_EVENT_VM_DEATH};
+    static constexpr std::array events = {JVMTI_EVENT_VM_INIT, JVMTI_EVENT_VM_DEATH, JVMTI_EVENT_CLASS_LOAD};
     for (jvmtiEvent event : events)
         if (!ok(ti->SetEventNotificationMode(JVMTI_ENABLE, event, nullptr)))
             return 1;
@@ -69,13 +74,13 @@ extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collect
         return nullptr;
     
     buffer.head<MainBufferHeader>()->nodes = buffer.position();
-    HeapData heapData = {buffer, 0, 0, 0};
+    HeapData heapData{buffer};
     if (!readHeap(objects, heapData, jni))
         return nullptr;
     buffer.head<MainBufferHeader>()->sequenceNum = heapData.sequenceNum;
     
     buffer.head<MainBufferHeader>()->classes = buffer.position();
-    loadClassesInfo(heapData.newClassesStart, heapData.newClassesCount, buffer);
+    loadClassesInfo(heapData.cachedClasses, heapData.uncachedClasses, buffer, jni);
     return buffer.result(jni);
 }
 
