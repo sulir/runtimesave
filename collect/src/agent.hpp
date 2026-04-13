@@ -7,6 +7,7 @@
 #include <jni.h>
 #include <jvmti.h>
 #include <source_location>
+#include <utility>
 
 constexpr int CALLER_DEPTH = 3;
 inline jvmtiEnv *ti = nullptr;
@@ -28,9 +29,10 @@ struct MainBufferHeader {
 };
 #pragma pack(pop)
 
-inline void check(bool condition, std::source_location loc = std::source_location::current()) {
+inline bool check(bool condition, std::source_location loc = std::source_location::current()) {
     if (!condition) [[unlikely]]
         std::fprintf(stderr, "Check failed at %s:%d\n", loc.function_name(), loc.line());
+    return condition;
 }
 
 template <typename T>
@@ -62,6 +64,35 @@ template <typename T>
 void dealloc(T *ptr) {
     ti->Deallocate(reinterpret_cast<unsigned char *>(ptr));
 }
+
+template <typename T>
+class TiPtr {
+public:
+    TiPtr() = default;
+    ~TiPtr() { dealloc(ptr); }
+    operator T *() { return ptr; }
+    T **operator &() { return &ptr; }
+
+    TiPtr(TiPtr&& other) noexcept : ptr(std::exchange(other.ptr, nullptr)) {}
+    TiPtr& operator=(TiPtr&& other) noexcept {
+        std::swap(ptr, other.ptr);
+        return *this;
+    }
+private:
+    T *ptr = nullptr;
+};
+
+template <typename T>
+class JniLocal {
+public:
+    JniLocal(T ref, JNIEnv *jni) : ref(ref), jni(jni) {};
+    ~JniLocal() { jni->DeleteLocalRef(ref); }
+    operator T() { return ref; }
+private:
+    T ref;
+    JNIEnv *jni;
+};
+
 
 template <int Id = 0>
 class ScopeTime {

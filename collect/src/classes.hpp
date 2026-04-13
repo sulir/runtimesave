@@ -11,7 +11,7 @@ inline class ClassCache {
 public:
     static constexpr jlong MIN_TAG = 1LL << 62;
     ClassCache();
-    void add(jclass klass, JNIEnv *jni);
+    jlong add(jclass klass, JNIEnv *jni);
     jweak get(jlong tag);
 private:
     std::vector<jweak> classes;

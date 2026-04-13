@@ -15,13 +15,13 @@ void Buffer::add(const void *data, size_t size) {
 }
 
 void Buffer::addString(const char *str) {
-    jsize length = strlen(str);
+    jint length = strlen(str);
     add(length);
     add(str, length);
 }
 
 void Buffer::addString(const std::string& str) {
-    add(static_cast<jsize>(str.size()));
+    add(static_cast<jint>(str.size()));
     add(str.c_str(), str.size());
 }
 
