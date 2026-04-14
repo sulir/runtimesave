@@ -25,6 +25,10 @@ jlong ClassCache::add(jclass klass, JNIEnv *jni) {
     return nextTag++;
 }
 
+bool ClassCache::contains(jlong tag) {
+    return tag >= MIN_TAG && static_cast<size_t>(tag - MIN_TAG) < classes.size();
+}
+
 jweak ClassCache::get(jlong tag) {
     return classes[tag - MIN_TAG];
 }
@@ -38,19 +42,11 @@ static std::string classSignatureToName(const char *sig) {
         arrayDim++;
     
     char kind = sig[arrayDim];
-    switch (kind) {
-        case 'Z': result += "boolean"; break;
-        case 'B': result += "byte"; break;
-        case 'C': result += "char"; break;
-        case 'S': result += "short"; break;
-        case 'I': result += "int"; break;
-        case 'J': result += "long"; break;
-        case 'F': result += "float"; break;
-        case 'D': result += "double"; break;
-        case 'L': [[likely]]
-            for (size_t i = arrayDim + 1; sig[i] != ';'; i++)
-                result += sig[i] == '/' ? '.' : sig[i];
-            break;
+    if (kind == 'L') {   
+        for (size_t i = arrayDim + 1; sig[i] != ';'; i++)
+            result += sig[i] == '/' ? '.' : sig[i];
+    } else if (kind >= 'B' && kind <= 'Z') {
+        result += primitiveTypes[kind - 'B'].name;
     }
 
     for (size_t i = 0; i < arrayDim; i++)
