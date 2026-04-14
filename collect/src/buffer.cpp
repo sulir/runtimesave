@@ -54,12 +54,18 @@ Buffer::~Buffer() {
 }
 
 bool Buffer::grow(size_t added) {
-    if (pos + added <= capacity || capacity == SIZE_MAX)
+    size_t needed = pos + added;
+    if (needed <= capacity || capacity == SIZE_MAX)
         return true;
 
-    constexpr size_t ROUND = 1024 * 1024;
-    size_t newCapacity = (pos + added + ROUND - 1) / ROUND * ROUND;
-    void *newMem = std::realloc(mem, newCapacity);
+    if (needed <= MAX_EXP)
+        capacity = std::bit_ceil(needed);
+    else
+        capacity = (needed + MAX_EXP - 1) / MAX_EXP * MAX_EXP;
+
+    if (capacity < MIN_SIZE)
+        capacity = MIN_SIZE;
+    void *newMem = std::realloc(mem, capacity);
     
     if (!newMem) {
         free(mem);
@@ -69,6 +75,5 @@ bool Buffer::grow(size_t added) {
     }
 
     mem = newMem;
-    capacity = newCapacity;
     return true;
 }

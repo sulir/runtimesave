@@ -31,6 +31,8 @@ public:
     ~Buffer();
 private:
     bool grow(size_t added);
+    static constexpr size_t MIN_SIZE = 128 * 1024;
+    static constexpr size_t MAX_EXP = 128 * 1024 * 1024;
 
     void *mem = nullptr;
     size_t capacity = 0;
