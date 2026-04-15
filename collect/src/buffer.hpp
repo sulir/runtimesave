@@ -20,7 +20,7 @@ public:
     template <typename T, typename... Args> void emplace(Args&&... args) {
         if (!grow(sizeof(T)))
             return;
-        new (static_cast<std::byte *>(mem) + pos) T(std::forward<Args>(args)...);
+        new (static_cast<std::byte *>(mem) + pos) T{std::forward<Args>(args)...};
         pos += sizeof(T);
     }
     size_t position();

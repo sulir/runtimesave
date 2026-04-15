@@ -15,24 +15,10 @@ struct HeapData {
 };
 
 #pragma pack(push, 1)
-struct HeapReference {
-    jbyte kind;
-    jlong from;
-    jint index;
-    jlong to;
-};
-
-struct ObjectNode {
+struct ObjectOrArrayNode {
     jbyte kind;
     jlong objectTag;
     jlong classTag;
-};
-
-struct ArrayNode {
-    jbyte kind;
-    jlong objectTag;
-    jlong classTag;
-    jint length;
 };
 
 struct StringNode {
@@ -40,6 +26,15 @@ struct StringNode {
     jlong objectTag;
     jint length;
 };
+
+struct ReferenceEdge {
+    jbyte kind;
+    jlong from;
+    jint index;
+    jlong to;
+};
+struct FieldEdge : ReferenceEdge {};
+struct ElementEdge : ReferenceEdge {};
 
 struct PrimitiveField {
     jbyte type;

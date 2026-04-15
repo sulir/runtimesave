@@ -30,7 +30,9 @@ void JNICALL onVMDeath(jvmtiEnv *, JNIEnv *jni) {
 }
 
 void JNICALL onClassLoad(jvmtiEnv *, JNIEnv *jni, jthread, jclass klass) {
-    classCache.add(klass, jni);
+    jlong tag;
+    if (ok(ti->GetTag(klass, &tag)) && tag != systemClasses.STRING_TAG)
+        classCache.add(klass, jni);
 }
 
 extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *, void *) {

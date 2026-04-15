@@ -14,7 +14,7 @@ inline jvmtiEnv *ti = nullptr;
 
 inline struct SystemClasses {
     jclass objectClass = nullptr;
-    const jlong STRING_TAG = std::numeric_limits<jlong>::min();
+    static constexpr jlong STRING_TAG = 1;
     void load(JNIEnv *jni);
     void unload(JNIEnv *jni);
 } systemClasses;
