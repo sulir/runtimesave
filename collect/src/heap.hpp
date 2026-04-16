@@ -1,6 +1,5 @@
 #pragma once
 
-#include <atomic>
 #include <jni.h>
 #include <unordered_set>
 #include <vector>
@@ -16,31 +15,47 @@ struct HeapData {
 
 #pragma pack(push, 1)
 struct ObjectOrArrayNode {
-    jbyte kind;
+    jbyte kind = 'R';
     jlong objectTag;
-    jlong classTag;
+    jint classTag;
+    ObjectOrArrayNode(jlong objectTag, jint classTag)
+        : objectTag(objectTag), classTag (classTag) {};
 };
 
 struct StringNode {
-    jbyte kind;
+    jbyte kind = 'T';
     jlong objectTag;
-    jint length;
+    jint charCount;
+    StringNode(jlong objectTag, jint charCount)
+        : objectTag(objectTag), charCount(charCount) {};
 };
 
-struct ReferenceEdge {
-    jbyte kind;
+struct FieldEdge {
+    jbyte kind = 'M';
+    jlong from;
+    jint fromClass;
+    jint fieldIndex;
+    jlong to;
+    jbyte toKind;
+    FieldEdge(jlong from, jint fromClass, jint fieldIndex, jlong to, jbyte toKind)
+        : from(from), fromClass(fromClass), fieldIndex(fieldIndex), to(to), toKind(toKind) {};
+};
+
+struct ElementEdge {
+    jbyte kind = 'E';
     jlong from;
     jint index;
     jlong to;
+    jbyte toKind;
+    ElementEdge(jlong from, jint index, jlong to, jbyte toKind)
+        : from(from), index(index), to(to), toKind(toKind) {};
 };
-struct FieldEdge : ReferenceEdge {};
-struct ElementEdge : ReferenceEdge {};
 
 struct PrimitiveField {
     jbyte type;
     jlong objectTag;
-    jint index;
-    jvalue value;
+    jint classTag;
+    jint fieldIndex;
 };
 
 struct PrimitiveArray {

@@ -1,3 +1,4 @@
+#include <atomic>
 #include <jni.h>
 #include <jvmti.h>
 #include <mutex>
@@ -19,7 +20,7 @@ static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni)
 
 static void tagClass(jlong *tagPtr, HeapData *data) {
     static jlong nextClassTag = systemClasses.STRING_TAG + 1;
-    
+
     jlong tag = *tagPtr;
     if (classCache.contains(tag)) {
         jweak klass = classCache.get(tag);
@@ -40,44 +41,59 @@ static jlong tagObject(jlong *tagPtr) {
 }
 
 static void addObjectOrArrayNode(jlong objectTag, jlong classTag, Buffer& buffer) {
-    if (classTag != systemClasses.STRING_TAG)
-        buffer.emplace<ObjectOrArrayNode>('R', objectTag, classTag);
+    if (objectTag != 0)
+        buffer.emplace<ObjectOrArrayNode>(objectTag, static_cast<jint>(classTag));
 }
 
-static jint addFieldEdge(jint index, jlong *tagPtr, jlong *referrerTagPtr, jlong classTag, Buffer& buffer) {
-    buffer.emplace<FieldEdge>('M', *referrerTagPtr, index, tagObject(tagPtr));
-    return classTag == systemClasses.STRING_TAG ? 0 : JVMTI_VISIT_OBJECTS;
+static jbyte getReferenceKind(jlong classTag, jint arrayLength) {
+    if (classTag == systemClasses.STRING_TAG)
+        return 'T';
+    if (arrayLength != -1)
+        return '[';
+    return 'L';
 }
 
-static jint addElementEdge(jint index, jlong *tagPtr, jlong *referrerTagPtr, jlong classTag, Buffer& buffer) {
-    buffer.emplace<ElementEdge>('E', *referrerTagPtr, index, tagObject(tagPtr));
-    return classTag == systemClasses.STRING_TAG ? 0 : JVMTI_VISIT_OBJECTS;
+static void addFieldEdge(jlong from, jlong fromClass, jint index, jlong *to, jlong toClass, jint arrLen, Buffer& buf) {
+    jbyte toKind = getReferenceKind(toClass, arrLen);
+    buf.emplace<FieldEdge>(from, static_cast<jint>(fromClass), index, tagObject(to), toKind);
 }
 
-static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapReferenceInfo *info, jlong classTag, jlong,
-        jlong, jlong *tagPtr, jlong *referrerTagPtr, jint, void *userData) {
+static void addElementEdge(jlong from, jint index, jlong *to, jlong toClass, jint arrLen, Buffer& buf) {
+    jbyte toKind = getReferenceKind(toClass, arrLen);
+    buf.emplace<ElementEdge>(from, index, tagObject(to), toKind);
+}
+
+static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapReferenceInfo *info, jlong classTag,
+        jlong referrerClassTag, jlong, jlong *tag, jlong *referrerTag, jint arrLen, void *userData) {
     HeapData *data = static_cast<HeapData *>(userData);
 
     switch (kind) {
         case JVMTI_HEAP_REFERENCE_CLASS:
-            tagClass(tagPtr, data);
-            addObjectOrArrayNode(*referrerTagPtr, *tagPtr, data->buffer);
+            if (*tag != systemClasses.STRING_TAG) {
+                tagClass(tag, data);
+                addObjectOrArrayNode(*referrerTag, *tag, data->buffer);
+            }
             return 0;
         case JVMTI_HEAP_REFERENCE_FIELD:
-            return addFieldEdge(info->field.index, tagPtr, referrerTagPtr, classTag, data->buffer);
+            if (referrerClassTag == systemClasses.STRING_TAG)
+                return 0;
+            addFieldEdge(*referrerTag, referrerClassTag, info->field.index, tag, classTag, arrLen, data->buffer);
+            return JVMTI_VISIT_OBJECTS;
         case JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT:
-            return addElementEdge(info->array.index, tagPtr, referrerTagPtr, classTag, data->buffer);
+            addElementEdge(*referrerTag, info->field.index, tag, classTag, arrLen, data->buffer);
+            return JVMTI_VISIT_OBJECTS;
         default:
             return 0;
     }
 }
 
-static jint primitiveFieldCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapReferenceInfo *info, jlong,
+static jint primitiveFieldCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapReferenceInfo *info, jlong classTag,
         jlong *tagPtr, jvalue value, jvmtiPrimitiveType type, void *userData) {
-    if (kind == JVMTI_HEAP_REFERENCE_STATIC_FIELD)
+    if (kind == JVMTI_HEAP_REFERENCE_STATIC_FIELD || classTag == systemClasses.STRING_TAG)
         return 0;
     Buffer& buffer = static_cast<HeapData *>(userData)->buffer;
-    buffer.emplace<PrimitiveField>(type, *tagPtr, info->field.index, value);
+    buffer.emplace<PrimitiveField>(type, *tagPtr, static_cast<jint>(classTag), info->field.index);
+    buffer.add(&value, primitiveTypes[type - 'B'].size);
     return 0;
 }
 
@@ -89,10 +105,10 @@ static jint primitiveArrayCallback(jlong, jlong, jlong *tagPtr, jint length, jvm
     return 0;
 }
 
-static jint stringCallback(jlong, jlong, jlong *tagPtr, const jchar *value, jint length, void *userData) {
+static jint stringCallback(jlong, jlong, jlong *tagPtr, const jchar *value, jint charCount, void *userData) {
     Buffer& buffer = static_cast<HeapData *>(userData)->buffer;
-    buffer.emplace<StringNode>('S', *tagPtr, length);
-    buffer.add(value, length * sizeof(jchar));
+    buffer.emplace<StringNode>(*tagPtr, charCount);
+    buffer.add(value, charCount * sizeof(jchar));
     return 0;
 }
 

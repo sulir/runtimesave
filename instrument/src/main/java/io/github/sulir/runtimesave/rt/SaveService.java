@@ -43,11 +43,11 @@ public class SaveService {
                 SourceLocation location = reader.readLocation();
                 FrameNode frame = reader.readFrame();
                 Log.info(location, frame);
-                packer.pack(frame);
-                AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
-                hasher.assignHashes(dag);
-                idHasher.assignIdHashes(frame);
                 if (System.getenv("RS_WRITE") != null) {
+                    packer.pack(frame);
+                    AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
+                    hasher.assignHashes(dag);
+                    idHasher.assignIdHashes(frame);
                     database.write(dag);
                     metadata.addLocation(frame.hash(), location);
                 }

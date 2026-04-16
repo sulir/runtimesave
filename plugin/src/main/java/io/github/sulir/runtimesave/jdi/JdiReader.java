@@ -5,12 +5,13 @@ import io.github.sulir.runtimesave.graph.ValueNode;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class JdiReader {
     private final StackFrame frame;
-    private final Map<Long, ValueNode> created = new java.util.HashMap<>();
+    private final Map<Long, ValueNode> created = new HashMap<>();
 
     public JdiReader(StackFrame frame) {
         this.frame = frame;
