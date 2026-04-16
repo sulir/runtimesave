@@ -22,9 +22,10 @@ inline struct SystemClasses {
 #pragma pack(push, 1)
 struct MainBufferHeader {
     jlong sequenceNum = 0;
+    jint referenceNodeCount = 0;
     jint location = sizeof(MainBufferHeader);
     jint locals = -1;
-    jint nodes = -1;
+    jint heap = -1;
     jint classes = -1;
 };
 #pragma pack(pop)

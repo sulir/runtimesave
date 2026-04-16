@@ -75,11 +75,12 @@ extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collect
     if (!readLocals(location, methodInfo, buffer, objects))
         return nullptr;
     
-    buffer.head<MainBufferHeader>()->nodes = buffer.position();
+    buffer.head<MainBufferHeader>()->heap = buffer.position();
     HeapData heapData{buffer};
     if (!readHeap(objects, heapData, jni))
         return nullptr;
     buffer.head<MainBufferHeader>()->sequenceNum = heapData.sequenceNum;
+    buffer.head<MainBufferHeader>()->referenceNodeCount = heapData.referenceNodeCount;
     
     buffer.head<MainBufferHeader>()->classes = buffer.position();
     loadClassesInfo(heapData.cachedClasses, heapData.uncachedClasses, buffer, jni);

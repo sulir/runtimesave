@@ -15,6 +15,7 @@ public class BufferReader {
     private static final AtomicLong lastSequence = new AtomicLong(0);
 
     private final long sequenceNum;
+    private final int referenceNodeCount;
     private final ByteBuffer main;
     private final ByteBuffer location;
     private final ByteBuffer locals;
@@ -27,6 +28,7 @@ public class BufferReader {
         main.order(ByteOrder.LITTLE_ENDIAN);
 
         sequenceNum = main.getLong();
+        referenceNodeCount = main.getInt();
         int locationStart = main.getInt();
         int localsStart = main.getInt();
         int heapStart = main.getInt();
@@ -73,7 +75,7 @@ public class BufferReader {
     }
 
     private void readHeap(FrameNode frame, List<String> referenceLocals) {
-        Map<Long, ValueNode> nodes = new HashMap<>();
+        Map<Long, ValueNode> nodes = new HashMap<>(referenceNodeCount);
 
         while (heap.hasRemaining()) {
             byte kind = heap.get();

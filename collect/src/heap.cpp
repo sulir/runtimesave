@@ -18,17 +18,17 @@ static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni)
     return array;
 }
 
-static void tagClass(jlong *tagPtr, HeapData *data) {
+static void tagClass(jlong *tagPtr, HeapData& data) {
     static jlong nextClassTag = systemClasses.STRING_TAG + 1;
 
     jlong tag = *tagPtr;
     if (classCache.contains(tag)) {
         jweak klass = classCache.get(tag);
-        data->cachedClasses.push_back(klass);
+        data.cachedClasses.push_back(klass);
         *tagPtr = nextClassTag++;
     } else if (tag == 0) {
         *tagPtr = nextClassTag++;
-        data->uncachedClasses.insert(*tagPtr);
+        data.uncachedClasses.insert(*tagPtr);
     }
 }
 
@@ -40,9 +40,11 @@ static jlong tagObject(jlong *tagPtr) {
     return *tagPtr;
 }
 
-static void addObjectOrArrayNode(jlong objectTag, jlong classTag, Buffer& buffer) {
-    if (objectTag != 0)
-        buffer.emplace<ObjectOrArrayNode>(objectTag, static_cast<jint>(classTag));
+static void addObjectOrArrayNode(jlong objectTag, jlong classTag, HeapData& data) {
+    if (objectTag != 0) {
+        data.buffer.emplace<ObjectOrArrayNode>(objectTag, static_cast<jint>(classTag));
+        data.referenceNodeCount++;
+    }
 }
 
 static jbyte getReferenceKind(jlong classTag, jint arrayLength) {
@@ -65,22 +67,22 @@ static void addElementEdge(jlong from, jint index, jlong *to, jlong toClass, jin
 
 static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapReferenceInfo *info, jlong classTag,
         jlong referrerClassTag, jlong, jlong *tag, jlong *referrerTag, jint arrLen, void *userData) {
-    HeapData *data = static_cast<HeapData *>(userData);
+    HeapData& data = *static_cast<HeapData *>(userData);
 
     switch (kind) {
         case JVMTI_HEAP_REFERENCE_CLASS:
             if (*tag != systemClasses.STRING_TAG) {
                 tagClass(tag, data);
-                addObjectOrArrayNode(*referrerTag, *tag, data->buffer);
+                addObjectOrArrayNode(*referrerTag, *tag, data);
             }
             return 0;
         case JVMTI_HEAP_REFERENCE_FIELD:
             if (referrerClassTag == systemClasses.STRING_TAG)
                 return 0;
-            addFieldEdge(*referrerTag, referrerClassTag, info->field.index, tag, classTag, arrLen, data->buffer);
+            addFieldEdge(*referrerTag, referrerClassTag, info->field.index, tag, classTag, arrLen, data.buffer);
             return JVMTI_VISIT_OBJECTS;
         case JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT:
-            addElementEdge(*referrerTag, info->field.index, tag, classTag, arrLen, data->buffer);
+            addElementEdge(*referrerTag, info->field.index, tag, classTag, arrLen, data.buffer);
             return JVMTI_VISIT_OBJECTS;
         default:
             return 0;
@@ -106,9 +108,10 @@ static jint primitiveArrayCallback(jlong, jlong, jlong *tagPtr, jint length, jvm
 }
 
 static jint stringCallback(jlong, jlong, jlong *tagPtr, const jchar *value, jint charCount, void *userData) {
-    Buffer& buffer = static_cast<HeapData *>(userData)->buffer;
-    buffer.emplace<StringNode>(*tagPtr, charCount);
-    buffer.add(value, charCount * sizeof(jchar));
+    HeapData& data = *static_cast<HeapData *>(userData);
+    data.buffer.emplace<StringNode>(*tagPtr, charCount);
+    data.buffer.add(value, charCount * sizeof(jchar));
+    data.referenceNodeCount++;
     return 0;
 }
 
