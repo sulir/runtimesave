@@ -6,20 +6,17 @@ import java.util.concurrent.atomic.LongAdder;
 public final class ScopeTime implements AutoCloseable {
     private static final int MAX_TIMERS = 32;
     private static final LongAdder[] totals = new LongAdder[MAX_TIMERS];
-    private static final LongAdder[] counts = new LongAdder[MAX_TIMERS];
 
     static {
         for (int i = 0; i < MAX_TIMERS; i++) {
             totals[i] = new LongAdder();
-            counts[i] = new LongAdder();
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             for (int i = 0; i < MAX_TIMERS; i++) {
                 long nanos = totals[i].sum();
-                long count = counts[i].sum();
                 if (nanos != 0) {
-                    System.err.printf("Java timer %d: %d ms, %dx%n", i, nanos / 1_000_000, count);
+                    System.err.printf("Java timer %d: %d ms%n", i, nanos / 1_000_000);
                 }
             }
         }));
@@ -44,6 +41,5 @@ public final class ScopeTime implements AutoCloseable {
     public void close() {
         long diff = System.nanoTime() - startNanos;
         totals[id].add(diff);
-        counts[id].increment();
     }
 }

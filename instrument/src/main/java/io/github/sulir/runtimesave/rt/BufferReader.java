@@ -14,21 +14,18 @@ public class BufferReader {
     private static ClassInfo[] classesInfo = new ClassInfo[16 * 1024];
     private static final AtomicLong lastSequence = new AtomicLong(0);
 
-    private final ByteBuffer main;
-    private final ByteBuffer refNodes;
     private final long sequenceNum;
     private final int referenceNodeCount;
+    private final ByteBuffer main;
     private final ByteBuffer location;
     private final ByteBuffer locals;
     private final ByteBuffer heap;
     private final ByteBuffer classes;
     private boolean classesRead = false;
 
-    public BufferReader(ByteBuffer main, ByteBuffer refNodes) {
+    public BufferReader(ByteBuffer main) {
         this.main = main;
         main.order(ByteOrder.LITTLE_ENDIAN);
-        this.refNodes = refNodes;
-        refNodes.order(ByteOrder.LITTLE_ENDIAN);
 
         sequenceNum = main.getLong();
         referenceNodeCount = main.getInt();
@@ -73,42 +70,18 @@ public class BufferReader {
                 frame.setVariable(variableName, readPrimitive(kind, locals));
         }
 
-        Map<Long, ValueNode> nodes = new HashMap<>(referenceNodeCount);
-        readRefNodes(nodes);
-        readHeap(nodes, frame, referenceLocals);
+        readHeap(frame, referenceLocals);
         return frame;
     }
 
-    private void readRefNodes(Map<Long, ValueNode> nodes) {
-        while (refNodes.hasRemaining()) {
-            byte kind = refNodes.get();
-            switch (kind) {
-                case 'R' -> readObjectOrArray(nodes);
-                case 'T' -> readString(nodes);
-                default -> throw new IllegalStateException();
-            }
-        }
-    }
+    private void readHeap(FrameNode frame, List<String> referenceLocals) {
+        Map<Long, ValueNode> nodes = new HashMap<>(referenceNodeCount);
 
-    private void readObjectOrArray(Map<Long, ValueNode> nodes) {
-        long objectTag = refNodes.getLong();
-        int classTag = refNodes.getInt();
-
-        String type = classesInfo[classTag].className();
-        nodes.put(objectTag, type.endsWith("]") ? new ArrayNode(type) : new ObjectNode(type));
-    }
-
-    private void readString(Map<Long, ValueNode> nodes) {
-        long objectTag = refNodes.getLong();
-        String value = readUTF16(refNodes);
-
-        nodes.put(objectTag, new StringNode(value));
-    }
-
-    private void readHeap(Map<Long, ValueNode> nodes, FrameNode frame, List<String> referenceLocals) {
         while (heap.hasRemaining()) {
             byte kind = heap.get();
             switch (kind) {
+                case 'R' -> readObjectOrArray(nodes);
+                case 'T' -> readString(nodes);
                 case 'M' -> readFieldEdge(nodes);
                 case 'E' -> readElementEdge(nodes, frame, referenceLocals);
                 default -> {
@@ -121,14 +94,35 @@ public class BufferReader {
         }
     }
 
+    private void readObjectOrArray(Map<Long, ValueNode> nodes) {
+        long objectTag = heap.getLong();
+        int classTag = heap.getInt();
+
+        String type = classesInfo[classTag].className();
+        ValueNode node = nodes.get(objectTag);
+        switch (node) {
+            case ObjectNode object -> object.setType(type);
+            case ArrayNode array -> array.setType(type);
+            case null, default -> throw new IllegalStateException();
+        }
+    }
+
+    private void readString(Map<Long, ValueNode> nodes) {
+        long objectTag = heap.getLong();
+        String value = readUTF16(heap);
+
+        ((StringNode) nodes.get(objectTag)).setValue(value);
+    }
+
     private void readFieldEdge(Map<Long, ValueNode> nodes) {
         long from = heap.getLong();
         int fromClass = heap.getInt();
         int fieldIndex = heap.getInt();
         long to = heap.getLong();
+        byte toKind = heap.get();
 
         ObjectNode source = (ObjectNode) nodes.get(from);
-        ValueNode target = nodes.get(to);
+        ValueNode target = getOrCreateNode(nodes, to, toKind);
         setField(source, fromClass, fieldIndex, target);
     }
 
@@ -136,9 +130,10 @@ public class BufferReader {
         long from = heap.getLong();
         int index = heap.getInt();
         long to = heap.getLong();
+        byte toKind = heap.get();
 
         ArrayNode source = (ArrayNode) nodes.get(from);
-        ValueNode target = nodes.get(to);
+        ValueNode target = getOrCreateNode(nodes, to, toKind);
 
         if (source == null) {
             if (from != 0)
@@ -166,6 +161,15 @@ public class BufferReader {
         ArrayNode array = (ArrayNode) nodes.get(objectTag);
         for (int i = 0; i < length; i++)
             array.setElement(i, readPrimitive(type, heap));
+    }
+
+    private static ValueNode getOrCreateNode(Map<Long, ValueNode> nodes, long tag, byte kind) {
+        return nodes.computeIfAbsent(tag, (t) -> switch (kind) {
+            case 'T' -> new StringNode();
+            case '[' -> new ArrayNode();
+            case 'L' -> new ObjectNode();
+            default -> throw new IllegalArgumentException("Unknown target kind: " + (char) kind);
+        });
     }
 
     private void setField(ObjectNode object, int classTag, int fieldIndex, ValueNode value) {
@@ -234,7 +238,6 @@ public class BufferReader {
 
     public void close() {
         dispose(main);
-        dispose(refNodes);
     }
 
     private static native void dispose(ByteBuffer buffer);

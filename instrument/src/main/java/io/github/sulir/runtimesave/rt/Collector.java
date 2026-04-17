@@ -3,6 +3,7 @@ package io.github.sulir.runtimesave.rt;
 import io.github.sulir.runtimesave.instrument.Settings;
 import io.github.sulir.runtimesave.misc.Log;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 @SuppressWarnings("unused")
@@ -48,12 +49,12 @@ public class Collector {
     }
 
     private static void collectData() {
-        BufferReader reader = readData();
-        if (reader != null)
-            SaveService.getInstance().saveFrame(reader);
+        ByteBuffer buffer = readData();
+        if (buffer != null)
+            SaveService.getInstance().saveFrame(new BufferReader(buffer));
         else
             Log.error("Cannot read runtime data");
     }
 
-    private static native BufferReader readData();
+    private static native ByteBuffer readData();
 }

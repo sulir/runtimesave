@@ -9,7 +9,7 @@
 #include "locals.hpp"
 #include "location.hpp"
 
-void Registry::load(JNIEnv *jni) {
+void SystemClasses::load(JNIEnv *jni) {
     objectClass = replaceByGlobal(jniCatch(jni->FindClass("java/lang/Object"), jni), jni);
 
     jclass stringClass = jniCatch(jni->FindClass("java/lang/String"), jni);
@@ -21,35 +21,21 @@ void Registry::load(JNIEnv *jni) {
         ok(ti->SetTag(classClass, CLASS_TAG));
 }
 
-void Registry::unload(JNIEnv *jni) {
+void SystemClasses::unload(JNIEnv *jni) {
     jni->DeleteGlobalRef(objectClass);
 }
 
-bool Registry::getBufferReader(jclass *klass, jmethodID *constructor, JNIEnv *jni) {
-    if (!reader) {
-        reader = replaceByGlobal(jniCatch(jni->FindClass("io/github/sulir/runtimesave/rt/BufferReader"), jni), jni);
-        if (!reader)
-            return false;
-        readerInit = jniCatch(jni->GetMethodID(reader, "<init>", "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;)V"), jni);
-        if (!readerInit)
-            return false;
-    }
-    *klass = reader;
-    *constructor = readerInit;
-    return true;
-}
-
 void JNICALL onVMInit(jvmtiEnv *, JNIEnv *jni, jthread) {
-    registry.load(jni);
+    systemClasses.load(jni);
 }
 
 void JNICALL onVMDeath(jvmtiEnv *, JNIEnv *jni) {
-    registry.unload(jni);
+    systemClasses.unload(jni);
 }
 
 void JNICALL onClassLoad(jvmtiEnv *, JNIEnv *jni, jthread, jclass klass) {
     jlong tag;
-    if (ok(ti->GetTag(klass, &tag)) && tag != registry.STRING_TAG && tag != registry.CLASS_TAG)
+    if (ok(ti->GetTag(klass, &tag)) && tag != systemClasses.STRING_TAG && tag != systemClasses.CLASS_TAG)
         classCache.add(klass, jni);
 }
 
@@ -79,37 +65,30 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *, void *) {
 }
 
 extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collector_readData(JNIEnv *jni, jclass) {
-    jclass bufferReader;
-    jmethodID bufferReaderInit;
-    if (!registry.getBufferReader(&bufferReader, &bufferReaderInit, jni))
-        return nullptr;
-    
-    Buffer main;
-    main.add(MainBufferHeader{});
+    Buffer buffer;
+    buffer.add(MainBufferHeader{});
 
     jmethodID method;
     jlocation location;
     MethodInfo& methodInfo = MethodInfo::getThreadInstance();
-    if (!readLocation(&method, &location, methodInfo, main))
+    if (!readLocation(&method, &location, methodInfo, buffer))
         return nullptr;
     
-    main.head<MainBufferHeader>()->locals = main.position();
+    buffer.head<MainBufferHeader>()->locals = buffer.position();
     std::vector<jobject> objects;
-    if (!readLocals(location, methodInfo, main, objects))
+    if (!readLocals(location, methodInfo, buffer, objects))
         return nullptr;
     
-    main.head<MainBufferHeader>()->heap = main.position();
-    Buffer refNodes;
-    HeapData heapData{main, refNodes};
+    buffer.head<MainBufferHeader>()->heap = buffer.position();
+    HeapData heapData{buffer};
     if (!readHeap(objects, heapData, jni))
         return nullptr;
-    main.head<MainBufferHeader>()->sequenceNum = heapData.sequenceNum;
-    main.head<MainBufferHeader>()->referenceNodeCount = heapData.referenceNodeCount;
+    buffer.head<MainBufferHeader>()->sequenceNum = heapData.sequenceNum;
+    buffer.head<MainBufferHeader>()->referenceNodeCount = heapData.referenceNodeCount;
     
-    main.head<MainBufferHeader>()->classes = main.position();
-    loadClassesInfo(heapData.cachedClasses, heapData.uncachedClasses, main, jni);
-
-    return jniCatch(jni->NewObject(bufferReader, bufferReaderInit, main.result(jni), refNodes.result(jni)), jni);
+    buffer.head<MainBufferHeader>()->classes = buffer.position();
+    loadClassesInfo(heapData.cachedClasses, heapData.uncachedClasses, buffer, jni);
+    return buffer.result(jni);
 }
 
 extern "C" JNIEXPORT void JNICALL
