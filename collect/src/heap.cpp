@@ -9,7 +9,7 @@
 
 static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni) {
     size_t count = objects.size();
-    jobjectArray array = jni->NewObjectArray(count, systemClasses.objectClass, nullptr);
+    jobjectArray array = jni->NewObjectArray(count, registry.objectClass, nullptr);
     if (!array)
         return nullptr;
     
@@ -19,16 +19,16 @@ static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni)
 }
 
 static void tagClass(jlong *tagPtr, HeapData& data) {
-    static jlong nextClassTag = systemClasses.CLASS_TAG + 1;
+    static jlong nextClassTag = registry.CLASS_TAG + 1;
 
     jlong tag = *tagPtr;
     if (classCache.contains(tag)) {
         jweak klass = classCache.get(tag);
         data.cachedClasses.push_back(klass);
-        if (tag != systemClasses.STRING_TAG && tag != systemClasses.CLASS_TAG)
+        if (tag != registry.STRING_TAG && tag != registry.CLASS_TAG)
             *tagPtr = nextClassTag++;
     } else if (tag == 0) {
-        if (tag != systemClasses.STRING_TAG && tag != systemClasses.CLASS_TAG)
+        if (tag != registry.STRING_TAG && tag != registry.CLASS_TAG)
             *tagPtr = nextClassTag++;
         data.uncachedClasses.insert(*tagPtr);
     }
@@ -38,7 +38,7 @@ static jlong tagObject(jlong *tagPtr, jlong classTag, HeapData& data) {
     static jlong nextObjectTag = -1;
 
     if (*tagPtr == 0) {
-        if (classTag == systemClasses.CLASS_TAG)
+        if (classTag == registry.CLASS_TAG)
             tagClass(tagPtr, data);
         else
         *tagPtr = nextObjectTag--;
@@ -54,7 +54,7 @@ static void addObjectOrArrayNode(jlong objectTag, jlong classTag, HeapData& data
 }
 
 static jbyte getReferenceKind(jlong classTag, jint arrayLength) {
-    if (classTag == systemClasses.STRING_TAG)
+    if (classTag == registry.STRING_TAG)
         return 'T';
     if (arrayLength != -1)
         return '[';
@@ -77,18 +77,18 @@ static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapRefere
 
     switch (kind) {
         case JVMTI_HEAP_REFERENCE_CLASS:
-            if (*tag != systemClasses.STRING_TAG) {
+            if (*tag != registry.STRING_TAG) {
                 tagClass(tag, data);
                 addObjectOrArrayNode(*referrerTag, *tag, data);
             }
             return 0;
         case JVMTI_HEAP_REFERENCE_FIELD:
-            if (referrerClassTag == systemClasses.STRING_TAG)
+            if (referrerClassTag == registry.STRING_TAG)
                 return 0;
             addFieldEdge(*referrerTag, referrerClassTag, info->field.index, tag, classTag, arrLen, data);
             return JVMTI_VISIT_OBJECTS;
         case JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT:
-            addElementEdge(*referrerTag, info->field.index, tag, classTag, arrLen, data);
+            addElementEdge(*referrerTag, info->array.index, tag, classTag, arrLen, data);
             return JVMTI_VISIT_OBJECTS;
         default:
             return 0;
@@ -97,7 +97,7 @@ static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapRefere
 
 static jint primitiveFieldCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapReferenceInfo *info, jlong classTag,
         jlong *tagPtr, jvalue value, jvmtiPrimitiveType type, void *userData) {
-    if (kind == JVMTI_HEAP_REFERENCE_STATIC_FIELD || classTag == systemClasses.STRING_TAG)
+    if (kind == JVMTI_HEAP_REFERENCE_STATIC_FIELD || classTag == registry.STRING_TAG)
         return 0;
     Buffer& buffer = static_cast<HeapData *>(userData)->buffer;
     buffer.emplace<PrimitiveField>(type, *tagPtr, static_cast<jint>(classTag), info->field.index);

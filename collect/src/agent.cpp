@@ -9,7 +9,7 @@
 #include "locals.hpp"
 #include "location.hpp"
 
-void SystemClasses::load(JNIEnv *jni) {
+void Registry::load(JNIEnv *jni) {
     objectClass = replaceByGlobal(jniCatch(jni->FindClass("java/lang/Object"), jni), jni);
 
     jclass stringClass = jniCatch(jni->FindClass("java/lang/String"), jni);
@@ -21,21 +21,21 @@ void SystemClasses::load(JNIEnv *jni) {
         ok(ti->SetTag(classClass, CLASS_TAG));
 }
 
-void SystemClasses::unload(JNIEnv *jni) {
+void Registry::unload(JNIEnv *jni) {
     jni->DeleteGlobalRef(objectClass);
 }
 
 void JNICALL onVMInit(jvmtiEnv *, JNIEnv *jni, jthread) {
-    systemClasses.load(jni);
+    registry.load(jni);
 }
 
 void JNICALL onVMDeath(jvmtiEnv *, JNIEnv *jni) {
-    systemClasses.unload(jni);
+    registry.unload(jni);
 }
 
 void JNICALL onClassLoad(jvmtiEnv *, JNIEnv *jni, jthread, jclass klass) {
     jlong tag;
-    if (ok(ti->GetTag(klass, &tag)) && tag != systemClasses.STRING_TAG && tag != systemClasses.CLASS_TAG)
+    if (ok(ti->GetTag(klass, &tag)) && tag != registry.STRING_TAG && tag != registry.CLASS_TAG)
         classCache.add(klass, jni);
 }
 
