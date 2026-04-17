@@ -15,6 +15,10 @@ void SystemClasses::load(JNIEnv *jni) {
     jclass stringClass = jniCatch(jni->FindClass("java/lang/String"), jni);
     if (stringClass)
         ok(ti->SetTag(stringClass, STRING_TAG));
+    
+    jclass classClass = jniCatch(jni->FindClass("java/lang/Class"), jni);
+    if (classClass)
+        ok(ti->SetTag(classClass, CLASS_TAG));
 }
 
 void SystemClasses::unload(JNIEnv *jni) {
@@ -31,7 +35,7 @@ void JNICALL onVMDeath(jvmtiEnv *, JNIEnv *jni) {
 
 void JNICALL onClassLoad(jvmtiEnv *, JNIEnv *jni, jthread, jclass klass) {
     jlong tag;
-    if (ok(ti->GetTag(klass, &tag)) && tag != systemClasses.STRING_TAG)
+    if (ok(ti->GetTag(klass, &tag)) && tag != systemClasses.STRING_TAG && tag != systemClasses.CLASS_TAG)
         classCache.add(klass, jni);
 }
 

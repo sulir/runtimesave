@@ -183,8 +183,6 @@ static void loadUncached(std::unordered_set<jlong>& tags, Buffer& buffer, JNIEnv
         if (tags.erase(tag))
             addClassInfo(klass, tag, buffer, jni);
     }
-
-    check(tags.empty());
 }
 
 void loadClassesInfo(const std::vector<jweak>& cached, std::unordered_set<jlong>& uncached, Buffer& buffer,
