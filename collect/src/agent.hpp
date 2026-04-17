@@ -12,13 +12,16 @@
 constexpr int CALLER_DEPTH = 3;
 inline jvmtiEnv *ti = nullptr;
 
-inline struct SystemClasses {
+inline struct Registry {
     jclass objectClass = nullptr;
     static constexpr jlong STRING_TAG = 1;
     static constexpr jlong CLASS_TAG = 2;
     void load(JNIEnv *jni);
     void unload(JNIEnv *jni);
-} systemClasses;
+    jclass reader = nullptr;
+    jmethodID readerInit = nullptr;
+    bool getBufferReader(jclass *klass, jmethodID *constructor, JNIEnv *jni);
+} registry;
 
 #pragma pack(push, 1)
 struct MainBufferHeader {

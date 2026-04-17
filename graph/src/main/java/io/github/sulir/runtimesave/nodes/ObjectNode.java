@@ -12,24 +12,17 @@ public class ObjectNode extends ValueNode {
     public static final Mapping mapping = mapping(ObjectNode.class)
             .property("type", String.class, ObjectNode::getType)
             .edges("HAS_FIELD", "name", String.class, ValueNode.class, node -> node.fields)
-            .constructor((String t) -> new ObjectNode(t));
+            .constructor(ObjectNode::new);
 
-    private String type;
+    private final String type;
     private final SortedMap<String, ValueNode> fields = new TreeMap<>();
 
     public ObjectNode(String type) {
         this.type = type;
     }
 
-    public ObjectNode() { }
-
     public String getType() {
         return type;
-    }
-
-    public void setType(String type) {
-        checkModification();
-        this.type = type;
     }
 
     public ValueNode getField(String name) {

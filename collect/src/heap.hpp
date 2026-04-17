@@ -7,7 +7,8 @@
 #include "buffer.hpp"
 
 struct HeapData {
-    Buffer& buffer;
+    Buffer& main;
+    Buffer& refNodes;
     jlong sequenceNum = 0;
     jint referenceNodeCount = 0;
     std::vector<jweak> cachedClasses{};
@@ -37,9 +38,8 @@ struct FieldEdge {
     jint fromClass;
     jint fieldIndex;
     jlong to;
-    jbyte toKind;
-    FieldEdge(jlong from, jint fromClass, jint fieldIndex, jlong to, jbyte toKind)
-        : from(from), fromClass(fromClass), fieldIndex(fieldIndex), to(to), toKind(toKind) {};
+    FieldEdge(jlong from, jint fromClass, jint fieldIndex, jlong to)
+        : from(from), fromClass(fromClass), fieldIndex(fieldIndex), to(to) {};
 };
 
 struct ElementEdge {
@@ -47,9 +47,8 @@ struct ElementEdge {
     jlong from;
     jint index;
     jlong to;
-    jbyte toKind;
-    ElementEdge(jlong from, jint index, jlong to, jbyte toKind)
-        : from(from), index(index), to(to), toKind(toKind) {};
+    ElementEdge(jlong from, jint index, jlong to)
+        : from(from), index(index), to(to) {};
 };
 
 struct PrimitiveField {

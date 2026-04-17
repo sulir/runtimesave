@@ -11,9 +11,9 @@ public class ArrayNode extends ValueNode {
     public static final Mapping mapping = mapping(ArrayNode.class)
             .property("type", String.class, ArrayNode::getType)
             .edges("HAS_ELEMENT", "index", Integer.class, ValueNode.class, node -> node.elements)
-            .constructor((String t) -> new ArrayNode(t));
+            .constructor(ArrayNode::new);
 
-    private String type;
+    private final String type;
     protected final SortedMap<Integer, ValueNode> elements = new TreeMap<>();
 
     public ArrayNode(String type) {
@@ -22,15 +22,8 @@ public class ArrayNode extends ValueNode {
         this.type = type;
     }
 
-    public ArrayNode() { }
-
     public String getType() {
         return type;
-    }
-
-    public void setType(String type) {
-        checkModification();
-        this.type = type;
     }
 
     public String getComponentType() {
