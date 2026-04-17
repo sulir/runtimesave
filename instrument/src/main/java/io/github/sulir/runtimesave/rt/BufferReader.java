@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class BufferReader {
+public class BufferReader implements AutoCloseable {
     private static ClassInfo[] classesInfo = new ClassInfo[16 * 1024];
     private static final AtomicLong lastSequence = new AtomicLong(0);
 
@@ -236,6 +236,7 @@ public class BufferReader {
         };
     }
 
+    @Override
     public void close() {
         dispose(main);
     }

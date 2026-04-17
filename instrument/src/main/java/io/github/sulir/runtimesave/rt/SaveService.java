@@ -38,21 +38,23 @@ public class SaveService {
 
     public void saveFrame(BufferReader reader) {
         reader.readClasses();
+
         thread.execute(() -> {
-            try {
-                SourceLocation location = reader.readLocation();
-                FrameNode frame = reader.readFrame();
-                Log.info(location, frame);
-                if (System.getenv("RS_WRITE") != null) {
-                    packer.pack(frame);
-                    AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
-                    hasher.assignHashes(dag);
-                    idHasher.assignIdHashes(frame);
-                    database.write(dag);
-                    metadata.addLocation(frame.hash(), location);
-                }
-            } finally {
-                reader.close();
+            SourceLocation location;
+            FrameNode frame;
+            try (reader) {
+                location = reader.readLocation();
+                frame = reader.readFrame();
+            }
+            Log.info(location, frame);
+
+            if (System.getenv("RS_WRITE") != null) {
+                packer.pack(frame);
+                AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
+                hasher.assignHashes(dag);
+                idHasher.assignIdHashes(frame);
+                database.write(dag);
+                metadata.addLocation(frame.hash(), location);
             }
         });
     }

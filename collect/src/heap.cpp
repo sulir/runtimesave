@@ -61,14 +61,14 @@ static jbyte getReferenceKind(jlong classTag, jint arrayLength) {
     return 'L';
 }
 
-static void addFieldEdge(jlong from, jlong fromClass, jint index, jlong *to, jlong toClass, jint arrLen, HeapData& data) {
-    jbyte toKind = getReferenceKind(toClass, arrLen);
-    data.buffer.emplace<FieldEdge>(from, static_cast<jint>(fromClass), index, tagObject(to, toClass, data), toKind);
+static void addFieldEdge(jlong from, jlong fromCls, jint index, jlong *to, jlong toCls, jint arrLen, HeapData& data) {
+    jbyte toKind = getReferenceKind(toCls, arrLen);
+    data.buffer.emplace<FieldEdge>(from, static_cast<jint>(fromCls), index, tagObject(to, toCls, data), toKind);
 }
 
-static void addElementEdge(jlong from, jint index, jlong *to, jlong toClass, jint arrLen, HeapData& data) {
-    jbyte toKind = getReferenceKind(toClass, arrLen);
-    data.buffer.emplace<ElementEdge>(from, index, tagObject(to, toClass, data), toKind);
+static void addElementEdge(jlong from, jint index, jlong *to, jlong toCls, jint arrLen, HeapData& data) {
+    jbyte toKind = getReferenceKind(toCls, arrLen);
+    data.buffer.emplace<ElementEdge>(from, index, tagObject(to, toCls, data), toKind);
 }
 
 static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapReferenceInfo *info, jlong classTag,

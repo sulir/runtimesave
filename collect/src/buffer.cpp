@@ -40,16 +40,18 @@ void Buffer::restore() {
 static_assert(std::endian::native == std::endian::little, "ByteBuffer is set to LE on Java side");
 
 jobject Buffer::result(JNIEnv *jni) {
-    if (capacity == SIZE_MAX)
+    if (capacity == SIZE_MAX || transferred)
         return nullptr;
+    
+    mem = std::realloc(mem, pos);
     jobject nioBuffer = jniCatch(jni->NewDirectByteBuffer(mem, pos), jni);
     if (nioBuffer)
-        pos = 0;
+        transferred = true;
     return nioBuffer;
 }
 
 Buffer::~Buffer() {
-    if (pos != 0)
+    if (!transferred)
         free(mem);
 }
 

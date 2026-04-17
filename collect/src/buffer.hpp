@@ -38,4 +38,5 @@ private:
     size_t capacity = 0;
     size_t pos = 0;
     size_t checkpointPos = 0;
+    bool transferred = false;
 };
