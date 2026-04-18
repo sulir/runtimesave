@@ -9,14 +9,19 @@
 
 inline class ClassCache {
 public:
-    static constexpr jlong MIN_TAG = 1LL << 62;
     ClassCache();
-    jlong add(jclass klass, JNIEnv *jni);
-    bool contains(jlong tag);
-    jweak get(jlong tag);
+    void load(JNIEnv *jni);
+    void unload(JNIEnv *jni);
+
+    jclass objectClass = nullptr;
+    jlong classTag = 0;
+    static constexpr jlong STRING_TAG = 1;
+
+    jlong addUnused(jclass klass, JNIEnv *jni);
+    jweak useIfUnused(jlong *tag, jlong *nextTag);
 private:
+    static constexpr jlong MIN_UNUSED = 1LL << 62;
     std::vector<jweak> classes;
-    jlong nextTag = MIN_TAG;
     std::mutex mtx;
 } classCache;
 

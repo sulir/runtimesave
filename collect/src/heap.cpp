@@ -9,7 +9,7 @@
 
 static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni) {
     size_t count = objects.size();
-    jobjectArray array = jni->NewObjectArray(count, registry.objectClass, nullptr);
+    jobjectArray array = jni->NewObjectArray(count, classCache.objectClass, nullptr);
     if (!array)
         return nullptr;
     
@@ -19,16 +19,11 @@ static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni)
 }
 
 static void tagClass(jlong *tagPtr, HeapData& data) {
-    static jlong nextClassTag = registry.STRING_TAG + 1;
+    static jlong nextClassTag = classCache.STRING_TAG + 1;
 
     jlong tag = *tagPtr;
-    if (classCache.contains(tag)) {
-        jweak klass = classCache.get(tag);
+    if (jweak klass = classCache.useIfUnused(tagPtr, &nextClassTag)) {
         data.cachedClasses.push_back(klass);
-        if (tag != registry.STRING_TAG)
-            *tagPtr = nextClassTag++;
-        if (tag == registry.classTag)
-            registry.classTag = *tagPtr;
     } else if (tag == 0) {
         *tagPtr = nextClassTag++;
         data.uncachedClasses.insert(*tagPtr);
@@ -39,7 +34,7 @@ static jlong tagObject(jlong *tagPtr, jlong classTag, HeapData& data) {
     static jlong nextObjectTag = -1;
 
     if (*tagPtr == 0) {
-        if (classTag == registry.classTag)
+        if (classTag == classCache.classTag)
             tagClass(tagPtr, data);
         else
         *tagPtr = nextObjectTag--;
@@ -49,13 +44,14 @@ static jlong tagObject(jlong *tagPtr, jlong classTag, HeapData& data) {
 
 static void addObjectOrArrayNode(jlong objectTag, jlong classTag, HeapData& data) {
     if (objectTag != 0) {
+        check(classTag >= std::numeric_limits<jint>::min() && classTag <= std::numeric_limits<jint>::max());
         data.buffer.emplace<ObjectOrArrayNode>(objectTag, static_cast<jint>(classTag));
         data.referenceNodeCount++;
     }
 }
 
 static jbyte getReferenceKind(jlong classTag, jint arrayLength) {
-    if (classTag == registry.STRING_TAG)
+    if (classTag == classCache.STRING_TAG)
         return 'T';
     if (arrayLength != -1)
         return '[';
@@ -64,6 +60,7 @@ static jbyte getReferenceKind(jlong classTag, jint arrayLength) {
 
 static void addFieldEdge(jlong from, jlong fromCls, jint index, jlong *to, jlong toCls, jint arrLen, HeapData& data) {
     jbyte toKind = getReferenceKind(toCls, arrLen);
+    check(fromCls >= std::numeric_limits<jint>::min() && fromCls <= std::numeric_limits<jint>::max());
     data.buffer.emplace<FieldEdge>(from, static_cast<jint>(fromCls), index, tagObject(to, toCls, data), toKind);
 }
 
@@ -78,13 +75,13 @@ static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapRefere
 
     switch (kind) {
         case JVMTI_HEAP_REFERENCE_CLASS:
-            if (*tag != registry.STRING_TAG) {
+            if (*tag != classCache.STRING_TAG) {
                 tagClass(tag, data);
                 addObjectOrArrayNode(*referrerTag, *tag, data);
             }
             return 0;
         case JVMTI_HEAP_REFERENCE_FIELD:
-            if (referrerClassTag == registry.STRING_TAG)
+            if (referrerClassTag == classCache.STRING_TAG)
                 return 0;
             addFieldEdge(*referrerTag, referrerClassTag, info->field.index, tag, classTag, arrLen, data);
             return JVMTI_VISIT_OBJECTS;
@@ -98,9 +95,10 @@ static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapRefere
 
 static jint primitiveFieldCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapReferenceInfo *info, jlong classTag,
         jlong *tagPtr, jvalue value, jvmtiPrimitiveType type, void *userData) {
-    if (kind == JVMTI_HEAP_REFERENCE_STATIC_FIELD || classTag == registry.STRING_TAG)
+    if (kind == JVMTI_HEAP_REFERENCE_STATIC_FIELD || classTag == classCache.STRING_TAG)
         return 0;
     Buffer& buffer = static_cast<HeapData *>(userData)->buffer;
+    check(classTag >= std::numeric_limits<jint>::min() && classTag <= std::numeric_limits<jint>::max());
     buffer.emplace<PrimitiveField>(type, *tagPtr, static_cast<jint>(classTag), info->field.index);
     buffer.add(&value, primitiveTypes[type - 'B'].size);
     return 0;

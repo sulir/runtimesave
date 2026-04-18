@@ -98,6 +98,9 @@ public class BufferReader implements AutoCloseable {
         long objectTag = heap.getLong();
         int classTag = heap.getInt();
 
+        if (classesInfo[classTag] == null)
+            System.err.println("NULL: " + classTag);
+
         String type = classesInfo[classTag].className();
         ValueNode node = nodes.get(objectTag);
         switch (node) {

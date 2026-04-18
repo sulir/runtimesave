@@ -11,26 +11,59 @@ ClassCache::ClassCache() {
     classes.reserve(32*1024);
 }
 
-jlong ClassCache::add(jclass klass, JNIEnv *jni) {
-    jweak weakClass = jni->NewWeakGlobalRef(klass);
-    if (!check(weakClass != nullptr))
-        return 0;
+void ClassCache::load(JNIEnv *jni) {
+    objectClass = replaceByGlobal(jniCatch(jni->FindClass("java/lang/Object"), jni), jni);
+
+    jclass classClass = jniCatch(jni->FindClass("java/lang/Class"), jni);
+    if (classClass)
+        classTag = addUnused(classClass, jni);
     
+    jclass stringClass = jniCatch(jni->FindClass("java/lang/String"), jni);
+    if (stringClass)
+        ok(ti->SetTag(stringClass, STRING_TAG));
+}
+
+void ClassCache::unload(JNIEnv *jni) {
+    jni->DeleteGlobalRef(objectClass);
+}
+
+jlong ClassCache::addUnused(jclass klass, JNIEnv *jni) {
+    jlong oldTag;
     std::lock_guard<std::mutex> lock(mtx);
-    if (!ok(ti->SetTag(klass, nextTag)))
+    if (!ok(ti->GetTag(klass, &oldTag)))
         return 0;
-    size_t pos = nextTag - MIN_TAG;
-    classes.resize(pos + 1);
-    classes[pos] = weakClass;
-    return nextTag++;
+    if (oldTag != 0)
+        return oldTag;
+
+    jweak weak = jni->NewWeakGlobalRef(klass);
+    if (!check(weak != nullptr))
+        return oldTag;
+
+    jlong newTag = MIN_UNUSED + classes.size();
+    if (!ok(ti->SetTag(klass, newTag)))
+        return oldTag;
+
+    classes.push_back(weak);
+    return newTag;
 }
 
-bool ClassCache::contains(jlong tag) {
-    return tag >= MIN_TAG && static_cast<size_t>(tag - MIN_TAG) < classes.size();
-}
+jweak ClassCache::useIfUnused(jlong *tagPtr, jlong *usedClassesTag) {
+    jlong tag = *tagPtr;
+    if (tag < MIN_UNUSED)
+        return nullptr;
+    
+    size_t index = static_cast<size_t>(tag - MIN_UNUSED);
+    if (index >= classes.size() || !classes[index])
+        return nullptr;
 
-jweak ClassCache::get(jlong tag) {
-    return classes[tag - MIN_TAG];
+    if (tag != STRING_TAG)
+        *tagPtr = (*usedClassesTag)++;
+    if (tag == classTag)
+        classTag = *tagPtr;
+
+    jweak klass = classes[index];
+    classes[index] = nullptr;
+    return klass;
 }
 
 static std::string classSignatureToName(const char *sig) {
@@ -95,7 +128,7 @@ static jint getInterfacesFieldCount(const std::vector<jclass>& classHierarchy, J
         if (!ok(ti->GetTag(interface, &tag)))
             return -1;
         if (tag == 0)
-            if ((tag = classCache.add(interface, jni)) == 0)
+            if ((tag = classCache.addUnused(interface, jni)) == 0)
                 return -1;
         if (!visited.insert(tag).second)
             continue;
@@ -142,6 +175,7 @@ static void addClassInfo(jclass klass, jlong tag, Buffer& buffer, JNIEnv *jni) {
     for (jclass cls : hierarchy)
         jni->DeleteLocalRef(cls);
 
+    check(tag >= std::numeric_limits<jint>::min() && tag <= std::numeric_limits<jint>::max());
     buffer.add(static_cast<jint>(tag));
     buffer.addString(classSignatureToName(signature));
     buffer.add(fieldStartIndex);
@@ -153,7 +187,7 @@ static void addClassInfo(jclass klass, jlong tag, Buffer& buffer, JNIEnv *jni) {
 static void loadCached(const std::vector<jweak>& classes, Buffer& buffer, JNIEnv *jni) {
     for (jweak weak : classes) {
         JniLocal<jclass> klass{static_cast<jclass>(jni->NewLocalRef(weak)), jni};
-        if (!klass)
+        if (!check(klass))
             continue;
         
         jlong tag;
@@ -161,6 +195,7 @@ static void loadCached(const std::vector<jweak>& classes, Buffer& buffer, JNIEnv
             continue;
 
         addClassInfo(klass, tag, buffer, jni);
+        jni->DeleteWeakGlobalRef(weak);
     }
 }
 
@@ -176,7 +211,7 @@ static void loadUncached(std::unordered_set<jlong>& tags, Buffer& buffer, JNIEnv
         if (!ok(ti->GetTag(klass, &tag)))
             continue;
         if (tag == 0) {
-            classCache.add(klass, jni);
+            classCache.addUnused(klass, jni);
             continue;
         }
 

@@ -12,14 +12,6 @@
 constexpr int CALLER_DEPTH = 3;
 inline jvmtiEnv *ti = nullptr;
 
-inline struct Registry {
-    jclass objectClass = nullptr;
-    jlong classTag = 0;
-    static constexpr jlong STRING_TAG = 1;
-    void load(JNIEnv *jni);
-    void unload(JNIEnv *jni);
-} registry;
-
 #pragma pack(push, 1)
 struct MainBufferHeader {
     jlong sequenceNum = 0;
