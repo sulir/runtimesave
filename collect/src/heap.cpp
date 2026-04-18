@@ -19,17 +19,18 @@ static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni)
 }
 
 static void tagClass(jlong *tagPtr, HeapData& data) {
-    static jlong nextClassTag = registry.CLASS_TAG + 1;
+    static jlong nextClassTag = registry.STRING_TAG + 1;
 
     jlong tag = *tagPtr;
     if (classCache.contains(tag)) {
         jweak klass = classCache.get(tag);
         data.cachedClasses.push_back(klass);
-        if (tag != registry.STRING_TAG && tag != registry.CLASS_TAG)
+        if (tag != registry.STRING_TAG)
             *tagPtr = nextClassTag++;
+        if (tag == registry.classTag)
+            registry.classTag = *tagPtr;
     } else if (tag == 0) {
-        if (tag != registry.STRING_TAG && tag != registry.CLASS_TAG)
-            *tagPtr = nextClassTag++;
+        *tagPtr = nextClassTag++;
         data.uncachedClasses.insert(*tagPtr);
     }
 }
@@ -38,7 +39,7 @@ static jlong tagObject(jlong *tagPtr, jlong classTag, HeapData& data) {
     static jlong nextObjectTag = -1;
 
     if (*tagPtr == 0) {
-        if (classTag == registry.CLASS_TAG)
+        if (classTag == registry.classTag)
             tagClass(tagPtr, data);
         else
         *tagPtr = nextObjectTag--;

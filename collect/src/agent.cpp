@@ -12,13 +12,13 @@
 void Registry::load(JNIEnv *jni) {
     objectClass = replaceByGlobal(jniCatch(jni->FindClass("java/lang/Object"), jni), jni);
 
+    jclass classClass = jniCatch(jni->FindClass("java/lang/Class"), jni);
+    if (classClass)
+        classTag = classCache.add(classClass, jni);
+        
     jclass stringClass = jniCatch(jni->FindClass("java/lang/String"), jni);
     if (stringClass)
         ok(ti->SetTag(stringClass, STRING_TAG));
-    
-    jclass classClass = jniCatch(jni->FindClass("java/lang/Class"), jni);
-    if (classClass)
-        ok(ti->SetTag(classClass, CLASS_TAG));
 }
 
 void Registry::unload(JNIEnv *jni) {
@@ -35,7 +35,7 @@ void JNICALL onVMDeath(jvmtiEnv *, JNIEnv *jni) {
 
 void JNICALL onClassLoad(jvmtiEnv *, JNIEnv *jni, jthread, jclass klass) {
     jlong tag;
-    if (ok(ti->GetTag(klass, &tag)) && tag != registry.STRING_TAG && tag != registry.CLASS_TAG)
+    if (ok(ti->GetTag(klass, &tag)) && tag != registry.classTag && tag != registry.STRING_TAG)
         classCache.add(klass, jni);
 }
 

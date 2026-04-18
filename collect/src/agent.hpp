@@ -14,8 +14,8 @@ inline jvmtiEnv *ti = nullptr;
 
 inline struct Registry {
     jclass objectClass = nullptr;
+    jlong classTag = 0;
     static constexpr jlong STRING_TAG = 1;
-    static constexpr jlong CLASS_TAG = 2;
     void load(JNIEnv *jni);
     void unload(JNIEnv *jni);
 } registry;
