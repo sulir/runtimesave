@@ -186,7 +186,7 @@ static bool getFieldNames(const std::vector<JniLocal<jclass>>& classHierarchy, s
 
 static void addClassInfo(jclass klass, jlong tag, Buffer& buffer, JNIEnv *jni) {
     TiPtr<char> signature;
-    if (!check(klass) || !ok(ti->GetClassSignature(klass, &signature, nullptr)))
+    if (!klass || !ok(ti->GetClassSignature(klass, &signature, nullptr)))
         return;
     
     std::vector<JniLocal<jclass>> hierarchy = getClassHierarchy(klass, jni);
@@ -197,7 +197,6 @@ static void addClassInfo(jclass klass, jlong tag, Buffer& buffer, JNIEnv *jni) {
     if (!getFieldNames(hierarchy, fieldNames))
         return;
 
-    check(tag >= std::numeric_limits<jint>::min() && tag <= std::numeric_limits<jint>::max());
     buffer.add(static_cast<jint>(tag));
     buffer.addString(classSignatureToName(signature));
     buffer.add(fieldStartIndex);

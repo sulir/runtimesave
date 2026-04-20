@@ -1,6 +1,7 @@
 package io.github.sulir.runtimesave.rt;
 
 import io.github.sulir.runtimesave.graph.ValueNode;
+import io.github.sulir.runtimesave.misc.Log;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.*;
 
@@ -98,10 +99,7 @@ public class BufferReader implements AutoCloseable {
         long objectTag = heap.getLong();
         int classTag = heap.getInt();
 
-        if (classesInfo[classTag] == null)
-            System.err.println("NULL: " + classTag);
-
-        String type = classesInfo[classTag].className();
+        String type = getClassInfo(classTag).className();
         ValueNode node = nodes.get(objectTag);
         switch (node) {
             case ObjectNode object -> object.setType(type);
@@ -166,6 +164,16 @@ public class BufferReader implements AutoCloseable {
             array.setElement(i, readPrimitive(type, heap));
     }
 
+    private ClassInfo getClassInfo(int tag) {
+        if (classesInfo[tag] == null) {
+            Log.error("Unknown class with tag " + tag);
+            ClassInfo unknown = new ClassInfo("$Unknown", 0, new String[64 * 1024]);
+            Arrays.fill(unknown.fieldNames(), "$unknown");
+            classesInfo[tag] = unknown;
+        }
+        return classesInfo[tag];
+    }
+
     private static ValueNode getOrCreateNode(Map<Long, ValueNode> nodes, long tag, byte kind) {
         return nodes.computeIfAbsent(tag, (t) -> switch (kind) {
             case 'T' -> new StringNode();
@@ -176,7 +184,7 @@ public class BufferReader implements AutoCloseable {
     }
 
     private void setField(ObjectNode object, int classTag, int fieldIndex, ValueNode value) {
-        ClassInfo info = classesInfo[classTag];
+        ClassInfo info = getClassInfo(classTag);
         String fieldName = info.fieldNames()[fieldIndex - info.fieldStartIndex()];
         object.setField(fieldName, value);
     }

@@ -34,7 +34,6 @@ static void tagObject(jlong *tag, jlong classTag) {
 
 static void addObjectOrArrayNode(jlong objectTag, jlong classTag, HeapData& data) {
     if (objectTag != 0) {
-        check(classTag >= std::numeric_limits<jint>::min() && classTag <= std::numeric_limits<jint>::max());
         data.buffer.emplace<ObjectOrArrayNode>(objectTag, static_cast<jint>(classTag));
         data.referenceNodeCount++;
     }
@@ -50,7 +49,6 @@ static jbyte getReferenceKind(jlong classTag, jint arrayLength) {
 
 static void addFieldEdge(jlong from, jlong fromCls, jint index, jlong *to, jlong toCls, jint arrLen, Buffer& buffer) {
     jbyte toKind = getReferenceKind(toCls, arrLen);
-    check(fromCls >= std::numeric_limits<jint>::min() && fromCls <= std::numeric_limits<jint>::max());
     tagObject(to, toCls);
     buffer.emplace<FieldEdge>(from, static_cast<jint>(fromCls), index, *to, toKind);
 }
@@ -90,7 +88,6 @@ static jint primitiveFieldCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapR
     if (kind == JVMTI_HEAP_REFERENCE_STATIC_FIELD || classTag == classCache.STRING_TAG)
         return 0;
     Buffer& buffer = static_cast<HeapData *>(userData)->buffer;
-    check(classTag >= std::numeric_limits<jint>::min() && classTag <= std::numeric_limits<jint>::max());
     buffer.emplace<PrimitiveField>(type, *tagPtr, static_cast<jint>(classTag), info->field.index);
     buffer.add(&value, primitiveTypes[type - 'B'].size);
     return 0;
