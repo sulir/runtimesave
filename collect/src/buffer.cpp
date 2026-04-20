@@ -69,7 +69,7 @@ bool Buffer::grow(size_t added) {
         capacity = MIN_SIZE;
     void *newMem = std::realloc(mem, capacity);
     
-    if (!newMem) {
+    if (!check(newMem)) {
         free(mem);
         mem = nullptr;
         capacity = SIZE_MAX;

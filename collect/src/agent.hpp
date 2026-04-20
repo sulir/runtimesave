@@ -64,7 +64,7 @@ class TiPtr {
 public:
     TiPtr() = default;
     ~TiPtr() { dealloc(ptr); }
-    operator T *() { return ptr; }
+    operator T *() const { return ptr; }
     T **operator &() { return &ptr; }
 
     TiPtr(TiPtr&& other) noexcept : ptr(std::exchange(other.ptr, nullptr)) {}
@@ -80,8 +80,19 @@ template <typename T>
 class JniLocal {
 public:
     JniLocal(T ref, JNIEnv *jni) : ref(ref), jni(jni) {};
-    ~JniLocal() { jni->DeleteLocalRef(ref); }
-    operator T() { return ref; }
+    ~JniLocal() {
+        if (jni)
+            jni->DeleteLocalRef(ref);
+    }
+    operator T() const { return ref; }
+
+    JniLocal(JniLocal&& other) noexcept
+        : ref(std::exchange(other.ref, nullptr)), jni(std::exchange(other.jni, nullptr))  {}
+    JniLocal& operator=(JniLocal&& other) noexcept {
+        std::swap(ref, other.ref);
+        std::swap(jni, other.jni);
+        return *this;
+    }
 private:
     T ref;
     JNIEnv *jni;

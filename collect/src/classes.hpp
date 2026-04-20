@@ -7,21 +7,28 @@
 
 #include "buffer.hpp"
 
+struct ClassState {
+    jweak weakRef = nullptr;
+    bool sent = false;
+};
+
 inline class ClassCache {
 public:
-    ClassCache();
-    void load(JNIEnv *jni);
-    void unload(JNIEnv *jni);
-
     jclass objectClass = nullptr;
-    jlong classTag = 0;
-    static constexpr jlong STRING_TAG = 1;
-
-    jlong addUnused(jclass klass, JNIEnv *jni);
-    jweak useIfUnused(jlong *tag, jlong *nextTag);
+    static constexpr jlong CLASS_TAG = 1;
+    static constexpr jlong STRING_TAG = 2;
+    static constexpr jlong FIRST_FREE = 3;
+    ClassCache();
+    bool load(JNIEnv *jni);
+    void unload(JNIEnv *jni);
+    jlong addIfAbsent(jclass klass, JNIEnv *jni);
+    bool addSafe(jlong *tag);
+    void addClassObjectOnly(jlong *tag);
+    jclass release(jlong tag, JNIEnv *jni);
+    std::mutex& mutex();
 private:
-    static constexpr jlong MIN_UNUSED = 1LL << 62;
-    std::vector<jweak> classes;
+    jlong add(jclass klass, jlong tag, JNIEnv *jni);
+    std::vector<ClassState> classes;
     std::mutex mtx;
 } classCache;
 
@@ -43,5 +50,4 @@ constexpr auto primitiveTypes = [] {
     return arr;
 }();
 
-void loadClassesInfo(const std::vector<jweak>& cached, std::unordered_set<jlong>& uncached, Buffer& buffer,
-        JNIEnv *jni);
+void loadClassesInfo(const std::vector<jlong>& newClasses, Buffer& buffer, JNIEnv *jni);

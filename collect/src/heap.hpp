@@ -10,8 +10,7 @@ struct HeapData {
     Buffer& buffer;
     jlong sequenceNum = 0;
     jint referenceNodeCount = 0;
-    std::vector<jweak> cachedClasses{};
-    std::unordered_set<jlong> uncachedClasses{};
+    std::vector<jlong> newClasses{};
 };
 
 #pragma pack(push, 1)

@@ -18,28 +18,18 @@ static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni)
     return array;
 }
 
-static void tagClass(jlong *tagPtr, HeapData& data) {
-    static jlong nextClassTag = classCache.STRING_TAG + 1;
-
-    jlong tag = *tagPtr;
-    if (jweak klass = classCache.useIfUnused(tagPtr, &nextClassTag)) {
-        data.cachedClasses.push_back(klass);
-    } else if (tag == 0) {
-        *tagPtr = nextClassTag++;
-        data.uncachedClasses.insert(*tagPtr);
-    }
+static void tagClass(jlong *tag, HeapData& data) {
+    if (classCache.addSafe(tag))
+        data.newClasses.push_back(*tag);
 }
 
-static jlong tagObject(jlong *tagPtr, jlong classTag, HeapData& data) {
+static void tagObject(jlong *tag, jlong classTag) {
     static jlong nextObjectTag = -1;
 
-    if (*tagPtr == 0) {
-        if (classTag == classCache.classTag)
-            tagClass(tagPtr, data);
-        else
-        *tagPtr = nextObjectTag--;
-    }
-    return *tagPtr;
+    if (classTag == classCache.CLASS_TAG)
+        classCache.addClassObjectOnly(tag);
+    else if (*tag == 0)
+        *tag = nextObjectTag--;
 }
 
 static void addObjectOrArrayNode(jlong objectTag, jlong classTag, HeapData& data) {
@@ -58,15 +48,17 @@ static jbyte getReferenceKind(jlong classTag, jint arrayLength) {
     return 'L';
 }
 
-static void addFieldEdge(jlong from, jlong fromCls, jint index, jlong *to, jlong toCls, jint arrLen, HeapData& data) {
+static void addFieldEdge(jlong from, jlong fromCls, jint index, jlong *to, jlong toCls, jint arrLen, Buffer& buffer) {
     jbyte toKind = getReferenceKind(toCls, arrLen);
     check(fromCls >= std::numeric_limits<jint>::min() && fromCls <= std::numeric_limits<jint>::max());
-    data.buffer.emplace<FieldEdge>(from, static_cast<jint>(fromCls), index, tagObject(to, toCls, data), toKind);
+    tagObject(to, toCls);
+    buffer.emplace<FieldEdge>(from, static_cast<jint>(fromCls), index, *to, toKind);
 }
 
-static void addElementEdge(jlong from, jint index, jlong *to, jlong toCls, jint arrLen, HeapData& data) {
+static void addElementEdge(jlong from, jint index, jlong *to, jlong toCls, jint arrLen, Buffer& buffer) {
     jbyte toKind = getReferenceKind(toCls, arrLen);
-    data.buffer.emplace<ElementEdge>(from, index, tagObject(to, toCls, data), toKind);
+    tagObject(to, toCls);
+    buffer.emplace<ElementEdge>(from, index, *to, toKind);
 }
 
 static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapReferenceInfo *info, jlong classTag,
@@ -83,10 +75,10 @@ static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapRefere
         case JVMTI_HEAP_REFERENCE_FIELD:
             if (referrerClassTag == classCache.STRING_TAG)
                 return 0;
-            addFieldEdge(*referrerTag, referrerClassTag, info->field.index, tag, classTag, arrLen, data);
+            addFieldEdge(*referrerTag, referrerClassTag, info->field.index, tag, classTag, arrLen, data.buffer);
             return JVMTI_VISIT_OBJECTS;
         case JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT:
-            addElementEdge(*referrerTag, info->array.index, tag, classTag, arrLen, data);
+            addElementEdge(*referrerTag, info->array.index, tag, classTag, arrLen, data.buffer);
             return JVMTI_VISIT_OBJECTS;
         default:
             return 0;
@@ -138,8 +130,7 @@ bool readHeap(const std::vector<jobject>& locals, HeapData& heapData, JNIEnv *jn
     callbacks.array_primitive_value_callback = primitiveArrayCallback;
     callbacks.string_primitive_value_callback = stringCallback;
     
-    static std::mutex mtx;
-    std::lock_guard<std::mutex> lock(mtx);
+    std::lock_guard<std::mutex> lock(classCache.mutex());
     if (!ok(ti->FollowReferences(0, nullptr, root, &callbacks, &heapData)))
         return false;
     heapData.sequenceNum = nextSequenceNum.fetch_add(1, std::memory_order_relaxed);
