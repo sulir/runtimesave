@@ -45,7 +45,7 @@ public class BufferReader implements AutoCloseable {
     }
 
     public SourceLocation readLocation() {
-        String classSig = readUTF8(location);
+        String classSig = Objects.requireNonNull(readUTF8(location));
         String className = classSig.substring(1, classSig.length() - 1).replace('/', '.');
         String methodName = readUTF8(location);
         String methodSig = readUTF8(location);
@@ -218,6 +218,8 @@ public class BufferReader implements AutoCloseable {
 
     public static String readUTF8(ByteBuffer buffer) {
         int length = buffer.getInt();
+        if (length == -1)
+            return null;
         ByteBuffer view = buffer.slice(buffer.position(), length);
         String string = StandardCharsets.UTF_8.decode(view).toString();
         buffer.position(buffer.position() + length);

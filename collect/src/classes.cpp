@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <classfile_constants.h>
 #include <jvmti.h>
 #include <string>
 #include <unordered_set>
@@ -175,6 +176,14 @@ static bool getFieldNames(const std::vector<JniLocal<jclass>>& classHierarchy, s
             return false;
         
         for (jint i = 0; i < count; i++) {
+            jint modifiers;
+            if (!ok(ti->GetFieldModifiers(klass, fields[i], &modifiers)))
+                return false;
+            if (modifiers & JVM_ACC_STATIC) {
+                result.emplace_back();
+                continue;
+            }
+
             TiPtr<char> name;
             if (!ok(ti->GetFieldName(klass, fields[i], &name, nullptr, nullptr)))
                 return false;
