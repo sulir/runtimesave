@@ -50,4 +50,5 @@ constexpr auto primitiveTypes = [] {
     return arr;
 }();
 
+void addJavaLangClass(Buffer& buffer);
 void loadClassesInfo(const std::vector<jlong>& newClasses, Buffer& buffer, JNIEnv *jni);

@@ -11,6 +11,7 @@ struct HeapData {
     jlong sequenceNum = 0;
     jint referenceNodeCount = 0;
     std::vector<jlong> newClasses{};
+    std::unordered_set<jlong> classObjects{};
 };
 
 #pragma pack(push, 1)

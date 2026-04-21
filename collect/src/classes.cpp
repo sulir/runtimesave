@@ -233,6 +233,13 @@ static void loadUncachedClasses(std::unordered_set<jlong>& tags, Buffer& buffer,
     check(tags.empty());
 }
 
+void addJavaLangClass(Buffer& buffer) {
+    buffer.add(static_cast<jint>(classCache.CLASS_TAG));
+    buffer.addString("java.lang.Class");
+    buffer.add(static_cast<jint>(-1));
+    buffer.add(static_cast<jint>(0));
+}
+
 void loadClassesInfo(const std::vector<jlong>& newClasses, Buffer& buffer, JNIEnv *jni) {
     std::unordered_set<jlong> uncached{};
 

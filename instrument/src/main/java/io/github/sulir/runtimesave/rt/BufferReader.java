@@ -189,11 +189,11 @@ public class BufferReader implements AutoCloseable {
         return classesInfo[tag];
     }
 
-    private static ValueNode getOrCreateNode(Map<Long, ValueNode> nodes, long tag, int toArrayLength) {
-        return nodes.computeIfAbsent(tag, (t) -> switch (toArrayLength) {
+    private static ValueNode getOrCreateNode(Map<Long, ValueNode> nodes, long tag, int arrayLength) {
+        return nodes.computeIfAbsent(tag, (t) -> switch (arrayLength) {
             case -2 -> new StringNode();
             case -1 -> new ObjectNode();
-            default -> new ArrayNode(toArrayLength);
+            default -> new ArrayNode(arrayLength);
         });
     }
 

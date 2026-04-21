@@ -39,15 +39,18 @@ static void addObjectOrArrayNode(jlong objectTag, jlong classTag, HeapData& data
     }
 }
 
+static void addClassObject(jlong tag, HeapData& data) {
+    if (data.classObjects.insert(tag).second)
+        addObjectOrArrayNode(tag, classCache.CLASS_TAG, data);
+}
+
 static void addFieldEdge(jlong from, jlong fromCls, jint index, jlong *to, jlong toCls, jint arrLen, Buffer& buffer) {
-    tagObject(to, toCls);
     if (toCls == classCache.STRING_TAG)
         arrLen = -2;
     buffer.emplace<FieldEdge>(from, static_cast<jint>(fromCls), index, *to, arrLen);
 }
 
 static void addElementEdge(jlong from, jint index, jlong *to, jlong toCls, jint arrLen, Buffer& buffer) {
-    tagObject(to, toCls);
     if (toCls == classCache.STRING_TAG)
         arrLen = -2;
     buffer.emplace<ElementEdge>(from, index, *to, arrLen);
@@ -64,14 +67,27 @@ static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapRefere
                 addObjectOrArrayNode(*referrerTag, *tag, data);
             }
             return 0;
+
         case JVMTI_HEAP_REFERENCE_FIELD:
             if (referrerClassTag == classCache.STRING_TAG)
                 return 0;
+            tagObject(tag, classTag);
             addFieldEdge(*referrerTag, referrerClassTag, info->field.index, tag, classTag, arrLen, data.buffer);
+            if (classTag == classCache.CLASS_TAG) {
+                addClassObject(*tag, data);
+                return 0;
+            }
             return JVMTI_VISIT_OBJECTS;
+        
         case JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT:
+            tagObject(tag, classTag);
             addElementEdge(*referrerTag, info->array.index, tag, classTag, arrLen, data.buffer);
+            if (classTag == classCache.CLASS_TAG) {
+                addClassObject(*tag, data);
+                return 0;
+            }
             return JVMTI_VISIT_OBJECTS;
+        
         default:
             return 0;
     }
