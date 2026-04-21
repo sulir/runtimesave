@@ -74,7 +74,7 @@ public class PrimitiveArrayPacker implements Packer {
         }
     }
 
-    private static boolean isPrimitive(String type) {
+    public static boolean isPrimitive(String type) {
         return switch (type) {
             case "char", "byte", "short", "int", "long", "float", "double", "boolean" -> true;
             default -> false;

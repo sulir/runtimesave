@@ -39,24 +39,18 @@ static void addObjectOrArrayNode(jlong objectTag, jlong classTag, HeapData& data
     }
 }
 
-static jbyte getReferenceKind(jlong classTag, jint arrayLength) {
-    if (classTag == classCache.STRING_TAG)
-        return 'T';
-    if (arrayLength != -1)
-        return '[';
-    return 'L';
-}
-
 static void addFieldEdge(jlong from, jlong fromCls, jint index, jlong *to, jlong toCls, jint arrLen, Buffer& buffer) {
-    jbyte toKind = getReferenceKind(toCls, arrLen);
     tagObject(to, toCls);
-    buffer.emplace<FieldEdge>(from, static_cast<jint>(fromCls), index, *to, toKind);
+    if (toCls == classCache.STRING_TAG)
+        arrLen = -2;
+    buffer.emplace<FieldEdge>(from, static_cast<jint>(fromCls), index, *to, arrLen);
 }
 
 static void addElementEdge(jlong from, jint index, jlong *to, jlong toCls, jint arrLen, Buffer& buffer) {
-    jbyte toKind = getReferenceKind(toCls, arrLen);
     tagObject(to, toCls);
-    buffer.emplace<ElementEdge>(from, index, *to, toKind);
+    if (toCls == classCache.STRING_TAG)
+        arrLen = -2;
+    buffer.emplace<ElementEdge>(from, index, *to, arrLen);
 }
 
 static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapReferenceInfo *info, jlong classTag,

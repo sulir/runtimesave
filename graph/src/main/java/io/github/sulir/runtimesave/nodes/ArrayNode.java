@@ -14,6 +14,7 @@ public class ArrayNode extends ValueNode {
             .constructor((String t) -> new ArrayNode(t));
 
     private String type;
+    private int fullLength = -1;
     protected final SortedMap<Integer, ValueNode> elements = new TreeMap<>();
 
     public ArrayNode(String type) {
@@ -22,7 +23,9 @@ public class ArrayNode extends ValueNode {
         this.type = type;
     }
 
-    public ArrayNode() { }
+    public ArrayNode(int fullLength) {
+        this.fullLength = fullLength;
+    }
 
     public String getType() {
         return type;
@@ -31,6 +34,10 @@ public class ArrayNode extends ValueNode {
     public void setType(String type) {
         checkModification();
         this.type = type;
+    }
+
+    public int getFullLength() {
+        return fullLength;
     }
 
     public String getComponentType() {

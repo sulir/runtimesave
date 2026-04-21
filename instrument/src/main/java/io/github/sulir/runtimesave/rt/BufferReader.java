@@ -4,6 +4,7 @@ import io.github.sulir.runtimesave.graph.ValueNode;
 import io.github.sulir.runtimesave.misc.Log;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.*;
+import io.github.sulir.runtimesave.packers.PrimitiveArrayPacker;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -102,8 +103,22 @@ public class BufferReader implements AutoCloseable {
         String type = getClassInfo(classTag).className();
         ValueNode node = nodes.get(objectTag);
         switch (node) {
-            case ObjectNode object -> object.setType(type);
-            case ArrayNode array -> array.setType(type);
+            case ObjectNode object -> {
+                object.setType(type);
+                String[] fields = getClassInfo(classTag).fieldNames();
+                for (String field : fields) {
+                    if (field != null)
+                        object.setField(field, NullNode.getInstance());
+                }
+            }
+            case ArrayNode array -> {
+                array.setType(type);
+                if (!PrimitiveArrayPacker.isPrimitive(array.getComponentType())) {
+                    for (int i = 0; i < array.getFullLength(); i++) {
+                        array.setElement(i, NullNode.getInstance());
+                    }
+                }
+            }
             case null, default -> throw new IllegalStateException();
         }
     }
@@ -120,10 +135,10 @@ public class BufferReader implements AutoCloseable {
         int fromClass = heap.getInt();
         int fieldIndex = heap.getInt();
         long to = heap.getLong();
-        byte toKind = heap.get();
+        int toArrayLength = heap.getInt();
 
         ObjectNode source = (ObjectNode) nodes.get(from);
-        ValueNode target = getOrCreateNode(nodes, to, toKind);
+        ValueNode target = getOrCreateNode(nodes, to, toArrayLength);
         setField(source, fromClass, fieldIndex, target);
     }
 
@@ -131,10 +146,10 @@ public class BufferReader implements AutoCloseable {
         long from = heap.getLong();
         int index = heap.getInt();
         long to = heap.getLong();
-        byte toKind = heap.get();
+        int toArrayLength = heap.getInt();
 
         ArrayNode source = (ArrayNode) nodes.get(from);
-        ValueNode target = getOrCreateNode(nodes, to, toKind);
+        ValueNode target = getOrCreateNode(nodes, to, toArrayLength);
 
         if (source == null) {
             if (from != 0)
@@ -174,12 +189,11 @@ public class BufferReader implements AutoCloseable {
         return classesInfo[tag];
     }
 
-    private static ValueNode getOrCreateNode(Map<Long, ValueNode> nodes, long tag, byte kind) {
-        return nodes.computeIfAbsent(tag, (t) -> switch (kind) {
-            case 'T' -> new StringNode();
-            case '[' -> new ArrayNode();
-            case 'L' -> new ObjectNode();
-            default -> throw new IllegalArgumentException("Unknown target kind: " + (char) kind);
+    private static ValueNode getOrCreateNode(Map<Long, ValueNode> nodes, long tag, int toArrayLength) {
+        return nodes.computeIfAbsent(tag, (t) -> switch (toArrayLength) {
+            case -2 -> new StringNode();
+            case -1 -> new ObjectNode();
+            default -> new ArrayNode(toArrayLength);
         });
     }
 
