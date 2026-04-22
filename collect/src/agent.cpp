@@ -70,7 +70,6 @@ extern "C" JNIEXPORT jobject JNICALL Java_io_github_sulir_runtimesave_rt_Collect
     buffer.head<MainBufferHeader>()->referenceNodeCount = heapData.referenceNodeCount;
     
     buffer.head<MainBufferHeader>()->classes = buffer.position();
-    addJavaLangClass(buffer);
     loadClassesInfo(heapData.newClasses, buffer, jni);
     return buffer.result(jni);
 }

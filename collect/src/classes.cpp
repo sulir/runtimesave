@@ -2,11 +2,32 @@
 #include <classfile_constants.h>
 #include <jvmti.h>
 #include <string>
-#include <unordered_set>
+#include <unordered_map>
 
 #include "agent.hpp"
 #include "buffer.hpp"
 #include "classes.hpp"
+
+static std::string classSignatureToName(const char *sig) {
+    std::string result;
+    result.reserve(strlen(sig));
+
+    size_t arrayDim = 0;
+    while (sig[arrayDim] == '[')
+        arrayDim++;
+    
+    char kind = sig[arrayDim];
+    if (kind == 'L') {   
+        for (size_t i = arrayDim + 1; sig[i] != ';'; i++)
+            result += sig[i] == '/' ? '.' : sig[i];
+    } else if (kind >= 'B' && kind <= 'Z') {
+        result += primitiveTypes[kind - 'B'].name;
+    }
+
+    for (size_t i = 0; i < arrayDim; i++)
+        result += "[]";
+    return result;
+}
 
 ClassCache::ClassCache() {
     classes.reserve(32 * 1024);
@@ -17,9 +38,30 @@ bool ClassCache::load(JNIEnv *jni) {
     objectClass = replaceByGlobal(jniCatch(jni->FindClass("java/lang/Object"), jni), jni);
     jclass classClass = jniCatch(jni->FindClass("java/lang/Class"), jni);
     jclass stringClass = jniCatch(jni->FindClass("java/lang/String"), jni);
-    
+
+    std::vector<JniLocal<jclass>> primitiveClasses;
+    primitiveClasses.reserve(PRIMITIVE_COUNT);
+    for (PrimitiveType type : primitiveTypes) {
+        if (!type.boxed)
+            continue;
+        JniLocal<jclass> boxed{jniCatch(jni->FindClass(type.boxed), jni), jni};
+        if (!boxed)
+            return false;
+        jfieldID field = jniCatch(jni->GetStaticFieldID(boxed, "TYPE", "Ljava/lang/Class;"), jni);
+        if (!field)
+            return false;
+        jclass primitive = static_cast<jclass>(jniCatch(jni->GetStaticObjectField(boxed, field), jni));
+        if (!field)
+            return false;
+        primitiveClasses.push_back(JniLocal{primitive, jni});
+    }
+
     std::lock_guard<std::mutex> lock(mtx);
-    return objectClass && add(classClass, CLASS_TAG, jni) && add(stringClass, STRING_TAG, jni);
+    if (!objectClass || !add(classClass, CLASS_TAG, jni) || !add(stringClass, STRING_TAG, jni))
+        return false;
+    for (size_t i = 0; i < PRIMITIVE_COUNT; i++)
+        add(primitiveClasses[i], STRING_TAG + 1 + i, jni);
+    return true;
 }
 
 void ClassCache::unload(JNIEnv *jni) {
@@ -52,65 +94,45 @@ jlong ClassCache::addIfAbsent(jclass klass, JNIEnv *jni) {
     return add(klass, newTag, jni);
 }
 
-bool ClassCache::addSafe(jlong *tag) {
+bool ClassCache::addSafe(jlong *tag, SendState minState) {
     if (*tag == 0) {
         *tag = classes.size();
-        classes.push_back(ClassState{nullptr, true});
+        classes.push_back(WeakClassInfo{nullptr, minState});
         return true;
     } else {
-        bool isNew = !classes[*tag].sent;
-        classes[*tag].sent = true;
-        return isNew;
+        if (classes[*tag].state < minState) {
+            classes[*tag].state = minState;
+            return true;
+        } else {
+            return false;
+        }
     }
 }
 
-void ClassCache::addClassObjectOnly(jlong *tag) {
-    if (*tag == 0) {
-        *tag = classes.size();
-        classes.push_back(ClassState{nullptr, false});
-    }
-}
-
-jclass ClassCache::release(jlong tag, JNIEnv *jni) {
+ClassInfo ClassCache::get(jlong tag, JNIEnv *jni) {
     std::lock_guard<std::mutex> lock(mtx);
+    ClassInfo info{nullptr, classes[tag].state};
+    
     jweak weak = classes[tag].weakRef;
     if (!weak)
-        return nullptr;
+        return info;
     
     jclass local = static_cast<jclass>(jni->NewLocalRef(weak));
-    if (!check(local)) {
+    if (!check(local))
         classes[tag].weakRef = nullptr;
-        return nullptr;
-    }
     
-    jni->DeleteWeakGlobalRef(weak);
+    info.klass = local;
+    return info;
+}
+
+void ClassCache::release(jlong tag, JNIEnv *jni) {
+    std::lock_guard<std::mutex> lock(mtx);
+    jni->DeleteWeakGlobalRef(classes[tag].weakRef);
     classes[tag].weakRef = nullptr;
-    return local;
 }
 
 std::mutex& ClassCache::mutex() {
     return mtx;
-}
-
-static std::string classSignatureToName(const char *sig) {
-    std::string result;
-    result.reserve(strlen(sig));
-
-    size_t arrayDim = 0;
-    while (sig[arrayDim] == '[')
-        arrayDim++;
-    
-    char kind = sig[arrayDim];
-    if (kind == 'L') {   
-        for (size_t i = arrayDim + 1; sig[i] != ';'; i++)
-            result += sig[i] == '/' ? '.' : sig[i];
-    } else if (kind >= 'B' && kind <= 'Z') {
-        result += primitiveTypes[kind - 'B'].name;
-    }
-
-    for (size_t i = 0; i < arrayDim; i++)
-        result += "[]";
-    return result;
 }
 
 static std::vector<JniLocal<jclass>> getClassHierarchy(jclass klass, JNIEnv *jni) {
@@ -193,18 +215,23 @@ static bool getFieldNames(const std::vector<JniLocal<jclass>>& classHierarchy, s
     return true;
 }
 
-static void addClassInfo(jclass klass, jlong tag, Buffer& buffer, JNIEnv *jni) {
+static void addClassInfo(jlong tag, const ClassInfo& info, Buffer& buffer, JNIEnv *jni) {
     TiPtr<char> signature;
-    if (!klass || !ok(ti->GetClassSignature(klass, &signature, nullptr)))
+    if (!ok(ti->GetClassSignature(info.klass, &signature, nullptr)))
         return;
     
-    std::vector<JniLocal<jclass>> hierarchy = getClassHierarchy(klass, jni);
-    jint fieldStartIndex = getInterfacesFieldCount(hierarchy, jni);
-    if (fieldStartIndex == -1)
-        return;
-    std::vector<TiPtr<char>> fieldNames;
-    if (!getFieldNames(hierarchy, fieldNames))
-        return;
+    jint fieldStartIndex = -1;
+    std::vector<TiPtr<char>> fieldNames{};
+
+    if (info.state == SendState::All) {
+        std::vector<JniLocal<jclass>> hierarchy = getClassHierarchy(info.klass, jni);
+        fieldStartIndex = getInterfacesFieldCount(hierarchy, jni);
+        if (fieldStartIndex == -1)
+            return;
+        if (!getFieldNames(hierarchy, fieldNames))
+            return;
+        classCache.release(tag, jni);
+    }
 
     buffer.add(static_cast<jint>(tag));
     buffer.addString(classSignatureToName(signature));
@@ -214,41 +241,34 @@ static void addClassInfo(jclass klass, jlong tag, Buffer& buffer, JNIEnv *jni) {
         buffer.addString(name);
 }
 
-static void loadUncachedClasses(std::unordered_set<jlong>& tags, Buffer& buffer, JNIEnv *jni) {
+static void loadUncachedClasses(std::unordered_map<jlong, ClassInfo>& classes, Buffer& buffer, JNIEnv *jni) {
     jint allCount;
     TiPtr<jclass> allClasses;
     if (!ok(ti->GetLoadedClasses(&allCount, &allClasses)))
         return;
     
-    for (jint i = 0; i < allCount && !tags.empty(); i++) {
+    for (jint i = 0; i < allCount && !classes.empty(); i++) {
         JniLocal<jclass> klass{allClasses[i], jni};
         jlong tag = classCache.addIfAbsent(klass, jni);
         if (tag == 0)
             continue;
 
-        bool found = tags.erase(tag);
-        if (found)
-            addClassInfo(klass, tag, buffer, jni);
+        auto node = classes.extract(tag);
+        if (!node.empty())
+            addClassInfo(tag, ClassInfo{klass, node.mapped().state}, buffer, jni);
     }
-    check(tags.empty());
-}
-
-void addJavaLangClass(Buffer& buffer) {
-    buffer.add(static_cast<jint>(classCache.CLASS_TAG));
-    buffer.addString("java.lang.Class");
-    buffer.add(static_cast<jint>(-1));
-    buffer.add(static_cast<jint>(0));
+    check(classes.empty());
 }
 
 void loadClassesInfo(const std::vector<jlong>& newClasses, Buffer& buffer, JNIEnv *jni) {
-    std::unordered_set<jlong> uncached{};
+    std::unordered_map<jlong, ClassInfo> uncached{};
 
     for (jlong tag : newClasses) {
-        JniLocal<jclass> klass{classCache.release(tag, jni), jni};
-        if (klass)
-            addClassInfo(klass, tag, buffer, jni);
+        ClassInfo info = classCache.get(tag, jni);
+        if (info.klass)
+            addClassInfo(tag, info, buffer, jni);
         else
-            uncached.insert(tag);
+            uncached[tag] = info;
     }
     
     if (!uncached.empty())

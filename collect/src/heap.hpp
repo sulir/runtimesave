@@ -23,6 +23,12 @@ struct ObjectOrArrayNode {
         : objectTag(objectTag), classTag (classTag) {};
 };
 
+struct ClassObjectNode {
+    jbyte kind = 'K';
+    jint tag;
+    ClassObjectNode(jlong tag) : tag(tag) {};
+};
+
 struct StringNode {
     jbyte kind = 'T';
     jlong objectTag;

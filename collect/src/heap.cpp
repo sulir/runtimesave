@@ -19,41 +19,45 @@ static jobjectArray createRoot(const std::vector<jobject>& objects, JNIEnv *jni)
 }
 
 static void tagClass(jlong *tag, HeapData& data) {
-    if (classCache.addSafe(tag))
+    if (classCache.addSafe(tag, SendState::All))
         data.newClasses.push_back(*tag);
 }
 
-static void tagObject(jlong *tag, jlong classTag) {
+static void tagObject(jlong *tag, jlong classTag, HeapData& data) {
     static jlong nextObjectTag = -1;
 
-    if (classTag == classCache.CLASS_TAG)
-        classCache.addClassObjectOnly(tag);
+    if (classTag == classCache.CLASS_TAG && classCache.addSafe(tag, SendState::Name))
+        data.newClasses.push_back(*tag);
     else if (*tag == 0)
         *tag = nextObjectTag--;
 }
 
 static void addObjectOrArrayNode(jlong objectTag, jlong classTag, HeapData& data) {
-    if (objectTag != 0) {
+    static constexpr jlong LOCALS_ARRAY = 0;
+
+    if (objectTag != LOCALS_ARRAY) {
         data.buffer.emplace<ObjectOrArrayNode>(objectTag, static_cast<jint>(classTag));
         data.referenceNodeCount++;
     }
 }
 
-static void addClassObject(jlong tag, HeapData& data) {
-    if (data.classObjects.insert(tag).second)
-        addObjectOrArrayNode(tag, classCache.CLASS_TAG, data);
+static void addClassObjectNode(jlong tag, HeapData& data) {
+    if (data.classObjects.insert(tag).second) {
+        data.buffer.emplace<ClassObjectNode>(static_cast<jint>(tag));
+        data.referenceNodeCount++;
+    }
 }
 
-static void addFieldEdge(jlong from, jlong fromCls, jint index, jlong *to, jlong toCls, jint arrLen, Buffer& buffer) {
+static void addFieldEdge(jlong from, jlong fromCls, jint index, jlong *to, jlong toCls, jint arrLen, HeapData& data) {
     if (toCls == classCache.STRING_TAG)
         arrLen = -2;
-    buffer.emplace<FieldEdge>(from, static_cast<jint>(fromCls), index, *to, arrLen);
+    data.buffer.emplace<FieldEdge>(from, static_cast<jint>(fromCls), index, *to, arrLen);
 }
 
-static void addElementEdge(jlong from, jint index, jlong *to, jlong toCls, jint arrLen, Buffer& buffer) {
+static void addElementEdge(jlong from, jint index, jlong *to, jlong toCls, jint arrLen, HeapData& data) {
     if (toCls == classCache.STRING_TAG)
         arrLen = -2;
-    buffer.emplace<ElementEdge>(from, index, *to, arrLen);
+    data.buffer.emplace<ElementEdge>(from, index, *to, arrLen);
 }
 
 static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapReferenceInfo *info, jlong classTag,
@@ -71,19 +75,19 @@ static jint referenceCallback(jvmtiHeapReferenceKind kind, const jvmtiHeapRefere
         case JVMTI_HEAP_REFERENCE_FIELD:
             if (referrerClassTag == classCache.STRING_TAG)
                 return 0;
-            tagObject(tag, classTag);
-            addFieldEdge(*referrerTag, referrerClassTag, info->field.index, tag, classTag, arrLen, data.buffer);
+            tagObject(tag, classTag, data);
+            addFieldEdge(*referrerTag, referrerClassTag, info->field.index, tag, classTag, arrLen, data);
             if (classTag == classCache.CLASS_TAG) {
-                addClassObject(*tag, data);
+                addClassObjectNode(*tag, data);
                 return 0;
             }
             return JVMTI_VISIT_OBJECTS;
         
         case JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT:
-            tagObject(tag, classTag);
-            addElementEdge(*referrerTag, info->array.index, tag, classTag, arrLen, data.buffer);
+            tagObject(tag, classTag, data);
+            addElementEdge(*referrerTag, info->array.index, tag, classTag, arrLen, data);
             if (classTag == classCache.CLASS_TAG) {
-                addClassObject(*tag, data);
+                addClassObjectNode(*tag, data);
                 return 0;
             }
             return JVMTI_VISIT_OBJECTS;

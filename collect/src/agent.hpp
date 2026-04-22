@@ -39,9 +39,12 @@ bool ok(T err, int allowedErr = 0, std::source_location loc = std::source_locati
 }
 
 template <typename T>
-T jniCatch(T value, JNIEnv *jni) {
-    if (!value && jni->ExceptionCheck()) [[unlikely]]
-        jni->ExceptionDescribe();
+T jniCatch(T value, JNIEnv *jni, std::source_location loc = std::source_location::current()) {
+    if (!value) { [[unlikely]]
+        std::fprintf(stderr, "JNI Error at %s:%d\n", loc.function_name(), loc.line());
+        if (jni->ExceptionCheck())
+            jni->ExceptionDescribe();
+    }
     return value;
 }
 

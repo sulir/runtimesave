@@ -112,7 +112,7 @@ public abstract class GraphNode {
     public String toString() {
         Function<GraphNode, String> shortId = n -> n.label() + ":" + Integer.toHexString(n.hashCode() & 0xFFFF);
         String properties = Arrays.stream(properties())
-                .map(property -> property.value().toString())
+                .map(property -> (property.value() != null) ? property.value().toString() : "null")
                 .collect(Collectors.joining(", "));
         int edgeLimit = 8;
         var data = new Object() {

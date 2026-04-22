@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class BufferReader implements AutoCloseable {
-    private static ClassInfo[] classesInfo = new ClassInfo[16 * 1024];
+    private static ClassInfo[] classData = new ClassInfo[16 * 1024];
     private static final AtomicLong lastSequence = new AtomicLong(0);
 
     private final long sequenceNum;
@@ -83,6 +83,7 @@ public class BufferReader implements AutoCloseable {
             byte kind = heap.get();
             switch (kind) {
                 case 'R' -> readObjectOrArray(nodes);
+                case 'K' -> readClassObject(nodes);
                 case 'T' -> readString(nodes);
                 case 'M' -> readFieldEdge(nodes);
                 case 'E' -> readElementEdge(nodes, frame, referenceLocals);
@@ -121,6 +122,15 @@ public class BufferReader implements AutoCloseable {
             }
             case null, default -> throw new IllegalStateException();
         }
+    }
+
+    private void readClassObject(Map<Long, ValueNode> nodes) {
+        int tag = heap.getInt();
+
+        ObjectNode object = (ObjectNode) nodes.get((long) tag);
+        object.setType("java.lang.Class");
+        String name = getClassInfo(tag).className();
+        object.setField("name", new StringNode(name));
     }
 
     private void readString(Map<Long, ValueNode> nodes) {
@@ -180,13 +190,13 @@ public class BufferReader implements AutoCloseable {
     }
 
     private ClassInfo getClassInfo(int tag) {
-        if (classesInfo[tag] == null) {
+        if (classData[tag] == null) {
             Log.error("Unknown class with tag " + tag);
             ClassInfo unknown = new ClassInfo("$Unknown", 0, new String[64 * 1024]);
             Arrays.fill(unknown.fieldNames(), "$unknown");
-            classesInfo[tag] = unknown;
+            classData[tag] = unknown;
         }
-        return classesInfo[tag];
+        return classData[tag];
     }
 
     private static ValueNode getOrCreateNode(Map<Long, ValueNode> nodes, long tag, int arrayLength) {
@@ -204,11 +214,22 @@ public class BufferReader implements AutoCloseable {
     }
 
     public void readClasses() {
+        List<Integer> tags = new ArrayList<>();
+        List<ClassInfo> newData = new ArrayList<>();
         while (classes.hasRemaining()) {
-            int tag = classes.getInt();
-            if (tag >= classesInfo.length)
-                classesInfo = Arrays.copyOf(classesInfo, Math.max(2 * classesInfo.length, tag + 1));
-            classesInfo[tag] = readClassInfo();
+            tags.add(classes.getInt());
+            newData.add(readClassInfo());
+        }
+
+        synchronized (BufferReader.class) {
+            for (int i = 0; i < tags.size(); i++) {
+                int tag = tags.get(i);
+                ClassInfo newInfo = newData.get(i);
+                if (tag >= classData.length)
+                    classData = Arrays.copyOf(classData, Math.max(2 * classData.length, tag + 1));
+                if (classData[tag] == null || newInfo.fieldStartIndex() != -1)
+                    classData[tag] = newInfo;
+            }
         }
         waitForPreviousClasses();
     }
@@ -259,7 +280,7 @@ public class BufferReader implements AutoCloseable {
             case 'J' -> new PrimitiveNode(buffer.getLong(), "long");
             case 'F' -> new PrimitiveNode(buffer.getFloat(), "float");
             case 'D' -> new PrimitiveNode(buffer.getDouble(), "double");
-            default -> throw new IllegalArgumentException("Unknown primitive type: " + (char) type);
+            default -> throw new IllegalArgumentException("Unknown type: " + (char) type);
         };
     }
 
