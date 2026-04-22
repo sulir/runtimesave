@@ -50,6 +50,7 @@ public:
     static constexpr jlong CLASS_TAG = 1;
     static constexpr jlong STRING_TAG = 2;
     static constexpr jlong FIRST_FREE = STRING_TAG + PRIMITIVE_COUNT + 1;
+    static constexpr size_t DEFAULT_SIZE = 32 * 1024;
     ClassCache();
     bool load(JNIEnv *jni);
     void unload(JNIEnv *jni);

@@ -11,7 +11,11 @@ struct HeapData {
     jlong sequenceNum = 0;
     jint referenceNodeCount = 0;
     std::vector<jlong> newClasses{};
-    std::unordered_set<jlong> classObjects{};
+    std::vector<uint8_t> classObjects{};
+
+    HeapData(Buffer& buffer) : buffer(buffer) {
+        classObjects.reserve(ClassCache::DEFAULT_SIZE);
+    }
 };
 
 #pragma pack(push, 1)

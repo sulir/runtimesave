@@ -42,7 +42,11 @@ static void addObjectOrArrayNode(jlong objectTag, jlong classTag, HeapData& data
 }
 
 static void addClassObjectNode(jlong tag, HeapData& data) {
-    if (data.classObjects.insert(tag).second) {
+    if (data.classObjects.size() <= static_cast<size_t>(tag))
+        data.classObjects.resize(tag + 1);
+
+    if (!data.classObjects[tag]) {
+        data.classObjects[tag] = true;
         data.buffer.emplace<ClassObjectNode>(static_cast<jint>(tag));
         data.referenceNodeCount++;
     }

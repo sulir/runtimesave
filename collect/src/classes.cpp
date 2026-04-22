@@ -30,7 +30,7 @@ static std::string classSignatureToName(const char *sig) {
 }
 
 ClassCache::ClassCache() {
-    classes.reserve(32 * 1024);
+    classes.reserve(DEFAULT_SIZE);
     classes.resize(FIRST_FREE);
 }
 
