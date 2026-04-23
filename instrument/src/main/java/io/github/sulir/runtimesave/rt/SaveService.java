@@ -17,11 +17,12 @@ import io.github.sulir.runtimesave.pack.ValuePacker;
 public class SaveService {
     private static SaveService instance;
 
-    private final BoundedExecutor thread = BoundedExecutor.singleThreaded();
+    private final BoundedExecutor cpuPool = BoundedExecutor.usingAllCores();
+    private final BoundedExecutor dbPool = BoundedExecutor.singleThreaded();
     private final DbIndex dbIndex = new DbIndex(DbConnection.getInstance());
     private final ValuePacker packer = ValuePacker.fromServiceLoader();
-    private final GraphHasher hasher = new GraphHasher();
-    private final GraphIdHasher idHasher = new GraphIdHasher();
+    private final ThreadLocal<GraphHasher> hasher = ThreadLocal.withInitial(GraphHasher::new);
+    private final ThreadLocal<GraphIdHasher> idHasher = ThreadLocal.withInitial(GraphIdHasher::new);
     private final NodeFactory factory = new NodeFactory(packer);
     private final HashedDb database  = new HashedDb(DbConnection.getInstance(), factory);
     private final Metadata metadata = new Metadata(DbConnection.getInstance());
@@ -39,7 +40,7 @@ public class SaveService {
     public void saveFrame(BufferReader reader) {
         reader.readClasses();
 
-        thread.execute(() -> {
+        cpuPool.execute(() -> {
             SourceLocation location;
             FrameNode frame;
             try (reader) {
@@ -48,14 +49,18 @@ public class SaveService {
             }
             Log.info(location, frame);
 
-            if (System.getenv("RS_WRITE") != null) {
-                packer.pack(frame);
-                AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
-                hasher.assignHashes(dag);
-                idHasher.assignIdHashes(frame);
+            if ("no".equals(System.getenv("RS_WRITE")))
+                return;
+
+            packer.pack(frame);
+            AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
+            hasher.get().assignHashes(dag);
+            idHasher.get().assignIdHashes(frame);
+
+            dbPool.execute(() -> {
                 database.write(dag);
                 metadata.addLocation(frame.hash(), location);
-            }
+            });
         });
     }
 }

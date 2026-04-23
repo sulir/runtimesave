@@ -51,6 +51,9 @@ public final class RuntimeStorageService {
         FrameNode frameNode = reader.readFrame();
         SourceLocation location = reader.readLocation();
 
+        if ("no".equals(System.getenv("RS_WRITE")))
+            return;
+
         cpuPool.execute(() -> {
             packer.pack(frameNode);
             AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frameNode);
