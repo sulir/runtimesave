@@ -21,6 +21,7 @@ public class AppUnaffectingLogManager extends LogManager {
 
         if (agentPackages.matcher(logger.getName()).matches()) {
             logger.setLevel(Level.OFF);
+            logger.setFilter(record -> false);
         } else if (!appLoggingStarted) {
             appLoggingStarted = true;
             try {
