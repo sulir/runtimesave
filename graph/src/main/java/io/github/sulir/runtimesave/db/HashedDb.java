@@ -97,21 +97,20 @@ public class HashedDb {
     }
 
     private List<Boolean> writeFirstNodes(Stream<GraphNode> nodes, TransactionContext transaction) {
-        List<Map<String, Object>> nodesList = nodes.map(this::nodeToMap).toList();
-        String query = "UNWIND $nodes AS node"
-                + " OPTIONAL MATCH (h:Hashed {idHash: node.props.idHash})"
-                + " WITH node, h IS NULL AS toCreate"
-                + " FOREACH (_ IN CASE WHEN toCreate then [1] ELSE [] END |"
-                + "  CREATE (n:$(node.label):Hashed)"
-                + "  SET n = node.props"
-                + " )"
-                + " RETURN collect(toCreate) as created";
+        List<Map<String, Object>> nodesList = nodes.map(n -> nodeToMap(n, false)).toList();
+        String query = "UNWIND range(0, size($nodes) - 1) AS i"
+                + " WITH i, $nodes[i] AS node"
+                + " CALL apoc.merge.nodeWithStats(['Hashed', node.label], {idHash: node.idHash}, node.props, {})"
+                + " YIELD stats, node AS n"
+                + " WITH i, stats.nodesCreated = 1 AS wasCreated"
+                + " ORDER BY i"
+                + " RETURN collect(wasCreated) as created";
         return transaction.run(query, Map.of("nodes", nodesList))
                 .single().get("created").asList(Value::asBoolean);
     }
 
     private void writeRestsOfNodes(Stream<GraphNode> nodes, TransactionContext transaction) {
-        List<Map<String, Object>> nodesList = nodes.map(this::nodeToMap).toList();
+        List<Map<String, Object>> nodesList = nodes.map(n -> nodeToMap(n, true)).toList();
         if (nodesList.isEmpty())
             return;
 
@@ -122,14 +121,16 @@ public class HashedDb {
         transaction.run(query, Map.of("nodes", nodesList));
     }
 
-    private Map<String, Object> nodeToMap(GraphNode node) {
+    private Map<String, Object> nodeToMap(GraphNode node, boolean idHashInProps) {
         Map<String, Object> properties = new HashMap<>();
         for (NodeProperty property : node.properties())
             properties.put(property.key(), property.value());
         properties.put("hash", node.hash().toString());
-        properties.put("idHash", node.idHash().toString());
+        if (idHashInProps)
+            properties.put("idHash", node.idHash().toString());
 
-        return Map.of("label", node.label(), "props", properties);
+        return idHashInProps ? Map.of("label", node.label(), "props", properties)
+                : Map.of("label", node.label(), "idHash", node.idHash().toString(), "props", properties);
     }
 
     private void writeOutEdges(Stream<GraphNode> nodes, TransactionContext transaction) {
