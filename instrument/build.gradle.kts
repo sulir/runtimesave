@@ -14,7 +14,9 @@ tasks.shadowJar {
     addAgentPackage("reactor", "reactor")
 
     exclude("META-INF/native-image/**")
-    exclude("META-INF/services/**")
+    exclude {
+        it.path.startsWith("META-INF/services/") && !it.path.contains("/io.github.sulir.runtimesave.")
+    }
     exclude("META-INF/*.versions.properties")
 
     manifest {
