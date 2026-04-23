@@ -63,10 +63,10 @@ public class HashedDb {
     }
 
     public void write(AcyclicGraph dag) {
-        Set<StrongComponent> visited = new HashSet<>();
-        List<StrongComponent> created = new ArrayList<>();
-
         db.writeTransaction(transaction -> {
+            Set<StrongComponent> visited = new HashSet<>();
+            List<StrongComponent> created = new ArrayList<>();
+
             writeComponents(Set.of(dag.getRootComponent()), visited, created, transaction);
             writeOutEdges(created.stream().flatMap(scc -> scc.nodes().stream()), transaction);
         });
