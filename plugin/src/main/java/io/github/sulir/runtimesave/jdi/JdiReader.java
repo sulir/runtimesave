@@ -9,10 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.sulir.runtimesave.misc.UncheckedThrowing.uncheck;
-
 public class JdiReader {
-    private StackFrame frame;
+    private final StackFrame frame;
     private final Map<Long, ValueNode> created = new HashMap<>();
 
     public JdiReader(StackFrame frame) {
@@ -67,8 +65,8 @@ public class JdiReader {
                     node = new ObjectNode(object.referenceType().name());
                     created.put(object.uniqueID(), node);
 
-                    if (object.referenceType().name().equals("java.lang.Class"))
-                        saveClassObjectName((ObjectNode) node, object);
+                    if (object instanceof ClassObjectReference classObject)
+                        ((ObjectNode) node).setField("name", new StringNode(classObject.reflectedType().name()));
                     else
                         saveFields((ObjectNode) node, object);
                 }
@@ -88,14 +86,6 @@ public class JdiReader {
         fields.removeIf(Field::isStatic);
         Map<Field, Value> values = object.getValues(fields);
         values.forEach((field, value) -> objectNode.setField(field.name(), createNode(value)));
-    }
-
-    private void saveClassObjectName(ObjectNode objectNode, ObjectReference object) {
-        Method method = ((ClassType) object.type()).concreteMethodByName("getName", "()Ljava/lang/String;");
-        ThreadReference thread = frame.thread();
-        Value name = uncheck(() -> object.invokeMethod(thread, method, List.of(), ClassType.INVOKE_SINGLE_THREADED));
-        frame = uncheck(() -> thread.frame(0));
-        objectNode.setField("name", new StringNode(((StringReference) name).value()));
     }
 
     private Object toBoxed(PrimitiveValue value) {
