@@ -2,9 +2,9 @@ package io.github.sulir.runtimesave.nodes;
 
 import io.github.sulir.runtimesave.graph.Mapping;
 import io.github.sulir.runtimesave.graph.ValueNode;
+import io.github.sulir.runtimesave.misc.ArrayMap;
 
 import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
 public class ArrayNode extends ValueNode {
@@ -15,7 +15,7 @@ public class ArrayNode extends ValueNode {
 
     private String type;
     private int fullLength = -1;
-    protected final SortedMap<Integer, ValueNode> elements = new TreeMap<>();
+    protected final SortedMap<Integer, ValueNode> elements = new ArrayMap<>();
 
     public ArrayNode(String type) {
         if (!type.endsWith("[]"))

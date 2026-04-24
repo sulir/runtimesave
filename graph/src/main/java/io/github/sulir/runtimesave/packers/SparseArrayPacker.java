@@ -2,13 +2,13 @@ package io.github.sulir.runtimesave.packers;
 
 import io.github.sulir.runtimesave.graph.Mapping;
 import io.github.sulir.runtimesave.graph.ValueNode;
+import io.github.sulir.runtimesave.misc.ArrayMap;
 import io.github.sulir.runtimesave.nodes.ArrayNode;
 import io.github.sulir.runtimesave.nodes.NullNode;
 import io.github.sulir.runtimesave.nodes.PrimitiveNode;
 import io.github.sulir.runtimesave.pack.Packer;
 
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 public class SparseArrayPacker implements Packer {
     @Override
@@ -56,7 +56,7 @@ public class SparseArrayPacker implements Packer {
 
         private final String type;
         private final int length;
-        protected final SortedMap<Integer, ValueNode> elements = new TreeMap<>();
+        protected final SortedMap<Integer, ValueNode> elements = new ArrayMap<>();
 
         public SparseArrayNode(String type, int length) {
             if (!type.endsWith("[]"))
