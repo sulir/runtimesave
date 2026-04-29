@@ -24,8 +24,8 @@ import java.util.function.BooleanSupplier;
 
 @Service
 public final class RuntimeStorageService {
-    private final BoundedExecutor cpuPool = BoundedExecutor.usingAllCores();
-    private final BoundedExecutor dbPool = BoundedExecutor.singleThreaded();
+    private final BoundedExecutor cpuPool = BoundedExecutor.usingAllCores("CPU");
+    private final BoundedExecutor dbPool = BoundedExecutor.singleThreaded("DB");
     private final ValuePacker packer = ValuePacker.fromServiceLoader();
     private final NodeFactory factory = new NodeFactory(packer);
     private final ThreadLocal<GraphHasher> hasher = ThreadLocal.withInitial(GraphHasher::new);

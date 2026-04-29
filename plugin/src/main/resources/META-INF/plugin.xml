@@ -15,7 +15,7 @@
     <debugger.javaBreakpointHandlerFactory
             implementation="io.github.sulir.runtimesave.savepoint.SavepointHandlerFactory"/>
 
-    <runConfigurationExtension implementation="io.github.sulir.runtimesave.config.SamplingRunConfigExtension"/>
+    <runConfigurationExtension implementation="io.github.sulir.runtimesave.config.RuntimeSaveRunConfigExtension"/>
     <executor implementation="io.github.sulir.runtimesave.sample.SamplingRunExecutor"/>
     <programRunner implementation="io.github.sulir.runtimesave.sample.SamplingRunRunner"/>
     <executor implementation="io.github.sulir.runtimesave.sample.SamplingDebugExecutor"/>

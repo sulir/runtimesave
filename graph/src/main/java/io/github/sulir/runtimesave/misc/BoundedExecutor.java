@@ -1,24 +1,22 @@
 package io.github.sulir.runtimesave.misc;
 
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class BoundedExecutor extends ThreadPoolExecutor {
+    public static final String PREFIX = "RuntimeSave";
     private static final int DEFAULT_QUEUE_SIZE = 10;
 
-    public static BoundedExecutor singleThreaded() {
-        return new BoundedExecutor(1, DEFAULT_QUEUE_SIZE);
+    public static BoundedExecutor singleThreaded(String name) {
+        return new BoundedExecutor(1, DEFAULT_QUEUE_SIZE, name);
     }
 
-    public static BoundedExecutor usingAllCores() {
-        return new BoundedExecutor(Runtime.getRuntime().availableProcessors(), DEFAULT_QUEUE_SIZE);
+    public static BoundedExecutor usingAllCores(String name) {
+        return new BoundedExecutor(Runtime.getRuntime().availableProcessors(), DEFAULT_QUEUE_SIZE, name);
     }
 
-    public BoundedExecutor(int threads, int queueSize) {
+    public BoundedExecutor(int threads, int queueSize, String name) {
         super(threads, threads, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>(queueSize),
-                Thread.ofPlatform().daemon().factory());
+                Thread.ofPlatform().name(PREFIX + name +  "-", 1).daemon().factory());
         setRejectedExecutionHandler(this::rejectedExecution);
         Runtime.getRuntime().addShutdownHook(new Thread(this::appShuttingDown));
     }

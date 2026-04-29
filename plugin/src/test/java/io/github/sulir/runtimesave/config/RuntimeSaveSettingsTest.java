@@ -6,33 +6,40 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
-class SamplingSettingsTest {
+class RuntimeSaveSettingsTest {
     @Test
     void getOrDefaultOnEmptyDataReturnsDefaults() {
-        SamplingSettings empty = SamplingSettings.getOrDefault(new UserDataHolderBase());
-        SamplingSettings defaultSettings = new SamplingSettings();
+        RuntimeSaveSettings empty = RuntimeSaveSettings.getOrDefault(new UserDataHolderBase());
+        RuntimeSaveSettings defaultSettings = new RuntimeSaveSettings();
         assertTrue(settingsEqual(defaultSettings, empty));
     }
 
     @Test
     void getOrDefaultReturnsGivenSettings() {
-        SamplingSettings expected = new SamplingSettings();
+        RuntimeSaveSettings expected = new RuntimeSaveSettings();
         expected.setEveryNthLine(2);
         expected.setFirstTExecutions(3);
         expected.setIncludeFilters(new ClassFilter[]{ new ClassFilter("Pattern") });
         UserDataHolderBase data = new UserDataHolderBase();
-        data.putUserData(SamplingSettings.key, expected);
+        data.putUserData(RuntimeSaveSettings.key, expected);
 
-        SamplingSettings settings = SamplingSettings.getOrDefault(data);
+        RuntimeSaveSettings settings = RuntimeSaveSettings.getOrDefault(data);
         assertTrue(settingsEqual(expected, settings));
     }
 
     @Test
+    void enablingSavepointChangesDefaults() {
+        RuntimeSaveSettings defaultSettings = new RuntimeSaveSettings();
+        RuntimeSaveSettings enabled = new RuntimeSaveSettings();
+        enabled.setSavepointEnabled(true);
+        assertFalse(settingsEqual(defaultSettings, enabled));
+    }
+
+    @Test
     void classPatternHasUnchangedFormat() {
-        SamplingSettings settings = new SamplingSettings();
+        RuntimeSaveSettings settings = new RuntimeSaveSettings();
         String pattern = "com.company.*";
         settings.setIncludeFilters(new ClassFilter[]{ new ClassFilter(pattern) });
         assertEquals(pattern, settings.getIncludeClassPatterns()[0]);
@@ -40,19 +47,20 @@ class SamplingSettingsTest {
 
     @Test
     void defaultSettingsIncludeAllClasses() {
-        assertEquals(".*", new SamplingSettings().getIncludeRegex());
+        assertEquals(".*", new RuntimeSaveSettings().getIncludeRegex());
     }
 
     @Test
     void twoClassFiltersAreConvertedToRegex() {
-        SamplingSettings settings = new SamplingSettings();
+        RuntimeSaveSettings settings = new RuntimeSaveSettings();
         ClassFilter[] filters = new ClassFilter[]{ new ClassFilter("a.*"), new ClassFilter("B") };
         settings.setIncludeFilters(filters);
         assertEquals("a\\..*|B", settings.getIncludeRegex());
     }
 
-    private boolean settingsEqual(SamplingSettings settings, SamplingSettings other) {
-        return settings.getEveryNthLine() == other.getEveryNthLine()
+    private boolean settingsEqual(RuntimeSaveSettings settings, RuntimeSaveSettings other) {
+        return settings.isSavepointEnabled() == other.isSavepointEnabled()
+                && settings.getEveryNthLine() == other.getEveryNthLine()
                 && settings.getFirstTExecutions() == other.getFirstTExecutions()
                 && Arrays.equals(settings.getIncludeFilters(), other.getIncludeFilters());
     }

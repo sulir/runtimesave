@@ -13,7 +13,7 @@ import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.EventRequestManager;
-import io.github.sulir.runtimesave.config.SamplingSettings;
+import io.github.sulir.runtimesave.config.RuntimeSaveSettings;
 import org.jetbrains.annotations.NotNull;
 
 public class JdiSamplingListener implements DebuggerManagerListener {
@@ -37,13 +37,13 @@ public class JdiSamplingListener implements DebuggerManagerListener {
 
                 VirtualMachine vm = ((VirtualMachineProxyImpl) process.getVirtualMachineProxy()).getVirtualMachine();
                 RunConfigurationBase<?> profile = (RunConfigurationBase<?>) environment.getRunProfile();
-                SamplingSettings settings = profile.getUserData(SamplingSettings.key);
+                RuntimeSaveSettings settings = profile.getUserData(RuntimeSaveSettings.key);
                 setClassPrepareRequest(vm, settings);
             }
         });
     }
 
-    private void setClassPrepareRequest(VirtualMachine vm, SamplingSettings settings) {
+    private void setClassPrepareRequest(VirtualMachine vm, RuntimeSaveSettings settings) {
         EventRequestManager manager = vm.eventRequestManager();
         ClassPrepareRequest request = manager.createClassPrepareRequest();
 

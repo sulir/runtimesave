@@ -129,7 +129,7 @@ public class MethodInstrumentation {
         result.add(generatePush(newLineId));
 
         if (infinityHits) {
-            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectInfinityIfLineChanged", "(II)V"));
+            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectAlwaysIfLineChanged", "(II)V"));
         } else if (everyNthLine == 1) {
             result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectIfLineChanged", "(II)V"));
         } else {
@@ -143,7 +143,7 @@ public class MethodInstrumentation {
         InsnList result = new InsnList();
 
         if (infinityHits) {
-            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectInfinity", "()V"));
+            result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collectAlways", "()V"));
         } else {
             result.add(generatePush(lineId / everyNthLine));
             result.add(new MethodInsnNode(Opcodes.INVOKESTATIC, COLLECTOR, "collect", "(I)V"));

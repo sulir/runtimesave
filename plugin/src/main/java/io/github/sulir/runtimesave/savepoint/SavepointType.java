@@ -5,6 +5,7 @@ import com.intellij.debugger.ui.breakpoints.JavaLineBreakpointType;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
 import com.intellij.xdebugger.XDebuggerUtil;
+import com.intellij.xdebugger.breakpoints.SuspendPolicy;
 import com.intellij.xdebugger.breakpoints.XBreakpoint;
 import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
 import org.jetbrains.annotations.Nls;
@@ -37,12 +38,13 @@ public class SavepointType extends JavaLineBreakpointType {
 
     @Override
     public EnumSet<StandardPanels> getVisibleStandardPanels() {
-        return EnumSet.of(StandardPanels.ACTIONS);
+        return EnumSet.of(StandardPanels.ACTIONS, StandardPanels.DEPENDENCY);
     }
 
     @Override
     public @NotNull Breakpoint<JavaLineBreakpointProperties> createJavaBreakpoint(Project project,
             XBreakpoint<JavaLineBreakpointProperties> breakpoint) {
+        breakpoint.setSuspendPolicy(SuspendPolicy.THREAD);
         return new Savepoint(project, breakpoint);
     }
 

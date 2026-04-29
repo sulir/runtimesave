@@ -8,15 +8,24 @@ import com.intellij.util.PatternUtil;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-public class SamplingSettings {
-    public static final Key<SamplingSettings> key = Key.create(SamplingSettings.class.getPackageName());
+public class RuntimeSaveSettings {
+    public static final Key<RuntimeSaveSettings> key = Key.create(RuntimeSaveSettings.class.getPackageName());
 
+    private boolean savepointEnabled = false;
     private int everyNthLine = 1;
     private int firstTExecutions = 1;
     private ClassFilter[] includeFilters = new ClassFilter[0];
 
-    public static SamplingSettings getOrDefault(UserDataHolderEx configuration) {
-        return configuration.putUserDataIfAbsent(key, new SamplingSettings());
+    public static RuntimeSaveSettings getOrDefault(UserDataHolderEx configuration) {
+        return configuration.putUserDataIfAbsent(key, new RuntimeSaveSettings());
+    }
+
+    public boolean isSavepointEnabled() {
+        return savepointEnabled;
+    }
+
+    public void setSavepointEnabled(boolean savepointEnabled) {
+        this.savepointEnabled = savepointEnabled;
     }
 
     public int getEveryNthLine() {

@@ -8,20 +8,22 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
-public class SamplingSettingsEditor extends SettingsEditor<RunConfigurationBase<?>> {
+public class RuntimeSaveSettingsEditor extends SettingsEditor<RunConfigurationBase<?>> {
     private final Project project;
     private JPanel mainPanel;
     private JBIntSpinner everyNthLineSpinner;
     private JBIntSpinner firstTExecutionsSpinner;
     private ProjectPackagesFilterEditor filterEditor;
+    private JCheckBox savepointEnabledCheckBox;
 
-    public SamplingSettingsEditor(Project project) {
+    public RuntimeSaveSettingsEditor(Project project) {
         this.project = project;
     }
 
     @Override
     protected void resetEditorFrom(@NotNull RunConfigurationBase configuration) {
-        SamplingSettings settings = SamplingSettings.getOrDefault(configuration);
+        RuntimeSaveSettings settings = RuntimeSaveSettings.getOrDefault(configuration);
+        savepointEnabledCheckBox.setSelected(settings.isSavepointEnabled());
         everyNthLineSpinner.setValue(settings.getEveryNthLine());
         firstTExecutionsSpinner.setValue(settings.getFirstTExecutions());
         filterEditor.setFilters(settings.getIncludeFilters());
@@ -29,7 +31,8 @@ public class SamplingSettingsEditor extends SettingsEditor<RunConfigurationBase<
 
     @Override
     protected void applyEditorTo(@NotNull RunConfigurationBase s) {
-        SamplingSettings settings = SamplingSettings.getOrDefault(s);
+        RuntimeSaveSettings settings = RuntimeSaveSettings.getOrDefault(s);
+        settings.setSavepointEnabled(savepointEnabledCheckBox.isSelected());
         settings.setEveryNthLine(everyNthLineSpinner.getNumber());
         settings.setFirstTExecutions(firstTExecutionsSpinner.getNumber());
         settings.setIncludeFilters(filterEditor.getFilters());
@@ -41,7 +44,7 @@ public class SamplingSettingsEditor extends SettingsEditor<RunConfigurationBase<
     }
 
     private void createUIComponents() {
-        SamplingSettings defaults = new SamplingSettings();
+        RuntimeSaveSettings defaults = new RuntimeSaveSettings();
         everyNthLineSpinner = new JBIntSpinner(defaults.getEveryNthLine(), 1, Integer.MAX_VALUE);
         firstTExecutionsSpinner = new JBIntSpinner(defaults.getFirstTExecutions(), -1, Integer.MAX_VALUE);
         filterEditor = new ProjectPackagesFilterEditor(project);

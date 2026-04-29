@@ -10,7 +10,9 @@ import java.util.Arrays;
 public class Collector {
     private static int[] hits = new int[128 * 1024];
 
-    public static void collectInfinity() {
+    public static void ensureLoaded() { }
+
+    public static void collectAlways() {
         collectData();
     }
 
@@ -22,7 +24,7 @@ public class Collector {
         }
     }
 
-    public static void collectInfinityIfLineChanged(int oldLineId, int newLineId) {
+    public static void collectAlwaysIfLineChanged(int oldLineId, int newLineId) {
         if (oldLineId != newLineId)
             collectData();
     }
