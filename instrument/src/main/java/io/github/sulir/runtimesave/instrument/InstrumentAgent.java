@@ -1,7 +1,6 @@
 package io.github.sulir.runtimesave.instrument;
 
 import io.github.sulir.runtimesave.misc.Log;
-import io.github.sulir.runtimesave.rt.Collector;
 import io.github.sulir.runtimesave.rt.SaveService;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -50,7 +49,6 @@ public class InstrumentAgent {
         AppUnaffectingLogManager.setAgentPackages(packagesToRegex(agentPackages));
 
         SaveService.getInstance().createIndexes();
-        Collector.ensureLoaded();
     }
 
     public void startInstrumenting(Instrumentation inst) {

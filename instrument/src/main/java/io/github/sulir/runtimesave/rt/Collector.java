@@ -10,8 +10,6 @@ import java.util.Arrays;
 public class Collector {
     private static int[] hits = new int[128 * 1024];
 
-    public static void ensureLoaded() { }
-
     public static void collectAlways() {
         collectData();
     }
@@ -59,4 +57,11 @@ public class Collector {
     }
 
     private static native ByteBuffer readData();
+
+    public static class SavepointCollector implements Runnable {
+        @Override
+        public void run() {
+            collectData();
+        }
+    }
 }

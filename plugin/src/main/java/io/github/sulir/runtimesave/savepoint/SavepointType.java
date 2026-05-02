@@ -5,7 +5,6 @@ import com.intellij.debugger.ui.breakpoints.JavaLineBreakpointType;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
 import com.intellij.xdebugger.XDebuggerUtil;
-import com.intellij.xdebugger.breakpoints.SuspendPolicy;
 import com.intellij.xdebugger.breakpoints.XBreakpoint;
 import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
 import org.jetbrains.annotations.Nls;
@@ -27,12 +26,7 @@ public class SavepointType extends JavaLineBreakpointType {
     }
 
     @Override
-    public @NotNull Icon getEnabledIcon() {
-        return AllIcons.Actions.MenuSaveall;
-    }
-
-    @Override
-    public Icon getTemporaryIcon() {
+    public @NotNull Icon getSuspendNoneIcon() {
         return AllIcons.Actions.MenuSaveall;
     }
 
@@ -44,7 +38,6 @@ public class SavepointType extends JavaLineBreakpointType {
     @Override
     public @NotNull Breakpoint<JavaLineBreakpointProperties> createJavaBreakpoint(Project project,
             XBreakpoint<JavaLineBreakpointProperties> breakpoint) {
-        breakpoint.setSuspendPolicy(SuspendPolicy.THREAD);
         return new Savepoint(project, breakpoint);
     }
 
