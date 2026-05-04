@@ -18,7 +18,7 @@ public class SaveService {
     private static SaveService instance;
 
     private final BoundedExecutor cpuPool = BoundedExecutor.usingAllCores("CPU");
-    private final BoundedExecutor dbPool = BoundedExecutor.singleThreaded("DB");
+    private final BoundedExecutor dbPool = BoundedExecutor.singleThreaded("DB", cpuPool);
     private final DbIndex dbIndex = new DbIndex(DbConnection.getInstance());
     private final ValuePacker packer = ValuePacker.fromServiceLoader();
     private final ThreadLocal<GraphHasher> hasher = ThreadLocal.withInitial(GraphHasher::new);
