@@ -10,13 +10,10 @@
   <resource-bundle>messages.Bundle</resource-bundle>
 
   <extensions defaultExtensionNs="com.intellij">
-    <postStartupActivity implementation="io.github.sulir.runtimesave.plugin.StartupActivity"/>
     <runConfigurationExtension implementation="io.github.sulir.runtimesave.config.RuntimeSaveRunConfigExtension"/>
-
     <xdebugger.breakpointType implementation="io.github.sulir.runtimesave.savepoint.SavepointType"/>
     <debugger.javaBreakpointHandlerFactory
             implementation="io.github.sulir.runtimesave.savepoint.SavepointHandlerFactory"/>
-
     <executor implementation="io.github.sulir.runtimesave.sample.SamplingRunExecutor"/>
     <programRunner implementation="io.github.sulir.runtimesave.sample.SamplingRunRunner"/>
     <executor implementation="io.github.sulir.runtimesave.sample.SamplingDebugExecutor"/>

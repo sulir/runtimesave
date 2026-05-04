@@ -17,7 +17,6 @@ import com.sun.jdi.event.Event;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
 import io.github.sulir.runtimesave.misc.MismatchException;
-import io.github.sulir.runtimesave.plugin.RuntimeStorageService;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -80,7 +79,7 @@ public class StartLineListener implements DebuggerManagerListener {
 
         try {
             StackFrame frame = breakpointEvent.thread().frame(0);
-            RuntimeStorageService.getInstance().loadFrame(frame);
+            LoadService.getInstance().loadFrame(frame);
         } catch (IncompatibleThreadStateException | MismatchException e) {
             stopProgram(event.virtualMachine(), e.getMessage());
         }
