@@ -10,17 +10,19 @@ import com.intellij.debugger.ui.breakpoints.LineBreakpoint;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.UserDataHolderEx;
 import com.intellij.psi.JavaCodeFragmentFactory;
 import com.intellij.psi.PsiElement;
+import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.breakpoints.SuspendPolicy;
 import com.intellij.xdebugger.breakpoints.XBreakpoint;
 import com.sun.jdi.Value;
 import com.sun.jdi.event.LocatableEvent;
+import io.github.sulir.runtimesave.config.RuntimeSaveSettings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.java.debugger.breakpoints.properties.JavaLineBreakpointProperties;
 
 import javax.swing.*;
-import java.util.Objects;
 
 import static io.github.sulir.runtimesave.misc.UncheckedThrowing.uncheck;
 
@@ -39,7 +41,22 @@ public class Savepoint extends LineBreakpoint<JavaLineBreakpointProperties> {
         if (!super.processLocatableEvent(action, event))
             return false;
 
-        SuspendContextImpl context = Objects.requireNonNull(action.getSuspendContext());
+        SuspendContextImpl context = action.getSuspendContext();
+        if (context == null || !savepointsEnabled(context))
+            return false;
+
+        collectData(context);
+        return true;
+    }
+
+    private boolean savepointsEnabled(SuspendContextImpl context) {
+        XDebugSession session = context.getDebugProcess().getSession().getXDebugSession();
+        if (session == null || ! (session.getRunProfile() instanceof UserDataHolderEx data))
+            return false;
+        return RuntimeSaveSettings.getOrDefault(data).isSavepointEnabled();
+    }
+
+    private static void collectData(SuspendContextImpl context) {
         JavaCodeFragmentFactory factory = JavaCodeFragmentFactory.getInstance(context.getDebugProcess().getProject());
         PsiElement fragment = factory.createExpressionCodeFragment(COLLECT_EXPRESSION, null, null, true);
         ExpressionEvaluator evaluator = ReadAction.computeBlocking(() ->
@@ -47,8 +64,6 @@ public class Savepoint extends LineBreakpoint<JavaLineBreakpointProperties> {
         StackFrameProxyImpl frame = context.getFrameProxy();
         EvaluationContextImpl evalContext = new EvaluationContextImpl(context, frame, (Value) null);
         uncheck(() -> evaluator.evaluate(evalContext));
-
-        return true;
     }
 
     @Override
