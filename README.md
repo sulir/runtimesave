@@ -16,9 +16,9 @@ Make sure you have JDK 21+, CMake and a C++ compiler installed.
 
 In IntelliJ IDEA with the plugin installed (e.g., via `runIde` Gradle task), you can perform various actions.
 
-To add a savepoint, right-click on the given line number in the left gutter and select Add Savepoint. Then you can run code (e.g., a test) that includes the execution of the given line, in debugging mode. This will save values of variables each time the savepoint is hit.
+To add a savepoint, right-click on the given line number in the left gutter and select Add Savepoint. In the Run/Debug Configuration dialog, check "Enable savepoints" under RuntimeSave savepoints settings. Then you can run code (e.g., a test) that includes the execution of the given line, in debugging mode. This will save values of variables each time the savepoint is hit.
 
-For saving sample values from all executed lines, choose the menu Run / Sample Values from '(configuration name)'. You can adjust sampling options in the given Run/Debug Configuration dialog under RuntimeSave Sampling Settings.
+For saving sample values from all executed lines, choose the menu Run / Sample Values from '(configuration name)'. You can adjust sampling options in the given Run/Debug Configuration dialog under RuntimeSave sampling settings.
 
 To view the saved objects in the graph database, open http://localhost:7474/.
 
