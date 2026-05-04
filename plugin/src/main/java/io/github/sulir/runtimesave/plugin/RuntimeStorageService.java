@@ -2,19 +2,15 @@ package io.github.sulir.runtimesave.plugin;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
+import com.sun.jdi.Location;
 import com.sun.jdi.StackFrame;
 import io.github.sulir.runtimesave.db.DbConnection;
 import io.github.sulir.runtimesave.db.DbIndex;
 import io.github.sulir.runtimesave.db.HashedDb;
 import io.github.sulir.runtimesave.db.Metadata;
 import io.github.sulir.runtimesave.graph.NodeFactory;
-import io.github.sulir.runtimesave.hash.AcyclicGraph;
-import io.github.sulir.runtimesave.hash.GraphHasher;
-import io.github.sulir.runtimesave.hash.GraphIdHasher;
 import io.github.sulir.runtimesave.hash.NodeHash;
-import io.github.sulir.runtimesave.jdi.JdiReader;
 import io.github.sulir.runtimesave.jdi.JdiWriter;
-import io.github.sulir.runtimesave.misc.BoundedExecutor;
 import io.github.sulir.runtimesave.misc.MismatchException;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.FrameNode;
@@ -24,12 +20,8 @@ import java.util.function.BooleanSupplier;
 
 @Service
 public final class RuntimeStorageService {
-    private final BoundedExecutor cpuPool = BoundedExecutor.usingAllCores("CPU");
-    private final BoundedExecutor dbPool = BoundedExecutor.singleThreaded("DB");
     private final ValuePacker packer = ValuePacker.fromServiceLoader();
     private final NodeFactory factory = new NodeFactory(packer);
-    private final ThreadLocal<GraphHasher> hasher = ThreadLocal.withInitial(GraphHasher::new);
-    private final ThreadLocal<GraphIdHasher> idHasher = ThreadLocal.withInitial(GraphIdHasher::new);
     private final HashedDb database  = new HashedDb(DbConnection.getInstance(), factory);
     private final DbIndex dbIndex = new DbIndex(DbConnection.getInstance());
     private boolean dbIndexed = false;
@@ -40,31 +32,17 @@ public final class RuntimeStorageService {
     }
 
     public void loadFrame(StackFrame frame) throws MismatchException {
-        NodeHash hash = metadata.findFrame(new JdiReader(frame).readLocation());
+        NodeHash hash = metadata.findFrame(readLocation(frame));
         FrameNode frameNode = database.read(hash, FrameNode.class);
         packer.unpack(frameNode);
         new JdiWriter(frame).writeFrame(frameNode);
     }
 
-    public void saveFrame(StackFrame frame) {
-        JdiReader reader = new JdiReader(frame);
-        FrameNode frameNode = reader.readFrame();
-        SourceLocation location = reader.readLocation();
-
-        if ("no".equals(System.getenv("RS_WRITE")))
-            return;
-
-        cpuPool.execute(() -> {
-            packer.pack(frameNode);
-            AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frameNode);
-            hasher.get().assignHashes(dag);
-            idHasher.get().assignIdHashes(frameNode);
-
-            dbPool.execute(() -> {
-                database.write(dag);
-                metadata.addLocation(frameNode.hash(), location);
-            });
-        });
+    private SourceLocation readLocation(StackFrame frame) {
+        Location location = frame.location();
+        String className = location.declaringType().name();
+        String method = location.method().name() + location.method().signature();
+        return new SourceLocation(className, method, location.lineNumber());
     }
 
     public void createIndexes(BooleanSupplier cancellationListener) {

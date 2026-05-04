@@ -10,6 +10,7 @@ import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.extensions.PluginDescriptor;
 import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.util.xmlb.XmlSerializer;
+import io.github.sulir.runtimesave.sample.SamplingDebugExecutor;
 import io.github.sulir.runtimesave.sample.SamplingRunExecutor;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +31,8 @@ public class RuntimeSaveRunConfigExtension extends RunConfigurationExtension {
     public void updateJavaParameters(@NonNull RunConfigurationBase configuration, @NotNull JavaParameters params,
                                      RunnerSettings runnerSettings, @NotNull Executor executor) {
         RuntimeSaveSettings settings = RuntimeSaveSettings.getOrDefault(configuration);
-        boolean sampling = executor.getId().equals(SamplingRunExecutor.EXECUTOR_ID);
+        boolean sampling = executor.getId().equals(SamplingRunExecutor.EXECUTOR_ID)
+                || executor.getId().equals(SamplingDebugExecutor.EXECUTOR_ID);
 
         if (sampling || settings.isSavepointEnabled()) {
             ParametersList vm = params.getVMParametersList();

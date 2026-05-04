@@ -36,9 +36,7 @@
   </actions>
 
   <projectListeners>
-    <listener class="io.github.sulir.runtimesave.savepoint.SavepointListener"
-              topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
-    <listener class="io.github.sulir.runtimesave.sample.JdiSamplingListener"
+    <listener class="io.github.sulir.runtimesave.plugin.ThreadResumer"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
     <listener class="io.github.sulir.runtimesave.start.StartLineListener"
               topic="com.intellij.debugger.impl.DebuggerManagerListener"/>
