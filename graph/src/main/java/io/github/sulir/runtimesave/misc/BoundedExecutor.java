@@ -22,10 +22,8 @@ public class BoundedExecutor extends ThreadPoolExecutor {
     }
 
     private void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
-        if (executor.isShutdown()) {
-            Log.error("Task rejected during shutdown");
+        if (executor.isShutdown())
             return;
-        }
 
         try {
             getQueue().put(runnable);
