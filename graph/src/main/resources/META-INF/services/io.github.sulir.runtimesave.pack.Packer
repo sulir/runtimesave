@@ -1,4 +1,3 @@
-io.github.sulir.runtimesave.packers.LinkedListPacker
 io.github.sulir.runtimesave.packers.PrimitiveArrayPacker
 io.github.sulir.runtimesave.packers.SparseArrayPacker
 io.github.sulir.runtimesave.packers.SamePrimitivesPacker
