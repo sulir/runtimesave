@@ -40,7 +40,7 @@ public class TestGraphGenerator {
     }
 
     public Stream<ValueNode> trees() {
-        PrimitiveNode singleNode = new PrimitiveNode(1, "int");
+        PrimitiveNode singleNode = PrimitiveNode.getInstance(1, "int");
         StringNode otherSingleNode = new StringNode("");
 
         ObjectNode oneChild = new ObjectNode("Type");

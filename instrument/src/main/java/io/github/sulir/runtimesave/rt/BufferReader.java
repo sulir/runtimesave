@@ -77,13 +77,15 @@ public class BufferReader implements AutoCloseable {
         while (locals.hasRemaining()) {
             String variableName = readUTF8(locals);
             byte kind = locals.get();
+
             if (kind == 'R') {
                 referenceLocals.add(variableName);
             } else if (kind == 'N') {
                 frame.setVariable(variableName, NullNode.getInstance());
             } else {
                 PrimitiveType type = types[kind];
-                frame.setVariable(variableName, new PrimitiveNode(type.reader().apply(locals), type.name()));
+                Object value = type.reader().apply(locals);
+                frame.setVariable(variableName, PrimitiveNode.getInstance(value, type.name()));
             }
         }
 
@@ -185,10 +187,11 @@ public class BufferReader implements AutoCloseable {
         long objectTag = heap.getLong();
         int classTag = heap.getInt();
         int fieldIndex = heap.getInt();
-        ValueNode value = new PrimitiveNode(types[type].reader().apply(heap), types[type].name());
+        Object value = types[type].reader().apply(heap);
 
+        ValueNode valueNode = PrimitiveNode.getInstance(value, types[type].name());
         ObjectNode object = (ObjectNode) nodes.get(objectTag);
-        setField(object, classTag, fieldIndex, value);
+        setField(object, classTag, fieldIndex, valueNode);
     }
 
     private void readPrimitiveArray(byte type, Map<Long, ValueNode> nodes) {

@@ -29,7 +29,7 @@ public class ReflectionReader {
         if (value == null)
             return NullNode.getInstance();
         if (type.isPrimitive())
-            return new PrimitiveNode(value, type.getName());
+            return PrimitiveNode.getInstance(value, type.getName());
 
         ValueNode existing = created.get(value);
         if (existing != null)

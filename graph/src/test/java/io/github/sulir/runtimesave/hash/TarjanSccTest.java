@@ -85,7 +85,7 @@ class TarjanSccTest {
         ObjectNode root = new ObjectNode("Root");
         ObjectNode left = new ObjectNode("Node");
         ObjectNode right = new ObjectNode("Node");
-        PrimitiveNode childOfLeft = new PrimitiveNode(1, "int");
+        PrimitiveNode childOfLeft = PrimitiveNode.getInstance(1, "int");
         root.setField("left", left);
         root.setField("right", right);
         left.setField("left", childOfLeft);

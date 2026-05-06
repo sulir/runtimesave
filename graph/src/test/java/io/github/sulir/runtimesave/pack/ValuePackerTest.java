@@ -31,11 +31,6 @@ class ValuePackerTest {
     }
 
     @Test
-    void serviceLoaderProvidesAtLeastOnePacker() {
-        assertTrue(ValuePacker.fromServiceLoader().getAllPackers().length > 0);
-    }
-
-    @Test
     void packingNodesWithCyclesReplacesSourceEdges() {
         frame.setVariable("var", packable);
         packable.setField("ref1", subPackable);

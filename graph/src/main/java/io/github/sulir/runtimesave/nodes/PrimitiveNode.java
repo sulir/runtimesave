@@ -1,19 +1,25 @@
 package io.github.sulir.runtimesave.nodes;
 
 import io.github.sulir.runtimesave.graph.Mapping;
+import io.github.sulir.runtimesave.graph.PrimitiveCache;
 import io.github.sulir.runtimesave.graph.ValueNode;
 
 public class PrimitiveNode extends ValueNode {
     public static final Mapping mapping = mapping(PrimitiveNode.class)
             .property("value", Object.class, PrimitiveNode::getValue)
             .property("type", String.class, PrimitiveNode::getType)
-            .argsConstructor(props -> new PrimitiveNode(props[0], (String) props[1]));
+            .argsConstructor(props -> getInstance(props[0], (String) props[1]));
+    private static final PrimitiveCache cache = new PrimitiveCache();
 
     private final Object value;
     private final String type;
 
-    public PrimitiveNode(Object value, String type) {
-        this.value = switch (type) {
+    public static PrimitiveNode getInstance(Object value, String type) {
+        return cache.deduplicate(new PrimitiveNode(value, type));
+    }
+
+    public static Object convertValue(Object value, String type) {
+        return switch (type) {
             case "char" -> value instanceof String string ? string.charAt(0) : (Character) value;
             case "byte" -> ((Number) value).byteValue();
             case "short" -> ((Number) value).shortValue();
@@ -24,6 +30,10 @@ public class PrimitiveNode extends ValueNode {
             case "boolean" -> (Boolean) value;
             default -> throw new IllegalArgumentException("Not primitive: " + type);
         };
+    }
+
+    private PrimitiveNode(Object value, String type) {
+        this.value = convertValue(value, type);
         this.type = type;
     }
 

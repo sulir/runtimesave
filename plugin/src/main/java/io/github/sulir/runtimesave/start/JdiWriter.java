@@ -75,7 +75,7 @@ public class JdiWriter {
     private void assignValue(ValueAssigner assigner, ValueNode node) {
         try {
             if (node instanceof PrimitiveNode primitiveNode) {
-                assigner.setValue(toJdiPrimitive(primitiveNode));
+                assigner.setValue(toJdiPrimitive(primitiveNode.getValue()));
             } else if (node instanceof NullNode) {
                 assigner.setValue(null);
             } else if (node instanceof StringNode stringNode) {
@@ -126,7 +126,7 @@ public class JdiWriter {
     private void assignPrimitiveElements(ArrayReference array, PrimitiveArrayNode node) {
         String type = node.getComponentType();
         List<PrimitiveValue> values = node.getElements().stream()
-                .map(elem -> toJdiPrimitive(new PrimitiveNode(elem, type))).toList();
+                .map(elem -> toJdiPrimitive(PrimitiveNode.convertValue(elem, type))).toList();
         try {
             array.setValues(values);
         } catch (InvalidTypeException | ClassNotLoadedException e) {
@@ -164,18 +164,16 @@ public class JdiWriter {
         return result;
     }
 
-    private PrimitiveValue toJdiPrimitive(PrimitiveNode node) {
-        Object value = node.getValue();
-
-        return switch(node.getType()) {
-            case "char" -> vm.mirrorOf((char) value);
-            case "byte" -> vm.mirrorOf((byte) value);
-            case "short" -> vm.mirrorOf((short) value);
-            case "int" -> vm.mirrorOf((int) value);
-            case "long" -> vm.mirrorOf((long) value);
-            case "float" -> vm.mirrorOf((float) value);
-            case "double" -> vm.mirrorOf((double) value);
-            case "boolean" -> vm.mirrorOf((boolean) value);
+    private PrimitiveValue toJdiPrimitive(Object value) {
+        return switch(value) {
+            case Character v -> vm.mirrorOf(v);
+            case Byte v -> vm.mirrorOf(v);
+            case Short v -> vm.mirrorOf(v);
+            case Integer v -> vm.mirrorOf(v);
+            case Long v -> vm.mirrorOf(v);
+            case Float v -> vm.mirrorOf(v);
+            case Double v -> vm.mirrorOf(v);
+            case Boolean v -> vm.mirrorOf(v);
             default -> throw new IllegalArgumentException("Unknown primitive type: " + value.getClass());
         };
     }
