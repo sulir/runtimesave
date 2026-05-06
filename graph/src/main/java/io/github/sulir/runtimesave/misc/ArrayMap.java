@@ -6,37 +6,35 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 public class ArrayMap<V> extends AbstractMap<Integer, V> implements SortedMap<Integer, V> {
-    private Object[] values = new Object[8];
-    private int first = Integer.MAX_VALUE;
-    private int last = Integer.MIN_VALUE;
+    private final Object[] values;
     private int size;
+    private int last = -1;
+
+    public ArrayMap(int length) {
+        values = new Object[length];
+    }
 
     @Override
     public V get(Object key) {
-        int index = (int) key;
-        return index < values.length ? elementAt(index) : null;
+        return elementAt((int) key);
     }
 
     @Override
     public V put(Integer key, V value) {
-        int index = key;
-        if (index >= values.length)
-            values = Arrays.copyOf(values, Math.max(index + 1, values.length * 2));
-        if (index < first)
-            first = index;
-        if (index > last)
-            last = index;
-
-        V old = elementAt(index);
+        V old = elementAt(key);
+        values[key] = value;
         if (old == null)
             size++;
-        values[index] = value;
+        if (value == null)
+            size--;
+        if (key > last)
+            last = key;
         return old;
     }
 
     @Override
     public void forEach(BiConsumer<? super Integer, ? super V> action) {
-        for (int i = first; i <= last; i++) {
+        for (int i = 0; i <= last; i++) {
             V value = elementAt(i);
             if (value != null)
                 action.accept(i, value);
@@ -45,16 +43,18 @@ public class ArrayMap<V> extends AbstractMap<Integer, V> implements SortedMap<In
 
     @Override
     public Integer firstKey() {
-        if (first == Integer.MAX_VALUE)
-            throw new NoSuchElementException();
-        return first;
+        for (int i = 0; i <= last; i++)
+            if (values[i] != null)
+                return i;
+        throw new NoSuchElementException();
     }
 
     @Override
     public Integer lastKey() {
-        if (last == Integer.MIN_VALUE)
-            throw new NoSuchElementException();
-        return last;
+        for (int i = last; i >= 0; i--)
+            if (values[i] != null)
+                return i;
+        throw new NoSuchElementException();
     }
 
     @Override
@@ -68,20 +68,28 @@ public class ArrayMap<V> extends AbstractMap<Integer, V> implements SortedMap<In
             @Override
             public @NotNull Iterator<Entry<Integer, V>> iterator() {
                 return new Iterator<>() {
-                    private int i = first;
+                    private int next = -1;
+
+                    { findNext(); }
 
                     @Override
                     public boolean hasNext() {
-                        while (i <= last && values[i] == null)
-                            i++;
-                        return i <= last;
+                        return next <= last;
                     }
 
                     @Override
                     public Entry<Integer, V> next() {
                         if (!hasNext())
                             throw new NoSuchElementException();
-                        return new SimpleEntry<>(i, elementAt(i++));
+                        int current = next;
+                        findNext();
+                        return new SimpleImmutableEntry<>(current, elementAt(current));
+                    }
+
+                    private void findNext() {
+                        do {
+                            next++;
+                        } while (next <= last && values[next] == null);
                     }
                 };
             }

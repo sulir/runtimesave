@@ -45,15 +45,15 @@ class GraphIdHasherTest {
     @Test
     void rightCycleAboveMergedNodeHaveDifferentIdHashThanAboveTwoNodes() {
         MergeableGraph first = createMergeableGraph();
-        ReferenceArrayNode mergedNode = new ReferenceArrayNode(TYPE);
-        first.leftJoinPoint().addElement(mergedNode);
-        first.rightJoinPoint().addElement(mergedNode);
+        ReferenceArrayNode mergedNode = new ReferenceArrayNode(TYPE, 0);
+        first.leftJoinPoint().setElement(0, mergedNode);
+        first.rightJoinPoint().setElement(0, mergedNode);
 
         MergeableGraph second = createMergeableGraph();
-        ReferenceArrayNode splitNode1 = new ReferenceArrayNode(TYPE);
-        ReferenceArrayNode splitNode2 = new ReferenceArrayNode(TYPE);
-        second.leftJoinPoint().addElement(splitNode1);
-        second.rightJoinPoint().addElement(splitNode2);
+        ReferenceArrayNode splitNode1 = new ReferenceArrayNode(TYPE, 0);
+        ReferenceArrayNode splitNode2 = new ReferenceArrayNode(TYPE, 0);
+        second.leftJoinPoint().setElement(0, splitNode1);
+        second.rightJoinPoint().setElement(0, splitNode2);
 
         hasher.assignHashes(first.root());
         idHasher.assignIdHashes(first.root());
@@ -73,18 +73,18 @@ class GraphIdHasherTest {
     }
 
     private MergeableGraph createMergeableGraph() {
-        ReferenceArrayNode root = new ReferenceArrayNode(TYPE);
+        ReferenceArrayNode root = new ReferenceArrayNode(TYPE, 2);
         ReferenceArrayNode[] leftCycle = generator.circularNodes(4);
         ReferenceArrayNode[] rightCycle = generator.circularNodes(4);
-        ReferenceArrayNode leftJoinPoint = new ReferenceArrayNode(TYPE);
-        ReferenceArrayNode rightJoinPoint = new ReferenceArrayNode(TYPE);
+        ReferenceArrayNode leftJoinPoint = new ReferenceArrayNode(TYPE, 1);
+        ReferenceArrayNode rightJoinPoint = new ReferenceArrayNode(TYPE, 1);
 
-        root.addElement(leftCycle[0]);
-        root.addElement(rightCycle[0]);
-        leftCycle[1].addElement(leftJoinPoint);
-        leftCycle[3].addElement(leftJoinPoint);
-        rightCycle[1].addElement(rightJoinPoint);
-        rightCycle[3].addElement(rightJoinPoint);
+        root.setElement(0, leftCycle[0]);
+        root.setElement(1, rightCycle[0]);
+        leftCycle[1].setElement(1, leftJoinPoint);
+        leftCycle[3].setElement(1, leftJoinPoint);
+        rightCycle[1].setElement(1, rightJoinPoint);
+        rightCycle[3].setElement(1, rightJoinPoint);
 
         return new MergeableGraph(root, rightCycle[3], leftJoinPoint, rightJoinPoint);
     }

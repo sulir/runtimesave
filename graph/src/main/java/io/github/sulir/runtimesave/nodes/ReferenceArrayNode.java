@@ -5,25 +5,27 @@ import io.github.sulir.runtimesave.graph.ValueNode;
 import io.github.sulir.runtimesave.misc.ArrayMap;
 
 import java.util.SortedMap;
-import java.util.function.BiConsumer;
 
 public class ReferenceArrayNode extends ValueNode {
     public static final Mapping mapping = mapping(ReferenceArrayNode.class)
             .property("type", String.class, ReferenceArrayNode::getType)
+            .property("length", Integer.class, ReferenceArrayNode::getLength)
             .edges("HAS_ELEMENT", "index", Integer.class, ValueNode.class, node -> node.elements)
-            .constructor((String t) -> new ReferenceArrayNode(t));
+            .argsConstructor(props -> new ReferenceArrayNode((String) props[0], (int) props[1]));
 
     private String type;
-    private int fullLength = -1;
-    protected final SortedMap<Integer, ValueNode> elements = new ArrayMap<>();
+    private final int length;
+    protected final SortedMap<Integer, ValueNode> elements;
 
-    public ReferenceArrayNode(String type) {
+    public ReferenceArrayNode(String type, int length) {
+        this(length);
         checkType(type);
         this.type = type;
     }
 
-    public ReferenceArrayNode(int fullLength) {
-        this.fullLength = fullLength;
+    public ReferenceArrayNode(int length) {
+        this.length = length;
+        elements = new ArrayMap<>(length);
     }
 
     public String getType() {
@@ -36,33 +38,17 @@ public class ReferenceArrayNode extends ValueNode {
         this.type = type;
     }
 
-    public int getFullLength() {
-        return fullLength;
-    }
-
-    public String getComponentType() {
-        return getComponentType(type);
+    public int getLength() {
+        return length;
     }
 
     public ValueNode getElement(int index) {
         return elements.get(index);
     }
 
-    public void forEachElement(BiConsumer<Integer, ValueNode> action) {
-        elements.forEach(action);
-    }
-
     public void setElement(int index, ValueNode value) {
         checkModification();
         elements.put(index, value);
-    }
-
-    public void addElement(ValueNode element) {
-        setElement(getLength(), element);
-    }
-
-    public int getLength() {
-        return elements.isEmpty() ? 0 : elements.lastKey() + 1;
     }
 
     public Mapping getMapping() {

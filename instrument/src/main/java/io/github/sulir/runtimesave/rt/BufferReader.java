@@ -128,12 +128,7 @@ public class BufferReader implements AutoCloseable {
                 }
             }
             case PrimitiveArrayNode array -> array.setType(type);
-            case ReferenceArrayNode array -> {
-                array.setType(type);
-                for (int i = 0; i < array.getFullLength(); i++) {
-                    array.setElement(i, NullNode.getInstance());
-                }
-            }
+            case ReferenceArrayNode array -> array.setType(type);
             default -> throw new IllegalStateException();
         }
     }

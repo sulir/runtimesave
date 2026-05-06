@@ -46,7 +46,7 @@ public class TestGraphGenerator {
         ObjectNode oneChild = new ObjectNode("Type");
         oneChild.setField("field", singleNode);
 
-        ReferenceArrayNode tree = new ReferenceArrayNode("Type[]");
+        ReferenceArrayNode tree = new ReferenceArrayNode("Type[]", 2);
         tree.setElement(0, otherSingleNode);
         tree.setElement(1, oneChild);
 
@@ -117,7 +117,7 @@ public class TestGraphGenerator {
     public ReferenceArrayNode[] circularNodes(int length) {
         ReferenceArrayNode[] nodes = new ReferenceArrayNode[length];
         for (int i = 0; i < length; i++)
-            nodes[i] = new ReferenceArrayNode("Cls[]");
+            nodes[i] = new ReferenceArrayNode("Object[]", 2);
 
         for (int i = 0; i < length; i++)
             nodes[i].setElement(0, nodes[(i + 1) % length]);
@@ -143,16 +143,16 @@ public class TestGraphGenerator {
         int nodeCount = spanningSources.length + 1;
         ReferenceArrayNode[] nodes = new ReferenceArrayNode[nodeCount];
         for (int i = 0; i < nodeCount; i++)
-            nodes[i] = new ReferenceArrayNode("Object[]");
+            nodes[i] = new ReferenceArrayNode("Object[]", nodeCount);
 
         for (int i = 1; i < nodeCount; i++) {
             ReferenceArrayNode connected = nodes[spanningSources[i - 1]];
-            connected.addElement(nodes[i]);
+            connected.setElement(i - 1, nodes[i]);
         }
 
         for (EdgeSet edgeSet : edgeSets)
             for (int i = 0; i < edgeSet.count; i++)
-                nodes[edgeSet.from].addElement(nodes[edgeSet.to]);
+                nodes[edgeSet.from].setElement(i, nodes[edgeSet.to]);
 
         return nodes[0];
     }
@@ -162,17 +162,17 @@ public class TestGraphGenerator {
                 random.nextInt(RANDOM_MIN_SIZE, RANDOM_MAX_SIZE + 1));
         ReferenceArrayNode[] nodes = new ReferenceArrayNode[nodeCount];
         for (int i = 0; i < nodeCount; i++)
-            nodes[i] = new ReferenceArrayNode("Type[]");
+            nodes[i] = new ReferenceArrayNode("Type[]", nodeCount);
 
         for (int i = 1; i < nodeCount; i++) {
             ReferenceArrayNode connected = nodes[random.nextInt(i)];
-            connected.addElement(nodes[i]);
+            connected.setElement(i - 1, nodes[i]);
         }
 
         int maxAdditionalEdges = Math.max(RANDOM_COUNT, nodeCount * nodeCount);
         int additionalEdges = random.nextInt(maxAdditionalEdges);
         for (int i = 0; i < additionalEdges; i++)
-            nodes[random.nextInt(nodeCount)].addElement(nodes[random.nextInt(nodeCount)]);
+            nodes[random.nextInt(nodeCount)].setElement(random.nextInt(nodeCount), nodes[random.nextInt(nodeCount)]);
 
         return nodes[0];
     }

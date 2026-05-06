@@ -56,7 +56,7 @@ public class ReflectionReader {
                 elements.add(Array.get(value, i));
             return new PrimitiveArrayNode(type.getTypeName(), elements);
         } else {
-            ReferenceArrayNode arrayNode = new ReferenceArrayNode(type.getTypeName());
+            ReferenceArrayNode arrayNode = new ReferenceArrayNode(type.getTypeName(), length);
             created.put(value, arrayNode);
             Class<?> componentType = type.getComponentType();
 
@@ -64,7 +64,7 @@ public class ReflectionReader {
                 Object element = Array.get(value, i);
                 Class<?> elementClass = element == null ? null : element.getClass();
                 Class<?> elementType = componentType.isPrimitive() ? componentType : elementClass;
-                arrayNode.addElement(read(element, elementType));
+                arrayNode.setElement(i, read(element, elementType));
             }
             return arrayNode;
         }
