@@ -1,7 +1,7 @@
 package io.github.sulir.runtimesave.hash;
 
 import io.github.sulir.runtimesave.graph.TestGraphGenerator;
-import io.github.sulir.runtimesave.nodes.ArrayNode;
+import io.github.sulir.runtimesave.nodes.ReferenceArrayNode;
 import io.github.sulir.runtimesave.nodes.ObjectNode;
 import io.github.sulir.runtimesave.nodes.PrimitiveNode;
 import io.github.sulir.runtimesave.nodes.StringNode;
@@ -35,7 +35,7 @@ class TarjanSccTest {
     @ParameterizedTest
     @ValueSource(ints = {1, 2, 3, 4})
     void circularGraphHasOneScc(int size) {
-        ArrayNode[] cycle = generator.circularNodes(size);
+        ReferenceArrayNode[] cycle = generator.circularNodes(size);
         List<StrongComponent> components = tarjanScc.computeComponents(cycle[0]);
         List<StrongComponent> expected = List.of(new StrongComponent(cycle));
         assertSccListsEqual(expected, components);
@@ -43,7 +43,7 @@ class TarjanSccTest {
 
     @Test
     void cycleAndSinkHaveTwoSCCs() {
-        ArrayNode[] cycle = generator.circularNodes(3);
+        ReferenceArrayNode[] cycle = generator.circularNodes(3);
         StringNode sink = new StringNode("");
         cycle[1].setElement(1, sink);
 
@@ -54,8 +54,8 @@ class TarjanSccTest {
 
     @Test
     void twoCyclesConnectedViaNodeWayHaveThreeSCCs() {
-        ArrayNode[] left = generator.circularNodes(5);
-        ArrayNode[] right = generator.circularNodes(4);
+        ReferenceArrayNode[] left = generator.circularNodes(5);
+        ReferenceArrayNode[] right = generator.circularNodes(4);
         ObjectNode middle = new ObjectNode("Between");
         left[2].setElement(1, middle);
         middle.setField("oneWay", right[2]);

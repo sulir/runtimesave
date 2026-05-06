@@ -13,11 +13,12 @@ import static io.github.sulir.runtimesave.misc.UncheckedThrowing.uncheck;
 
 public class NodeFactory {
     private static final List<Class<? extends GraphNode>> nodeClasses = List.of(
-            ArrayNode.class,
             FrameNode.class,
             NullNode.class,
             ObjectNode.class,
             PrimitiveNode.class,
+            PrimitiveArrayNode.class,
+            ReferenceArrayNode.class,
             StringNode.class
     );
 

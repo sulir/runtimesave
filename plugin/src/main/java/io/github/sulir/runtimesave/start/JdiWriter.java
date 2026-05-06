@@ -80,17 +80,23 @@ public class JdiWriter {
                 assigner.setValue(null);
             } else if (node instanceof StringNode stringNode) {
                 assigner.setValue(vm.mirrorOf(stringNode.getValue()));
-            } else if (node instanceof ArrayNode || node instanceof ObjectNode) {
+            } else if (node instanceof ReferenceArrayNode || node instanceof PrimitiveArrayNode
+                    || node instanceof ObjectNode) {
                 ObjectReference existing = visited.get(node);
                 if (existing != null) {
                     assigner.setValue(existing);
                     return;
                 }
 
-                if (node instanceof ArrayNode arrayNode) {
-                    ArrayReference array = allocateArray(arrayNode);
+                if (node instanceof ReferenceArrayNode arrayNode) {
+                    ArrayReference array = allocateArray(arrayNode.getType(), arrayNode.getLength());
                     visited.put(arrayNode, array);
-                    assignElements(array, arrayNode);
+                    assignReferenceElements(array, arrayNode);
+                    assigner.setValue(array);
+                } else if (node instanceof PrimitiveArrayNode arrayNode) {
+                    ArrayReference array = allocateArray(arrayNode.getType(), arrayNode.getLength());
+                    visited.put(arrayNode, array);
+                    assignPrimitiveElements(array, arrayNode);
                     assigner.setValue(array);
                 } else {
                     ObjectNode objectNode = (ObjectNode) node;
@@ -105,17 +111,27 @@ public class JdiWriter {
         }
     }
 
-    private ArrayReference allocateArray(ArrayNode node) {
+    private ArrayReference allocateArray(String type, int length) {
         Value result = invokeHelperMethod("allocateArray", "(Ljava/lang/String;I)Ljava/lang/Object;",
-                List.of(vm.mirrorOf(node.getType()), vm.mirrorOf(node.getLength())));
+                List.of(vm.mirrorOf(type), vm.mirrorOf(length)));
         return (ArrayReference) result;
     }
 
-    private void assignElements(ArrayReference array, ArrayNode node) {
+    private void assignReferenceElements(ArrayReference array, ReferenceArrayNode node) {
         int size = node.getLength();
-
         for (int i = 0; i < size; i++)
             assignElement(array, i, node.getElement(i));
+    }
+
+    private void assignPrimitiveElements(ArrayReference array, PrimitiveArrayNode node) {
+        String type = node.getComponentType();
+        List<PrimitiveValue> values = node.getElements().stream()
+                .map(elem -> toJdiPrimitive(new PrimitiveNode(elem, type))).toList();
+        try {
+            array.setValues(values);
+        } catch (InvalidTypeException | ClassNotLoadedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private ObjectReference allocateObject(ObjectNode node) {

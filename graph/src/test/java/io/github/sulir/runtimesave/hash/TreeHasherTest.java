@@ -3,7 +3,7 @@ package io.github.sulir.runtimesave.hash;
 import io.github.sulir.runtimesave.graph.GraphNode;
 import io.github.sulir.runtimesave.graph.TestGraphGenerator;
 import io.github.sulir.runtimesave.graph.ValueNode;
-import io.github.sulir.runtimesave.nodes.ArrayNode;
+import io.github.sulir.runtimesave.nodes.ReferenceArrayNode;
 import io.github.sulir.runtimesave.nodes.FrameNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ class TreeHasherTest {
 
     @Test
     void nonTreeNodesDoNotGetHash() {
-        ArrayNode[] cycle = new TestGraphGenerator().circularNodes(2);
+        ReferenceArrayNode[] cycle = new TestGraphGenerator().circularNodes(2);
         assignLocalAndTreeHashes(cycle[0]);
         assertAll(() -> assertFalse(cycle[0].hasHash()),
                   () -> assertFalse(cycle[1].hasHash()));

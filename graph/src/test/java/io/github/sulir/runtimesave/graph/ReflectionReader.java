@@ -47,19 +47,27 @@ public class ReflectionReader {
         return readObject(value, type);
     }
 
-    private ArrayNode readArray(Object value, Class<?> type) {
-        ArrayNode arrayNode = new ArrayNode(type.getTypeName());
-        created.put(value, arrayNode);
+    private ValueNode readArray(Object value, Class<?> type) {
         int length = Array.getLength(value);
-        Class<?> componentType = type.getComponentType();
 
-        for (int i = 0; i < length; i++) {
-            Object element = Array.get(value, i);
-            Class<?> elementClass = element == null ? null : element.getClass();
-            Class<?> elementType = componentType.isPrimitive() ? componentType : elementClass;
-            arrayNode.addElement(read(element, elementType));
+        if (type.getComponentType().isPrimitive()) {
+            List<Object> elements = new ArrayList<>(length);
+            for (int i = 0; i < length; i++)
+                elements.add(Array.get(value, i));
+            return new PrimitiveArrayNode(type.getTypeName(), elements);
+        } else {
+            ReferenceArrayNode arrayNode = new ReferenceArrayNode(type.getTypeName());
+            created.put(value, arrayNode);
+            Class<?> componentType = type.getComponentType();
+
+            for (int i = 0; i < length; i++) {
+                Object element = Array.get(value, i);
+                Class<?> elementClass = element == null ? null : element.getClass();
+                Class<?> elementType = componentType.isPrimitive() ? componentType : elementClass;
+                arrayNode.addElement(read(element, elementType));
+            }
+            return arrayNode;
         }
-        return arrayNode;
     }
 
     private ObjectNode readObject(Object value, Class<?> type) {

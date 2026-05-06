@@ -1,6 +1,6 @@
 package io.github.sulir.runtimesave.graph;
 
-import io.github.sulir.runtimesave.nodes.ArrayNode;
+import io.github.sulir.runtimesave.nodes.ReferenceArrayNode;
 import io.github.sulir.runtimesave.nodes.ObjectNode;
 import io.github.sulir.runtimesave.nodes.PrimitiveNode;
 import io.github.sulir.runtimesave.nodes.StringNode;
@@ -46,7 +46,7 @@ public class TestGraphGenerator {
         ObjectNode oneChild = new ObjectNode("Type");
         oneChild.setField("field", singleNode);
 
-        ArrayNode tree = new ArrayNode("Type[]");
+        ReferenceArrayNode tree = new ReferenceArrayNode("Type[]");
         tree.setElement(0, otherSingleNode);
         tree.setElement(1, oneChild);
 
@@ -70,14 +70,14 @@ public class TestGraphGenerator {
     }
 
     public Stream<ValueNode> cyclicGraphs() {
-        ArrayNode oneCycle = circularNodes(1)[0];
-        ArrayNode twoCycle = circularNodes(2)[0];
-        ArrayNode threeCycle = circularNodes(3)[0];
+        ReferenceArrayNode oneCycle = circularNodes(1)[0];
+        ReferenceArrayNode twoCycle = circularNodes(2)[0];
+        ReferenceArrayNode threeCycle = circularNodes(3)[0];
 
-        ArrayNode[] fourCycle = circularNodes(4);
+        ReferenceArrayNode[] fourCycle = circularNodes(4);
         fourCycle[2].setElement(0, new StringNode(""));
 
-        ArrayNode[] fiveCycle = circularNodes(5);
+        ReferenceArrayNode[] fiveCycle = circularNodes(5);
         fiveCycle[1].setElement(0, new StringNode("a"));
         fiveCycle[1].setElement(1, new StringNode("b"));
         fiveCycle[2].setElement(0, new StringNode("c"));
@@ -114,10 +114,10 @@ public class TestGraphGenerator {
         });
     }
 
-    public ArrayNode[] circularNodes(int length) {
-        ArrayNode[] nodes = new ArrayNode[length];
+    public ReferenceArrayNode[] circularNodes(int length) {
+        ReferenceArrayNode[] nodes = new ReferenceArrayNode[length];
         for (int i = 0; i < length; i++)
-            nodes[i] = new ArrayNode("Cls[]");
+            nodes[i] = new ReferenceArrayNode("Cls[]");
 
         for (int i = 0; i < length; i++)
             nodes[i].setElement(0, nodes[(i + 1) % length]);
@@ -141,12 +141,12 @@ public class TestGraphGenerator {
 
     private GraphNode createGraph(int[] spanningSources, List<EdgeSet> edgeSets) {
         int nodeCount = spanningSources.length + 1;
-        ArrayNode[] nodes = new ArrayNode[nodeCount];
+        ReferenceArrayNode[] nodes = new ReferenceArrayNode[nodeCount];
         for (int i = 0; i < nodeCount; i++)
-            nodes[i] = new ArrayNode("Object[]");
+            nodes[i] = new ReferenceArrayNode("Object[]");
 
         for (int i = 1; i < nodeCount; i++) {
-            ArrayNode connected = nodes[spanningSources[i - 1]];
+            ReferenceArrayNode connected = nodes[spanningSources[i - 1]];
             connected.addElement(nodes[i]);
         }
 
@@ -160,12 +160,12 @@ public class TestGraphGenerator {
     private GraphNode randomGraph() {
         int nodeCount = Math.max(random.nextInt(RANDOM_MIN_SIZE, RANDOM_MAX_SIZE + 1),
                 random.nextInt(RANDOM_MIN_SIZE, RANDOM_MAX_SIZE + 1));
-        ArrayNode[] nodes = new ArrayNode[nodeCount];
+        ReferenceArrayNode[] nodes = new ReferenceArrayNode[nodeCount];
         for (int i = 0; i < nodeCount; i++)
-            nodes[i] = new ArrayNode("Type[]");
+            nodes[i] = new ReferenceArrayNode("Type[]");
 
         for (int i = 1; i < nodeCount; i++) {
-            ArrayNode connected = nodes[random.nextInt(i)];
+            ReferenceArrayNode connected = nodes[random.nextInt(i)];
             connected.addElement(nodes[i]);
         }
 

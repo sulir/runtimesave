@@ -47,9 +47,10 @@ struct FieldEdge {
     jint fromClass;
     jint fieldIndex;
     jlong to;
+    jbyte toKind;
     jint toArrayLength;
-    FieldEdge(jlong from, jint fromClass, jint fieldIndex, jlong to, jint toArrayLength)
-        : from(from), fromClass(fromClass), fieldIndex(fieldIndex), to(to), toArrayLength(toArrayLength) {};
+    FieldEdge(jlong from, jint fromClass, jint fieldIndex, jlong to, jbyte toKind, jint toArrayLength) : from(from),
+        fromClass(fromClass), fieldIndex(fieldIndex), to(to), toKind(toKind), toArrayLength(toArrayLength) {};
 };
 
 struct ElementEdge {
@@ -57,9 +58,10 @@ struct ElementEdge {
     jlong from;
     jint index;
     jlong to;
+    jbyte toKind;
     jint toArrayLength;
-    ElementEdge(jlong from, jint index, jlong to, jint toArrayLength)
-        : from(from), index(index), to(to), toArrayLength(toArrayLength) {};
+    ElementEdge(jlong from, jint index, jlong to, jbyte toKind, jint toArrayLength)
+        : from(from), index(index), to(to), toKind(toKind), toArrayLength(toArrayLength) {};
 };
 
 struct PrimitiveField {

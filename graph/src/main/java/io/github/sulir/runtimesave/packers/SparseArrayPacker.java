@@ -3,7 +3,7 @@ package io.github.sulir.runtimesave.packers;
 import io.github.sulir.runtimesave.graph.Mapping;
 import io.github.sulir.runtimesave.graph.ValueNode;
 import io.github.sulir.runtimesave.misc.ArrayMap;
-import io.github.sulir.runtimesave.nodes.ArrayNode;
+import io.github.sulir.runtimesave.nodes.ReferenceArrayNode;
 import io.github.sulir.runtimesave.nodes.NullNode;
 import io.github.sulir.runtimesave.nodes.PrimitiveNode;
 import io.github.sulir.runtimesave.pack.Packer;
@@ -13,12 +13,12 @@ import java.util.SortedMap;
 public class SparseArrayPacker implements Packer {
     @Override
     public boolean canPack(ValueNode node) {
-        return node instanceof ArrayNode array && array.getLength() != 0;
+        return node instanceof ReferenceArrayNode array && array.getLength() != 0;
     }
 
     @Override
     public ValueNode pack(ValueNode node) {
-        ArrayNode array = (ArrayNode) node;
+        ReferenceArrayNode array = (ReferenceArrayNode) node;
         SparseArrayNode sparseArray = new SparseArrayNode(array.getType(), array.getLength());
         Object defaultValue = getDefaultValue(array.getComponentType());
 
@@ -39,7 +39,7 @@ public class SparseArrayPacker implements Packer {
     @Override
     public ValueNode unpack(ValueNode node) {
         SparseArrayNode sparseArray = (SparseArrayNode) node;
-        ArrayNode array = new ArrayNode(sparseArray.getType());
+        ReferenceArrayNode array = new ReferenceArrayNode(sparseArray.getType());
 
         for (int i = 0; i < sparseArray.getLength(); i++)
             array.setElement(i, sparseArray.getElement(i));

@@ -4,17 +4,30 @@ import io.github.sulir.runtimesave.graph.ValueNode;
 import io.github.sulir.runtimesave.misc.Log;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.*;
-import io.github.sulir.runtimesave.packers.PrimitiveArrayPacker;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 public class BufferReader implements AutoCloseable {
     private static ClassInfo[] classData = new ClassInfo[16 * 1024];
     private static final AtomicLong lastSequence = new AtomicLong(0);
+
+    private record PrimitiveType(String name, Function<ByteBuffer, Object> reader) { }
+    private static final PrimitiveType[] types = new PrimitiveType['Z' + 1];
+    static {
+        types['Z'] = new PrimitiveType("boolean", buffer -> buffer.get() != 0);
+        types['B'] = new PrimitiveType("byte", ByteBuffer::get);
+        types['C'] = new PrimitiveType("char", ByteBuffer::getChar);
+        types['S'] = new PrimitiveType("short", ByteBuffer::getShort);
+        types['I'] = new PrimitiveType("int", ByteBuffer::getInt);
+        types['J'] = new PrimitiveType("long", ByteBuffer::getLong);
+        types['F'] = new PrimitiveType("float", ByteBuffer::getFloat);
+        types['D'] = new PrimitiveType("double", ByteBuffer::getDouble);
+    }
 
     private final long sequenceNum;
     private final int referenceNodeCount;
@@ -64,12 +77,14 @@ public class BufferReader implements AutoCloseable {
         while (locals.hasRemaining()) {
             String variableName = readUTF8(locals);
             byte kind = locals.get();
-            if (kind == 'R')
+            if (kind == 'R') {
                 referenceLocals.add(variableName);
-            else if (kind == 'N')
+            } else if (kind == 'N') {
                 frame.setVariable(variableName, NullNode.getInstance());
-            else
-                frame.setVariable(variableName, readPrimitive(kind, locals));
+            } else {
+                PrimitiveType type = types[kind];
+                frame.setVariable(variableName, new PrimitiveNode(type.reader().apply(locals), type.name()));
+            }
         }
 
         readHeap(frame, referenceLocals);
@@ -112,15 +127,14 @@ public class BufferReader implements AutoCloseable {
                         object.setField(field, NullNode.getInstance());
                 }
             }
-            case ArrayNode array -> {
+            case PrimitiveArrayNode array -> array.setType(type);
+            case ReferenceArrayNode array -> {
                 array.setType(type);
-                if (!PrimitiveArrayPacker.isPrimitive(array.getComponentType())) {
-                    for (int i = 0; i < array.getFullLength(); i++) {
-                        array.setElement(i, NullNode.getInstance());
-                    }
+                for (int i = 0; i < array.getFullLength(); i++) {
+                    array.setElement(i, NullNode.getInstance());
                 }
             }
-            case null, default -> throw new IllegalStateException();
+            default -> throw new IllegalStateException();
         }
     }
 
@@ -145,10 +159,11 @@ public class BufferReader implements AutoCloseable {
         int fromClass = heap.getInt();
         int fieldIndex = heap.getInt();
         long to = heap.getLong();
+        byte toKind = heap.get();
         int toArrayLength = heap.getInt();
 
         ObjectNode source = (ObjectNode) nodes.get(from);
-        ValueNode target = getOrCreateNode(nodes, to, toArrayLength);
+        ValueNode target = getOrCreateNode(nodes, to, toKind, toArrayLength);
         setField(source, fromClass, fieldIndex, target);
     }
 
@@ -156,10 +171,11 @@ public class BufferReader implements AutoCloseable {
         long from = heap.getLong();
         int index = heap.getInt();
         long to = heap.getLong();
+        byte toKind = heap.get();
         int toArrayLength = heap.getInt();
 
-        ArrayNode source = (ArrayNode) nodes.get(from);
-        ValueNode target = getOrCreateNode(nodes, to, toArrayLength);
+        ReferenceArrayNode source = (ReferenceArrayNode) nodes.get(from);
+        ValueNode target = getOrCreateNode(nodes, to, toKind, toArrayLength);
 
         if (source == null) {
             if (from != 0)
@@ -174,7 +190,7 @@ public class BufferReader implements AutoCloseable {
         long objectTag = heap.getLong();
         int classTag = heap.getInt();
         int fieldIndex = heap.getInt();
-        ValueNode value = readPrimitive(type, heap);
+        ValueNode value = new PrimitiveNode(types[type].reader().apply(heap), types[type].name());
 
         ObjectNode object = (ObjectNode) nodes.get(objectTag);
         setField(object, classTag, fieldIndex, value);
@@ -184,9 +200,11 @@ public class BufferReader implements AutoCloseable {
         long objectTag = heap.getLong();
         int length = heap.getInt();
 
-        ArrayNode array = (ArrayNode) nodes.get(objectTag);
+        PrimitiveArrayNode array = (PrimitiveArrayNode) nodes.get(objectTag);
+        List<Object> elements = new ArrayList<>(length);
         for (int i = 0; i < length; i++)
-            array.setElement(i, readPrimitive(type, heap));
+            elements.add(types[type].reader().apply(heap));
+        array.setElements(elements);
     }
 
     private ClassInfo getClassInfo(int tag) {
@@ -199,11 +217,13 @@ public class BufferReader implements AutoCloseable {
         return classData[tag];
     }
 
-    private static ValueNode getOrCreateNode(Map<Long, ValueNode> nodes, long tag, int arrayLength) {
-        return nodes.computeIfAbsent(tag, (t) -> switch (arrayLength) {
-            case -2 -> new StringNode();
-            case -1 -> new ObjectNode();
-            default -> new ArrayNode(arrayLength);
+    private static ValueNode getOrCreateNode(Map<Long, ValueNode> nodes, long tag, byte toKind, int arrayLength) {
+        return nodes.computeIfAbsent(tag, (t) -> switch (toKind) {
+            case 'T' -> new StringNode();
+            case 'O' -> new ObjectNode();
+            case 'P' -> new PrimitiveArrayNode();
+            case 'R' -> new ReferenceArrayNode(arrayLength);
+            default -> throw new IllegalStateException("Unknown target kind: " + (char) toKind);
         });
     }
 
@@ -268,20 +288,6 @@ public class BufferReader implements AutoCloseable {
         String result = new String(chars);
         buffer.position(buffer.position() + 2 * charCount);
         return result;
-    }
-
-    private static PrimitiveNode readPrimitive(byte type, ByteBuffer buffer) {
-        return switch (type) {
-            case 'Z' -> new PrimitiveNode(buffer.get() != 0, "boolean");
-            case 'B' -> new PrimitiveNode(buffer.get(), "byte");
-            case 'C' -> new PrimitiveNode(buffer.getChar(), "char");
-            case 'S' -> new PrimitiveNode(buffer.getShort(), "short");
-            case 'I' -> new PrimitiveNode(buffer.getInt(), "int");
-            case 'J' -> new PrimitiveNode(buffer.getLong(), "long");
-            case 'F' -> new PrimitiveNode(buffer.getFloat(), "float");
-            case 'D' -> new PrimitiveNode(buffer.getDouble(), "double");
-            default -> throw new IllegalArgumentException("Unknown type: " + (char) type);
-        };
     }
 
     @Override

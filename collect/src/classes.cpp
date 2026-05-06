@@ -51,16 +51,29 @@ bool ClassCache::load(JNIEnv *jni) {
         if (!field)
             return false;
         jclass primitive = static_cast<jclass>(jniCatch(jni->GetStaticObjectField(boxed, field), jni));
-        if (!field)
+        if (!primitive)
             return false;
         primitiveClasses.push_back(JniLocal{primitive, jni});
+    }
+
+    std::vector<JniLocal<jclass>> primitiveArrayClasses;
+    primitiveArrayClasses.reserve(PRIMITIVE_ARR_COUNT);
+    for (PrimitiveType type : primitiveTypes) {
+        if (!type.size)
+            continue;
+        JniLocal<jclass> array{jniCatch(jni->FindClass(type.array), jni), jni};
+        if (!array)
+            return false;
+        primitiveArrayClasses.push_back(std::move(array));
     }
 
     std::lock_guard<std::mutex> lock(mtx);
     if (!objectClass || !add(classClass, CLASS_TAG, jni) || !add(stringClass, STRING_TAG, jni))
         return false;
-    for (size_t i = 0; i < PRIMITIVE_COUNT; i++)
+    for (size_t i = 0; i < primitiveClasses.size(); i++)
         add(primitiveClasses[i], STRING_TAG + 1 + i, jni);
+    for (size_t i = 0; i < primitiveArrayClasses.size(); i++)
+        add(primitiveArrayClasses[i], PRIMITIVE_ARR_MIN + i, jni);
     return true;
 }
 

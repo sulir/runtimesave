@@ -1,7 +1,7 @@
 package io.github.sulir.runtimesave.packers;
 
 import io.github.sulir.runtimesave.graph.TestUtils;
-import io.github.sulir.runtimesave.nodes.ArrayNode;
+import io.github.sulir.runtimesave.nodes.ReferenceArrayNode;
 import io.github.sulir.runtimesave.pack.Packer;
 import io.github.sulir.runtimesave.packers.SparseArrayPacker.SparseArrayNode;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +34,7 @@ class SparseArrayPackerTest {
 
     @Test
     void emptyArrayIsNotPacked() {
-        assertFalse(packer.canPack(new ArrayNode("Object[]")));
+        assertFalse(packer.canPack(new ReferenceArrayNode("Object[]")));
     }
 
     @ParameterizedTest

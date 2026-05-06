@@ -7,23 +7,22 @@ import io.github.sulir.runtimesave.misc.ArrayMap;
 import java.util.SortedMap;
 import java.util.function.BiConsumer;
 
-public class ArrayNode extends ValueNode {
-    public static final Mapping mapping = mapping(ArrayNode.class)
-            .property("type", String.class, ArrayNode::getType)
+public class ReferenceArrayNode extends ValueNode {
+    public static final Mapping mapping = mapping(ReferenceArrayNode.class)
+            .property("type", String.class, ReferenceArrayNode::getType)
             .edges("HAS_ELEMENT", "index", Integer.class, ValueNode.class, node -> node.elements)
-            .constructor((String t) -> new ArrayNode(t));
+            .constructor((String t) -> new ReferenceArrayNode(t));
 
     private String type;
     private int fullLength = -1;
     protected final SortedMap<Integer, ValueNode> elements = new ArrayMap<>();
 
-    public ArrayNode(String type) {
-        if (!type.endsWith("[]"))
-            throw new IllegalArgumentException("Invalid array type: " + type);
+    public ReferenceArrayNode(String type) {
+        checkType(type);
         this.type = type;
     }
 
-    public ArrayNode(int fullLength) {
+    public ReferenceArrayNode(int fullLength) {
         this.fullLength = fullLength;
     }
 
@@ -32,6 +31,7 @@ public class ArrayNode extends ValueNode {
     }
 
     public void setType(String type) {
+        checkType(type);
         checkModification();
         this.type = type;
     }
@@ -41,7 +41,7 @@ public class ArrayNode extends ValueNode {
     }
 
     public String getComponentType() {
-        return type.substring(0, type.length() - 2);
+        return getComponentType(type);
     }
 
     public ValueNode getElement(int index) {
@@ -67,5 +67,14 @@ public class ArrayNode extends ValueNode {
 
     public Mapping getMapping() {
         return mapping;
+    }
+
+    private static void checkType(String type) {
+        if (!type.endsWith("[]") || PrimitiveArrayNode.isPrimitive(getComponentType(type)))
+            throw new IllegalArgumentException("Invalid reference array type: " + type);
+    }
+
+    private static String getComponentType(String type) {
+        return type.substring(0, type.length() - 2);
     }
 }

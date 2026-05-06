@@ -2,7 +2,7 @@ package io.github.sulir.runtimesave.hash;
 
 import io.github.sulir.runtimesave.graph.GraphNode;
 import io.github.sulir.runtimesave.graph.TestGraphGenerator;
-import io.github.sulir.runtimesave.nodes.ArrayNode;
+import io.github.sulir.runtimesave.nodes.ReferenceArrayNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -45,13 +45,13 @@ class GraphIdHasherTest {
     @Test
     void rightCycleAboveMergedNodeHaveDifferentIdHashThanAboveTwoNodes() {
         MergeableGraph first = createMergeableGraph();
-        ArrayNode mergedNode = new ArrayNode(TYPE);
+        ReferenceArrayNode mergedNode = new ReferenceArrayNode(TYPE);
         first.leftJoinPoint().addElement(mergedNode);
         first.rightJoinPoint().addElement(mergedNode);
 
         MergeableGraph second = createMergeableGraph();
-        ArrayNode splitNode1 = new ArrayNode(TYPE);
-        ArrayNode splitNode2 = new ArrayNode(TYPE);
+        ReferenceArrayNode splitNode1 = new ReferenceArrayNode(TYPE);
+        ReferenceArrayNode splitNode2 = new ReferenceArrayNode(TYPE);
         second.leftJoinPoint().addElement(splitNode1);
         second.rightJoinPoint().addElement(splitNode2);
 
@@ -73,11 +73,11 @@ class GraphIdHasherTest {
     }
 
     private MergeableGraph createMergeableGraph() {
-        ArrayNode root = new ArrayNode(TYPE);
-        ArrayNode[] leftCycle = generator.circularNodes(4);
-        ArrayNode[] rightCycle = generator.circularNodes(4);
-        ArrayNode leftJoinPoint = new ArrayNode(TYPE);
-        ArrayNode rightJoinPoint = new ArrayNode(TYPE);
+        ReferenceArrayNode root = new ReferenceArrayNode(TYPE);
+        ReferenceArrayNode[] leftCycle = generator.circularNodes(4);
+        ReferenceArrayNode[] rightCycle = generator.circularNodes(4);
+        ReferenceArrayNode leftJoinPoint = new ReferenceArrayNode(TYPE);
+        ReferenceArrayNode rightJoinPoint = new ReferenceArrayNode(TYPE);
 
         root.addElement(leftCycle[0]);
         root.addElement(rightCycle[0]);
@@ -89,8 +89,8 @@ class GraphIdHasherTest {
         return new MergeableGraph(root, rightCycle[3], leftJoinPoint, rightJoinPoint);
     }
 
-    private record MergeableGraph(ArrayNode root,
-                                  ArrayNode inCycle,
-                                  ArrayNode leftJoinPoint,
-                                  ArrayNode rightJoinPoint) { }
+    private record MergeableGraph(ReferenceArrayNode root,
+                                  ReferenceArrayNode inCycle,
+                                  ReferenceArrayNode leftJoinPoint,
+                                  ReferenceArrayNode rightJoinPoint) { }
 }
