@@ -59,7 +59,7 @@ public class SaveService {
 
             dbPool.execute(() -> {
                 database.write(dag);
-                metadata.addLocation(frame.hash(), location);
+                metadata.addLocation(frame.idHash(), location);
             });
         });
     }
