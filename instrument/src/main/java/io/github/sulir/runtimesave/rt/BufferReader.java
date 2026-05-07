@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 public class BufferReader implements AutoCloseable {
+    public record ClassInfo (String className, int fieldStartIndex, String[] fieldNames) { }
     private static ClassInfo[] classData = new ClassInfo[16 * 1024];
     private static final AtomicLong lastSequence = new AtomicLong(0);
 

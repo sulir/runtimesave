@@ -24,8 +24,6 @@ To view the saved objects in the graph database, open http://localhost:7474/.
 
 To start a program from any line, place the caret on the given line and select Run / Start Program at Current Line from the main menu. In the opened dialog, click Debug.
 
-## Tests and the Comparison of Approaches
+## Tests
 
-Unit tests, including the tests of the hashing algorithms, are located in the `plugin/src/test/java` directory. They can be run using: `./gradlew test`.
-
-The comparison of approaches (plain, packed, hashed, and pack+hash) is implemented in `Comparison.java` inside the `plugin/src/test/java/io/github/sulir/runtimesave/comparison` directory. It can be executed using its `main` method (the `NEO4J_PASSWORD` environment variable has to be set). Since the comparison of database sizes in bytes requires direct access to Neo4j data files, it is started separately from `scripts/compare-db-size.sh`.
+Unit tests, including the tests of the hashing algorithms, are located in the `graph/src/test/java` directory. They can be run using: `./gradlew test`.

@@ -91,7 +91,7 @@ public class TestGraphGenerator {
 
         return IntStream.range(0, RANDOM_COUNT)
                 .mapToObj(i -> randomGraph())
-                .filter(graph -> uniqueTraversals.add(TestUtils.getBfsTraversal(graph)));
+                .filter(graph -> uniqueTraversals.add(getBfsTraversal(graph)));
     }
 
     public Stream<GraphNode> allSmallGraphs() {
@@ -109,7 +109,7 @@ public class TestGraphGenerator {
                         edgeSets.add(new EdgeSet(edge[0], edge[1], edgeCounts[i]));
                     }
                     return createGraph(spanningSources, edgeSets);
-                }).filter(graph -> uniqueTraversals.add(TestUtils.getBfsTraversal(graph)));
+                }).filter(graph -> uniqueTraversals.add(getBfsTraversal(graph)));
             });
         });
     }
@@ -175,6 +175,29 @@ public class TestGraphGenerator {
             nodes[random.nextInt(nodeCount)].setElement(random.nextInt(nodeCount), nodes[random.nextInt(nodeCount)]);
 
         return nodes[0];
+    }
+
+    private List<?> getBfsTraversal(GraphNode root) {
+        List<Object> traversal = new ArrayList<>();
+        Queue<GraphNode> toVisit = new ArrayDeque<>();
+        toVisit.add(root);
+        Map<GraphNode, Integer> orders = new HashMap<>();
+        orders.put(root, 0);
+
+        while (!toVisit.isEmpty()) {
+            GraphNode node = toVisit.remove();
+            traversal.add(node.label());
+            traversal.add(Arrays.asList(node.properties()));
+            node.forEachEdge((label, target) -> {
+                int targetOrder = orders.computeIfAbsent(target, t -> {
+                    toVisit.add(target);
+                    return orders.size();
+                });
+                traversal.add(label);
+                traversal.add(targetOrder);
+            });
+        }
+        return traversal;
     }
 
     private record EdgeSet(int from, int to, int count) { }

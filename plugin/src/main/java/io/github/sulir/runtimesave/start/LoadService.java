@@ -12,12 +12,10 @@ import io.github.sulir.runtimesave.hash.NodeHash;
 import io.github.sulir.runtimesave.misc.MismatchException;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.FrameNode;
-import io.github.sulir.runtimesave.pack.ValuePacker;
 
 @Service
 public final class LoadService {
-    private final ValuePacker packer = ValuePacker.fromServiceLoader();
-    private final NodeFactory factory = new NodeFactory(packer);
+    private final NodeFactory factory = new NodeFactory();
     private final HashedDb database  = new HashedDb(DbConnection.getInstance(), factory);
     private final Metadata metadata = new Metadata(DbConnection.getInstance());
 
@@ -28,7 +26,6 @@ public final class LoadService {
     public void loadFrame(StackFrame frame) throws MismatchException {
         NodeHash hash = metadata.findFrame(readLocation(frame));
         FrameNode frameNode = database.read(hash, FrameNode.class);
-        packer.unpack(frameNode);
         new JdiWriter(frame).writeFrame(frameNode);
     }
 

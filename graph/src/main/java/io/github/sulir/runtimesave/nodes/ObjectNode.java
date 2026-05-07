@@ -3,8 +3,6 @@ package io.github.sulir.runtimesave.nodes;
 import io.github.sulir.runtimesave.graph.Mapping;
 import io.github.sulir.runtimesave.graph.ValueNode;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -34,10 +32,6 @@ public class ObjectNode extends ValueNode {
 
     public ValueNode getField(String name) {
         return fields.get(name);
-    }
-
-    public Collection<String> getFieldNames() {
-        return Collections.unmodifiableCollection(fields.keySet());
     }
 
     public void setField(String name, ValueNode field) {

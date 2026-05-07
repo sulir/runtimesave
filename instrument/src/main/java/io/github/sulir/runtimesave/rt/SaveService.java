@@ -12,7 +12,6 @@ import io.github.sulir.runtimesave.misc.BoundedExecutor;
 import io.github.sulir.runtimesave.misc.Log;
 import io.github.sulir.runtimesave.misc.SourceLocation;
 import io.github.sulir.runtimesave.nodes.FrameNode;
-import io.github.sulir.runtimesave.pack.ValuePacker;
 
 public class SaveService {
     private static SaveService instance;
@@ -20,10 +19,9 @@ public class SaveService {
     private final BoundedExecutor cpuPool = BoundedExecutor.usingAllCores("CPU");
     private final BoundedExecutor dbPool = BoundedExecutor.singleThreaded("DB", cpuPool);
     private final DbIndex dbIndex = new DbIndex(DbConnection.getInstance());
-    private final ValuePacker packer = ValuePacker.fromServiceLoader();
     private final ThreadLocal<GraphHasher> hasher = ThreadLocal.withInitial(GraphHasher::new);
     private final ThreadLocal<GraphIdHasher> idHasher = ThreadLocal.withInitial(GraphIdHasher::new);
-    private final NodeFactory factory = new NodeFactory(packer);
+    private final NodeFactory factory = new NodeFactory();
     private final HashedDb database  = new HashedDb(DbConnection.getInstance(), factory);
     private final Metadata metadata = new Metadata(DbConnection.getInstance());
 
@@ -52,7 +50,6 @@ public class SaveService {
             if ("no".equals(System.getenv("RS_WRITE")))
                 return;
 
-            packer.pack(frame);
             AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
             hasher.get().assignHashes(dag);
             idHasher.get().assignIdHashes(frame);

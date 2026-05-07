@@ -58,13 +58,10 @@ public class ReflectionReader {
         } else {
             ReferenceArrayNode arrayNode = new ReferenceArrayNode(type.getTypeName(), length);
             created.put(value, arrayNode);
-            Class<?> componentType = type.getComponentType();
-
             for (int i = 0; i < length; i++) {
                 Object element = Array.get(value, i);
-                Class<?> elementClass = element == null ? null : element.getClass();
-                Class<?> elementType = componentType.isPrimitive() ? componentType : elementClass;
-                arrayNode.setElement(i, read(element, elementType));
+                if (element != null)
+                    arrayNode.setElement(i, read(element, element.getClass()));
             }
             return arrayNode;
         }

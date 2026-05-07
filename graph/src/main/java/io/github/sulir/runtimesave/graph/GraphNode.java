@@ -62,10 +62,6 @@ public abstract class GraphNode {
                 .map(edge -> new Edge(this, edge.getKey(), edge.getValue()));
     }
 
-    public int edgeCount() {
-        return getMapping().edgeMap().apply(this).size();
-    }
-
     public void forEachEdge(BiConsumer<Object, GraphNode> action) {
         getMapping().edgeMap().apply(this).forEach(action);
     }

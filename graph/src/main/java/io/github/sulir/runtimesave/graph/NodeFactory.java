@@ -1,8 +1,6 @@
 package io.github.sulir.runtimesave.graph;
 
 import io.github.sulir.runtimesave.nodes.*;
-import io.github.sulir.runtimesave.pack.Packer;
-import io.github.sulir.runtimesave.pack.ValuePacker;
 import org.neo4j.driver.Value;
 
 import java.lang.reflect.Field;
@@ -24,13 +22,8 @@ public class NodeFactory {
 
     private final Map<String, Mapping> labelToMapping = new HashMap<>();
 
-    public NodeFactory(ValuePacker valuePacker) {
+    public NodeFactory() {
         nodeClasses.forEach(this::registerMapping);
-
-        for (Packer packer : valuePacker.getAllPackers())
-            for (Class<?> nested : packer.getClass().getClasses())
-                if (GraphNode.class.isAssignableFrom(nested))
-                    registerMapping(nested.asSubclass(GraphNode.class));
     }
 
     public GraphNode createNode(Iterable<String> labels, Map<String, Value> properties) {
@@ -40,12 +33,6 @@ public class NodeFactory {
         Object[] params = new Object[propertySpecs.length];
         for (int i = 0; i < params.length; i++)
             params[i] = properties.get(propertySpecs[i].key()).as(propertySpecs[i].type());
-        return mapping.constructor().apply(params);
-    }
-
-    public GraphNode createNode(String label, NodeProperty[] properties) {
-        Mapping mapping = findMapping(List.of(label));
-        Object[] params = Arrays.stream(properties).map(NodeProperty::value).toArray(Object[]::new);
         return mapping.constructor().apply(params);
     }
 
