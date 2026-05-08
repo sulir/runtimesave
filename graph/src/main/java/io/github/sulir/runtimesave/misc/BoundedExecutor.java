@@ -6,12 +6,9 @@ public class BoundedExecutor extends ThreadPoolExecutor {
     public static final String PREFIX = "RuntimeSave";
     private static final int DEFAULT_QUEUE_SIZE = 10;
 
-    public static BoundedExecutor singleThreaded(String name, BoundedExecutor... dependencies) {
-        return new BoundedExecutor(1, DEFAULT_QUEUE_SIZE, name, dependencies);
-    }
-
-    public static BoundedExecutor usingAllCores(String name, BoundedExecutor... dependencies) {
-        return new BoundedExecutor(Runtime.getRuntime().availableProcessors(), DEFAULT_QUEUE_SIZE, name, dependencies);
+    public static BoundedExecutor forPartOfCores(double part, String name, BoundedExecutor... dependencies) {
+        int cores = (int) Math.round(part * Runtime.getRuntime().availableProcessors());
+        return new BoundedExecutor(cores, DEFAULT_QUEUE_SIZE, name, dependencies);
     }
 
     public BoundedExecutor(int threads, int queueSize, String name, BoundedExecutor... dependencies) {

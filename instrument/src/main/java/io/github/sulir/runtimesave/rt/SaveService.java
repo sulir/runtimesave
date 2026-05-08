@@ -8,6 +8,7 @@ import io.github.sulir.runtimesave.graph.NodeFactory;
 import io.github.sulir.runtimesave.hash.AcyclicGraph;
 import io.github.sulir.runtimesave.hash.GraphHasher;
 import io.github.sulir.runtimesave.hash.GraphIdHasher;
+import io.github.sulir.runtimesave.hash.NodeHash;
 import io.github.sulir.runtimesave.misc.BoundedExecutor;
 import io.github.sulir.runtimesave.misc.Log;
 import io.github.sulir.runtimesave.misc.SourceLocation;
@@ -16,8 +17,8 @@ import io.github.sulir.runtimesave.nodes.FrameNode;
 public class SaveService {
     private static SaveService instance;
 
-    private final BoundedExecutor cpuPool = BoundedExecutor.usingAllCores("CPU");
-    private final BoundedExecutor dbPool = BoundedExecutor.singleThreaded("DB", cpuPool);
+    private final BoundedExecutor cpuPool = BoundedExecutor.forPartOfCores(0.5, "CPU");
+    private final BoundedExecutor dbPool = BoundedExecutor.forPartOfCores(0.5, "DB", cpuPool);
     private final DbIndex dbIndex = new DbIndex(DbConnection.getInstance());
     private final ThreadLocal<GraphHasher> hasher = ThreadLocal.withInitial(GraphHasher::new);
     private final ThreadLocal<GraphIdHasher> idHasher = ThreadLocal.withInitial(GraphIdHasher::new);
@@ -37,27 +38,30 @@ public class SaveService {
 
     public void saveFrame(BufferReader reader) {
         reader.readClasses();
+        cpuPool.execute(() -> processGraph(reader));
+    }
 
-        cpuPool.execute(() -> {
-            SourceLocation location;
-            FrameNode frame;
-            try (reader) {
-                location = reader.readLocation();
-                frame = reader.readFrame();
-            }
-            Log.info(location, frame);
+    private void processGraph(BufferReader reader) {
+        SourceLocation location;
+        FrameNode frame;
+        try (reader) {
+            location = reader.readLocation();
+            frame = reader.readFrame();
+        }
+        Log.info(location, frame);
 
-            if ("no".equals(System.getenv("RS_WRITE")))
-                return;
+        if ("no".equals(System.getenv("RS_WRITE")))
+            return;
 
-            AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
-            hasher.get().assignHashes(dag);
-            idHasher.get().assignIdHashes(frame);
+        AcyclicGraph dag = AcyclicGraph.multiCondensationOf(frame);
+        hasher.get().assignHashes(dag);
+        idHasher.get().assignIdHashes(frame);
 
-            dbPool.execute(() -> {
-                database.write(dag);
-                metadata.addLocation(frame.idHash(), location);
-            });
-        });
+        dbPool.execute(() -> writeToDatabase(dag, frame.idHash(), location));
+    }
+
+    private void writeToDatabase(AcyclicGraph dag, NodeHash idHash, SourceLocation location) {
+        database.write(dag);
+        metadata.addLocation(idHash, location);
     }
 }
