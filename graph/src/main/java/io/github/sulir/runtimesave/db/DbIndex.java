@@ -9,7 +9,7 @@ public class DbIndex {
             "Class", "name",
             "Method", "signature",
             "Line", "number",
-            "Frame", "hash"
+            "Hashed", "hash"
     );
 
     private final DbConnection db;
@@ -19,7 +19,7 @@ public class DbIndex {
     }
 
     public void createIndexes() {
-        createConstraint("Hashed", "idHash");
+        createConstraint();
 
         for (Map.Entry<String, String> index : indexes.entrySet()) {
             String label = index.getKey();
@@ -32,9 +32,9 @@ public class DbIndex {
         }
     }
 
-    public void createConstraint(String label, String property) {
+    private void createConstraint() {
         String query = "CREATE CONSTRAINT %1$s_%2$s IF NOT EXISTS FOR (n:%1$s) REQUIRE n.%2$s IS UNIQUE"
-                .formatted(label, property);
+                .formatted("Hashed", "idHash");
         try (Session session = db.createSession()) {
             session.run(query);
         }

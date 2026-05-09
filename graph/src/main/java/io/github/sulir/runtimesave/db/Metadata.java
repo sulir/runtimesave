@@ -34,7 +34,7 @@ public class Metadata {
 
     public void addLocation(NodeHash frameIdHash, SourceLocation location) {
         try (Session session = db.createSession()) {
-            String query = "MATCH (f:Frame {idHash: $idHash})"
+            String query = "MATCH (f:Frame:Hashed {idHash: $idHash})"
                     + " MERGE (c:Class:Meta {name: $class})"
                     + " MERGE (c)-[:DECLARES]->(m:Method:Meta {signature: $method})"
                     + " MERGE (m)-[:CONTAINS]->(l:Line:Meta {number: $line})"
