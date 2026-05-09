@@ -8,8 +8,6 @@ import java.util.Map;
 public class GraphHasher {
     private final ObjectHasher objectHasher = new ObjectHasher();
     private final LocalHasher localHasher = new LocalHasher(objectHasher);
-    private final TreeHasher treeHasher = new TreeHasher(objectHasher);
-
     private Map<GraphNode, Integer> orders;
 
     public NodeHash assignHashes(GraphNode graph) {
@@ -19,15 +17,12 @@ public class GraphHasher {
     public NodeHash assignHashes(AcyclicGraph dag) {
         GraphNode root = dag.getRootNode();
         localHasher.assignLocalHashes(root);
-        treeHasher.assignHashes(dag);
 
         root.traverse(node -> {
-            if (!node.hasHash()) {
-                objectHasher.reset();
-                orders = new HashMap<>();
-                computeHash(node);
-                node.setHash(new NodeHash(objectHasher.finish()));
-            }
+            objectHasher.reset();
+            orders = new HashMap<>();
+            computeHash(node);
+            node.setHash(new NodeHash(objectHasher.finish()));
         });
         orders = null;
         return root.hash();

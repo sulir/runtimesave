@@ -86,10 +86,6 @@ public abstract class GraphNode {
         return hash;
     }
 
-    public boolean hasHash() {
-        return hash != null;
-    }
-
     public void setHash(NodeHash hash) {
         this.hash = hash;
     }
