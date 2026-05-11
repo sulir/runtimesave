@@ -14,7 +14,7 @@ public class PrimitiveNode extends ValueNode {
     private final Object value;
     private final String type;
 
-    public static PrimitiveNode getInstance(Object value, String type) {
+    public static synchronized PrimitiveNode getInstance(Object value, String type) {
         return cache.deduplicate(new PrimitiveNode(value, type));
     }
 
